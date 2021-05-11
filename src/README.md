@@ -39,9 +39,9 @@
 
 ## Concepts
 
-Fresh Boot: No existing database at boot.
-Insolvent Account: Flows from account can be terminated.
-Listed SuperTokens: SuperTokens register in Superfluid resolver contract.
+_Fresh Boot_: No existing database at boot.
+_Insolvent Account_: Flows from account can be terminated.
+_Listed SuperTokens_: SuperTokens register in Superfluid resolver contract.
 
 # Code structure
 

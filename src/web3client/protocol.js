@@ -151,6 +151,7 @@ class Protocol {
                 if(err === undefined || err == null) {
                     this.app.logger.log(evt.event);
                     let event = this.app.models.event.transformWeb3Event(evt);
+                    console.log(event);
                     switch(evt.eventName) {
 
                         case "AgreementStateUpdated" : {
@@ -200,7 +201,7 @@ class Protocol {
                 if(err === undefined || err == null) {
                     this.app.logger.log(evt.event);
                     let event = this.app.models.event.transformWeb3Event(evt);
-                    if(this.client.superToken[event.token] === undefined) {
+                    if(this.client.superTokens[event.token] === undefined) {
                         console.debug("Found new token: ", event.token);
                         await this.client.loadSuperToken(event.token);
                         setTimeout(() => subscribeEvents(token), 1000);

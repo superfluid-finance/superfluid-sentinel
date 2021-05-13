@@ -7,8 +7,7 @@ const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contra
 const SuperTokenModel = require("./../database/models/superTokenModel");
 
 /*
- *
- * Web3 and superfluid client:
+ *   Web3 and superfluid client:
  *
  * - Create web3 connections
  * - Load superfluid contracts
@@ -41,7 +40,7 @@ class Client {
                 // Enable auto reconnection
                 reconnect: {
                     auto: true,
-                    delay: 50000,
+                    //delay: 50000,
                     onTimeout: false
                 }
             }).on("reconnect", function() {
@@ -50,6 +49,12 @@ class Client {
             this.web3 = new Web3(web3);
             var web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_NODE);
             this.web3HTTP = new Web3(web3Provider);
+            const httpChainId = await this.web3HTTP.eth.net.getId();
+            const wsChainId = await this.web3.eth.net.getId();
+
+            if(httpChainId.toString() !== wsChainId.toString()) {
+                throw Error("WS and HTTP point to different networks");
+            }
             console.log("ChainId: ", await this.getNetworkId());
             const resolverAddress = SDKConfig(await this.getNetworkId()).resolverAddress;
             const superfluidIdent = `Superfluid.${this.version}`;
@@ -88,12 +93,19 @@ class Client {
 
         try {
             this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, 100);
-            this.app.logger.startSpinner("Connecting to Node: WS Mode");
+            this.app.logger.startSpinner("Connecting to Node: HTTP");
             if(await this.web3HTTP.eth.net.isListening()) {
                 this.web3HTTP.eth.transactionConfirmationBlocks = 3;
+                this.app.logger.stopSpinnerWithSuccess("Node connected (HTTP)");
+            } else {
+                this.app.logger.error("Error: Node HTTP not connected");
+            }
+            this.app.logger.startSpinner("Connecting to Node: WS");
+            if(await this.web3.eth.net.isListening()) {
+                this.web3.eth.transactionConfirmationBlocks = 3;
                 this.app.logger.stopSpinnerWithSuccess("Node connected (WS)");
             } else {
-                this.app.logger.error("Error: not connected");
+                this.app.logger.error("Error: Node WS not connected");
             }
         } catch(e) {
             this.app.logger.error(e);

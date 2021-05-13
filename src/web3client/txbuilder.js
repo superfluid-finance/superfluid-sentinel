@@ -22,6 +22,7 @@ class TxBuilder {
 
     constructor(app) {
         this.app = app;
+        this.timeout = this.app.config.TIMEOUT_FN;
     }
 
     async start() {
@@ -91,34 +92,26 @@ class TxBuilder {
                                 chainId: chainId
                             }
                             //simulate tx
-                            const result = await this.estimateGasLimit(wallet, txObject);
-                            if(result.error !== undefined) {
-                                if(result.error.message === "Returned error: execution reverted: CFA: flow does not exist") {
+                            const gas = await this.estimateGasLimit(wallet, txObject);
+                            console.log(gas);
+                            if(gas.error !== undefined) {
+                                if(gas.error.message === "Returned error: execution reverted: CFA: flow does not exist") {
                                     //register flow to recalculation
-                                    console.log(txObject);
+                                    console.error("CFA: flow does not exist");
+                                    console.debug("Deleting from database");
+                                    await flow.destroy();
                                     break;
                                 }
                             } else {
-                                txObject.gasLimit = await result.gasLimit;
+                                txObject.gasLimit = gas.gasLimit;
                                 console.log(txObject);
                                 console.debug("sending tx");
                                 networkAccountNonce++;
-                                const result = await this.sendWithRetry(wallet, txObject, 240000);
+                                const result = await this.sendWithRetry(wallet, txObject, this.timeout);
                                 if(result === undefined) {
                                     console.error("error with tx");
                                 }
                             }
-
-                            //console.log(txObject);
-                            //console.log(`sending with nonce : ${ networkAccountNonce }`);
-                            //networkAccountNonce++;
-                            //console.debug("sending tx");
-                            /*
-                            const result = await this.sendWithRetry(wallet, txObject, 120000);
-                            if(result === undefined) {
-                                console.error("error signing tx");
-                            }
-                            */
                         } catch(error) {
                             console.error(error);
                         }
@@ -147,17 +140,23 @@ class TxBuilder {
         }
 
         try {
-            const tx = await promiseTimeout(
-                this.app.client.web3.eth.sendSignedTransaction(signed.tx.rawTransaction),
-                ms
-            );
+            console.log("waiting until timeout");
+            const tx =  await promiseTimeout(this.app.client.web3.eth.sendSignedTransaction(signed.tx.rawTransaction),ms);
             return tx;
+
         } catch(error) {
             if(error.message === "timeout rejection") {
-                console.debug(`replacement with nonce : ${txObject.nonce} tx: ${signed.tx.transactionHash}`)
+                console.debug(`agent account: ${wallet.address} - replacement with nonce : ${txObject.nonce} tx: ${signed.tx.transactionHash}`)
                 txObject.retry = txObject.retry + 1;
                 return this.sendWithRetry(wallet, txObject, ms);
             }
+
+            if(error.message === "Returned error: replacement transaction underpriced") {
+                txObject.retry = txObject.retry + 1;
+                txObject.gasPrice += 10;
+                return this.sendWithRetry(wallet, txObject, ms);
+            }
+
             console.log(error);
         }
     }

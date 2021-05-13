@@ -9,7 +9,7 @@ class LoadSuperTokens {
 
     async start() {
         try {
-            console.log("Getting Past event to find SuperTokens");
+            console.log("getting Past event to find SuperTokens");
             console.debug("using concurrency: ", this.concurrency);
             const runningNetwork = await this.app.client.getNetworkId();
             const systemInfo = await SystemModel.findOne();
@@ -60,6 +60,7 @@ class LoadSuperTokens {
                 await systemInfo.save();
             }
             await this.app.client.loadSuperTokens(tokens);
+            console.log("finish Past event to find SuperTokens");
         } catch(error) {
             this.app.logger.error(`error getting pasted events\n ${error}`);
             process.exit(1);

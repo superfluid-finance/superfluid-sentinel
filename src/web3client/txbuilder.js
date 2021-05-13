@@ -46,7 +46,7 @@ class TxBuilder {
                 ]
             }
         });
-        console.log("How many estimations: ", estimations.length);
+        //console.log("How many estimations: ", estimations.length);
         const wallet = this.app.client.getAccount();
         const chainId = await this.app.client.getNetworkId();
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address, "pending");

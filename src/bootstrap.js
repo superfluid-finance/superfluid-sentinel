@@ -2,6 +2,7 @@ const SystemModel = require("./database/models/systemModel");
 const EstimationModel = require("./database/models/accountEstimationModel");
 const AgreementModel =  require("./database/models/agreementModel");
 const { Op, ValidationError } = require("sequelize");
+const async = require("async");
 /*
  * @dev Bootstrap the app from fresh or persisted state
  */
@@ -9,10 +10,13 @@ class Bootstrap {
 
     constructor(app) {
         this.app = app;
+        this.concurrency = this.app.config.CONCURRENCY;
     }
 
     async start() {
         console.debug("collecting events from the last boot or epoch block");
+        console.debug("using concurrency: ", this.concurrency);
+
         const systemInfo = await SystemModel.findOne();
         let blockNumber = parseInt(this.app.config.EPOCH_BLOCK);
         if(systemInfo !== null) {
@@ -27,74 +31,110 @@ class Bootstrap {
         if(blockNumber === currentBlockNumber) {
             return;
         }
-
+        //TODO: return if wrong block numbers
         if (blockNumber < currentBlockNumber) {
             const uniqueAccountAgreementPairs = new Set();
             try {
                 let pastEvents = new Array();
                 let pullCounter = blockNumber;
+
+                var queue = async.queue(async function(task) {
+                    console.log(`${task.fromBlock} - ${task.toBlock}`);
+                    try {
+                        let promiseResult = task.self.app.protocol.getAllSuperTokensEvents("AgreementStateUpdated", {
+                                fromBlock: task.fromBlock,
+                                toBlock: task.toBlock
+                        });
+                        pastEvents = pastEvents.concat(await Promise.all(promiseResult));
+                    } catch(error) {
+                        console.error(error);
+                    }
+                }, this.concurency);
+
                 while(pullCounter <= currentBlockNumber) {
                     let end = (pullCounter + pullStep);
-                    let promiseResult = this.app.protocol.getAllSuperTokensEvents(
-                        "AgreementStateUpdated", {
-                            fromBlock: pullCounter,
-                            toBlock: end > currentBlockNumber ? currentBlockNumber : end
-                        }
-                    );
-                    pastEvents = pastEvents.concat(await Promise.all(promiseResult));
-                    this.app.logger.log("from " + pullCounter + " to block " + (end > currentBlockNumber ? currentBlockNumber : end));
+                    queue.push({
+                        self: this,
+                        fromBlock: pullCounter,
+                        toBlock: end > currentBlockNumber ? currentBlockNumber : end
+                    });
                     pullCounter = end;
                 }
+
+                await queue.drain();
                 // normalize web3 events
                 for(let i = 0; i < pastEvents.length; i++) {
                     for(let event of pastEvents[i]) {
                         uniqueAccountAgreementPairs.add(
-                            JSON.stringify({
-                                account: event.returnValues.account
-                            })
+                            event.returnValues.account
                         );
                     }
                 }
                 this.app.logger.stopSpinnerWithSuccess("Pulling past events");
-                this.app.logger.startSpinner("Getting Agreements");
-                const now = this.app.getTimeUnix();
-                for(let item of uniqueAccountAgreementPairs) {
-                    const senderFlows = new Map();
-                    const elem = JSON.parse(item);
-                    let senderFilter = {
-                        filter : {
-                            "sender" : elem.account
-                        },
-                        fromBlock: blockNumber,
-                        toBlock: currentBlockNumber,
-                    };
+                //this.app.logger.startSpinner("Getting Agreements");
+                this.app.logger.log("getting agreements");
+                queue = async.queue(async function(task) {
+                    //console.log(`${task.account} : ${task.fromBlock} - ${task.toBlock}`);
+                    try {
+                        let senderFilter = {
+                            filter : {
+                                "sender" : task.account
+                            },
+                            fromBlock: task.fromBlock,
+                            toBlock: task.toBlock,
+                        };
 
-                    let allFlowUpdatedEvents = await this.app.protocol.getAgreementEvents(
-                        "FlowUpdated",
-                        senderFilter
-                    );
+
+                        let allFlowUpdatedEvents = await task.self.app.protocol.getAgreementEvents(
+                            "FlowUpdated",
+                            senderFilter
+                        );
+
+                        allFlowUpdatedEvents = allFlowUpdatedEvents.map(
+                            task.self.app.models.event.transformWeb3Event
+                        );
+                        allFlowUpdatedEvents.sort(function(a,b) {
+                            return a.blockNumber > b.blockNumber;
+                        }).forEach(e => {
+                            e.agreementId = task.self.app.protocol.generateId(e.sender, e.receiver);
+                            e.sender = e.sender;
+                            e.receiver = e.receiver;
+                            e.superToken = e.token;
+                            e.zchecked = -1;
+
+                            task.senderFlows.set(task.self.app.protocol.generateId(e.superToken, e.agreementId), e);
+                            task.accountTokenInteractions.add(e.token);
+                        });
+
+                    } catch(error) {
+                        console.error(error);
+                    }
+                }, this.concurency);
+
+                for(let account of uniqueAccountAgreementPairs) {
                     let accountTokenInteractions = new Set();
-                    allFlowUpdatedEvents = allFlowUpdatedEvents.map(this.app.models.event.transformWeb3Event);
-                    allFlowUpdatedEvents.sort(function(a,b) {
-                        return a.blockNumber > b.blockNumber;
-                    }).forEach(e => {
-                        //assuming CFA ID generation
-                        e.agreementId = this.app.protocol.generateId(e.sender, e.receiver);
-                        e.sender = e.sender;
-                        e.receiver = e.receiver;
-                        e.superToken = e.token;
-                        e.zchecked = -1;
-
-                        senderFlows.set(this.app.protocol.generateId(e.superToken, e.agreementId), e);
-                        accountTokenInteractions.add(e.token);
-                    });
-
+                    let senderFlows = new Map();
+                    let pullCounter = blockNumber;
+                    while(pullCounter <= currentBlockNumber) {
+                        let end = (pullCounter + pullStep);
+                        queue.push({
+                            self: this,
+                            account: account,
+                            senderFlows: senderFlows,
+                            accountTokenInteractions: accountTokenInteractions,
+                            fromBlock: pullCounter,
+                            toBlock: end > currentBlockNumber ? currentBlockNumber : end
+                        });
+                        pullCounter = end;
+                    }
+                    await queue.drain();
+                    const now = this.app.getTimeUnix();
                     for(let token of accountTokenInteractions) {
                         if(this.app.client.superTokens[token] !== undefined) {
-                            const accountEstimationDate = await this.app.protocol.liquidationDate(token, elem.account);
+                            const accountEstimationDate = await this.app.protocol.liquidationDate(token, account);
                             try {
                                 await EstimationModel.upsert({
-                                    address: elem.account,
+                                    address: account,
                                     superToken: token,
                                     zestimation: accountEstimationDate == "Invalid Date" ? -1 : new Date(accountEstimationDate).getTime(),
                                     zestimationHuman : accountEstimationDate,
@@ -127,11 +167,12 @@ class Bootstrap {
                         }
                     }
                 }
-                //if account is mark to liquidate but there is no flows to terminate
+
                 const estimationsNow  = await EstimationModel.findAll({
-                    attributes: ['address', 'superToken'],
-                    where: { now : true }
+                    attributes: ['address', 'superToken']
+                    //where: { now : true }
                 });
+
                 for(let est of estimationsNow) {
                     let flows  = await AgreementModel.findAll({
                         where: {

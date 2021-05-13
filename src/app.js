@@ -25,7 +25,6 @@ class App {
         this.protocol = new Protocol(this);
         this.findST = new LoadSuperTokens(this);
         const models = {
-            //account : new AccountModel(),
             event : new EventModel()
         };
         this.models = models;
@@ -51,6 +50,7 @@ class App {
             await this.bootstrap.start();
             await this.liquidation.start();
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
+            setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             this.run(this.liquidation, 30000);
         } catch(error) {
             console.error(error);

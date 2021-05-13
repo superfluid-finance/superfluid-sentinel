@@ -18,6 +18,7 @@ class Client {
     constructor(app) {
         this.app = app;
         this.CFAv1;
+        this.CFAv1WS;
         this.sf;
         this.agreements = new Map();
         this.superTokens = new Map();
@@ -68,10 +69,8 @@ class Client {
                 cfaIdent
             ).call();
             console.log("CFA: ", cfaAddress);
-            this.CFAv1 = new this.web3HTTP.eth.Contract(
-                ICFA.abi,
-                cfaAddress
-            );
+            this.CFAv1 = new this.web3HTTP.eth.Contract(ICFA.abi,cfaAddress);
+            this.CFAv1WS = new this.web3.eth.Contract(ICFA.abi,cfaAddress);
             this.initialize = true;
         } catch(err) {
             this.app.logger.error(`Web3Client: ${err}`);
@@ -156,6 +155,40 @@ class Client {
                     listed: isListed
                 });
             }
+        }
+    }
+
+    async loadSuperToken(newSuperToken) {
+        if(this.superTokens[sp] === undefined) {
+            let superToken = await new this.web3.eth.Contract(ISuperToken.abi, sp);
+            const tokenResponse = await Promise.all(
+                [
+                    superToken.methods.name().call(),
+                    superToken.methods.symbol().call()
+                ]
+            );
+            let tokenName = tokenResponse[0];
+            let tokenSymbol = tokenResponse[1];
+            console.log(`new token: ${tokenSymbol} - ${tokenName}`);
+            const superTokenAddress = await this.resolver.methods.get(
+                `supertokens.${this.version}.${tokenSymbol}`
+            ).call();
+            let isListed = 0;
+            //listed superToken
+            if(superTokenAddress === superToken._address) {
+                console.log("Adding listed SuperToken ", superTokenAddress);
+                this.superTokens[superTokenAddress] = superToken;
+                this.superTokensHTTP[superTokenAddress] = await new this.web3HTTP.eth.Contract(ISuperToken.abi, sp);
+                this.superTokensCount++;
+                isListed = 1;
+            }
+            //persistence database
+            await SuperTokenModel.upsert({
+                address: sp,
+                symbol: tokenSymbol,
+                name : tokenName,
+                listed: isListed
+            });
         }
     }
 

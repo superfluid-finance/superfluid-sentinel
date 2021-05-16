@@ -63,7 +63,7 @@ class LoadSuperTokens {
             console.log("finish Past event to find SuperTokens");
         } catch(error) {
             this.app.logger.error(`error getting pasted events\n ${error}`);
-            process.exit(1);
+            //process.exit(1);
         }
     }
 }

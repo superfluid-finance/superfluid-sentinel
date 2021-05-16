@@ -1,17 +1,17 @@
 const async = require("async");
 const BN = require("bn.js");
 const EstimationModel = require("../database/models/accountEstimationModel");
+const AgreementModel =  require("../database/models/agreementModel");
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function trigger(fn, ms) {
     await timeout(ms);
-    await fn.drain("Empty queue");
+    await fn.drain();
 }
 
 const estimationQueue = async.queue(async function(task) {
-    console.log('estimationQueue');
-    const accountEstimationDate = await task.self.liquidationDate(task.token, task.account);
     try {
+        const accountEstimationDate = await task.self.liquidationDate(task.token, task.account);
         await EstimationModel.upsert({
             address: task.account,
             superToken: task.token,
@@ -27,18 +27,62 @@ const estimationQueue = async.queue(async function(task) {
     }
 }, 1);
 
-estimationQueue.drain(function() {
-    console.log('all items have been processed');
-});
-
-estimationQueue.error(function(err, task) {
-    console.debug(`task error: ${task}`);
-    console.error(error);
-});
-
 const agreementUpdateQueue = async.queue(async function(task) {
-    console.log('agreementUpdateQueue');
-    //task.self.getSuperTokenEvent(task.token, "");
+    try {
+            const now = Math.floor(new Date().getTime() / 1000);
+            console.log('agreementUpdateQueue');
+            let senderFilter = {
+                filter : {
+                    "sender" : task.account
+                },
+                fromBlock: task.blockNumber,
+                toBlock: task.blockNumber,
+            };
+
+
+            let allFlowUpdatedEvents = await task.self.app.protocol.getAgreementEvents(
+                "FlowUpdated",
+                senderFilter
+            );
+
+            allFlowUpdatedEvents = allFlowUpdatedEvents.map(
+                task.self.app.models.event.transformWeb3Event
+            );
+
+            allFlowUpdatedEvents.sort(function(a,b) {
+                return a.blockNumber > b.blockNumber;
+            }).forEach(e => {
+                e.agreementId = task.self.app.protocol.generateId(e.sender, e.receiver);
+                e.sender = e.sender;
+                e.receiver = e.receiver;
+                e.superToken = e.token;
+                e.zchecked = -1;
+            });
+
+            for(let event of allFlowUpdatedEvents) {
+                await AgreementModel.upsert({
+                    agreementId: event.agreementId,
+                    superToken: event.superToken,
+                    sender: event.sender,
+                    receiver: event.receiver,
+                    flowRate: event.flowRate,
+                    zlastChecked: now
+                });
+
+                estimationQueue.push([{
+                    self: task.self,
+                    account: event.sender,
+                    token: event.superToken
+                }, {
+                    self: task.self,
+                    account: event.receiver,
+                    token: event.superToken
+                }]);
+            }
+    } catch(error) {
+        console.error(error);
+    }
+
 }, 1);
 
 class Protocol {
@@ -47,6 +91,10 @@ class Protocol {
         this.app = app;
         this.client = this.app.client;
         this.subs = new Map();
+    }
+
+    async createQueues() {
+
     }
 
     async getAccountRealtimeBalance(token, address, timestamp) {
@@ -135,11 +183,13 @@ class Protocol {
     }
 
     async subscribeAllTokensEvents() {
-        this.run(estimationQueue, 1000);
         const superTokenInstances = this.client.getSuperTokenInstances();
         for(let key of Object.keys(superTokenInstances)) {
             this.subscribeEvents(key);
         }
+        console.debug("starting draining queues");
+        this.run(estimationQueue, 10000);
+        this.run(agreementUpdateQueue, 10000);
     }
 
     async subscribeEvents(token) {
@@ -151,11 +201,11 @@ class Protocol {
                 if(err === undefined || err == null) {
                     this.app.logger.log(evt.event);
                     let event = this.app.models.event.transformWeb3Event(evt);
-                    console.log(event);
-                    switch(evt.eventName) {
+                    switch(event.eventName) {
 
                         case "AgreementStateUpdated" : {
                             agreementUpdateQueue.push({
+                                self: this,
                                 account: event.account,
                                 blockNumber: event.blockNumber
                             });
@@ -166,7 +216,7 @@ class Protocol {
                             estimationQueue.push({
                                 self: this,
                                 account: event.account,
-                                superToken: event.address
+                                token: event.address
                             });
                             break;
                         }
@@ -176,12 +226,12 @@ class Protocol {
                                 {
                                     self: this,
                                     account: event.from,
-                                    superToken: event.address
+                                    token: event.address
                                 },
                                 {
                                     self: this,
                                     account: event.to,
-                                    superToken: event.address
+                                    token: event.address
                                 }
                             ]);
                             break;

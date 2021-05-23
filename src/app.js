@@ -44,6 +44,11 @@ class App {
     async start() {
         try {
             await this.db.sync();
+            if(this.config.COLD_BOOT) {
+                console.debug("dropping database...");
+                await this.db.drop();
+                await this.db.sync();
+            }
             await this.client.start();
             await this.findST.start();
             await this.bootstrap.start();

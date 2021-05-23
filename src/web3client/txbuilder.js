@@ -50,8 +50,7 @@ class TxBuilder {
         //console.log("How many estimations: ", estimations.length);
         const wallet = this.app.client.getAccount();
         const chainId = await this.app.client.getNetworkId();
-        let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address, "pending");
-        networkAccountNonce = 4908;
+        let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
         for(const est of estimations) {
             if(new Date(est.zestimation) <= checkDate) {
                 est.recalculate = true;
@@ -93,7 +92,6 @@ class TxBuilder {
                             }
                             //simulate tx
                             const gas = await this.estimateGasLimit(wallet, txObject);
-                            console.log(gas);
                             if(gas.error !== undefined) {
                                 if(gas.error.message === "Returned error: execution reverted: CFA: flow does not exist") {
                                     //register flow to recalculation
@@ -105,7 +103,7 @@ class TxBuilder {
                             } else {
                                 txObject.gasLimit = gas.gasLimit;
                                 console.log(txObject);
-                                console.debug("sending tx");
+                                console.debug("sending tx from account: ", wallet.address);
                                 networkAccountNonce++;
                                 const result = await this.sendWithRetry(wallet, txObject, this.timeout);
                                 if(result === undefined) {
@@ -117,6 +115,7 @@ class TxBuilder {
                         }
                     } else {
                         console.debug(`address ${flow.sender} is solvent at ${flow.superToken} with flow ${flow.flowRate}` );
+                        this.app.protocol.newEstimation(flow.superToken, flow.sender);
                     }
                 }
             }
@@ -141,7 +140,10 @@ class TxBuilder {
 
         try {
             console.log("waiting until timeout");
-            const tx =  await promiseTimeout(this.app.client.web3.eth.sendSignedTransaction(signed.tx.rawTransaction),ms);
+            const tx =  await promiseTimeout(
+                this.app.client.web3HTTP.eth.sendSignedTransaction(signed.tx.rawTransaction),
+                ms
+            );
             return tx;
 
         } catch(error) {
@@ -171,9 +173,7 @@ class TxBuilder {
                 });
             return {gasLimit : result, error: undefined};
         } catch(error) {
-            //console.error(error);
             return {gasLimit : undefined, error: error};
-
         }
     }
 
@@ -201,11 +201,8 @@ class TxBuilder {
                 unsignedTx,
                 wallet._privateKey.toString("hex")
             );
-
             return { tx: signed, error: undefined };
-
         } catch(error) {
-            //console.error(error);
             return { tx: undefined, error: error};
         }
     }

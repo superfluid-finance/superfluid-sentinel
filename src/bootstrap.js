@@ -47,7 +47,9 @@ class Bootstrap {
                         });
                         pastEvents = pastEvents.concat(await Promise.all(promiseResult));
                     } catch(error) {
+                        console.debug("error with retry");
                         console.error(error);
+                        queue.unshift(task);
                     }
                 }, this.concurency);
 
@@ -107,7 +109,9 @@ class Bootstrap {
                         });
 
                     } catch(error) {
+                        console.debug("error with retry");
                         console.error(error);
+                        queue.unshift(task);
                     }
                 }, this.concurency);
 

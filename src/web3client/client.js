@@ -48,6 +48,7 @@ class Client {
             });
             this.web3 = new Web3(web3);
             var web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_NODE);
+            //var web3Provider = new Web3.providers.HttpProvider("http://localhost:3000");
             this.web3HTTP = new Web3(web3Provider);
             const httpChainId = await this.web3HTTP.eth.net.getId();
             const wsChainId = await this.web3.eth.net.getId();

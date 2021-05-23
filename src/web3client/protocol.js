@@ -156,7 +156,8 @@ class Protocol {
         const arrPromise = new Array();
         for(const key of keys){
             arrPromise.push(
-                this.client.superTokens[key].getPastEvents(eventName, filter)
+                //this.client.superTokens[key].getPastEvents(eventName, filter)
+                this.client.superTokensHTTP[key].getPastEvents(eventName, filter)
             )
         }
         return arrPromise.flat();
@@ -180,6 +181,14 @@ class Protocol {
     async run(fn, time) {
         await trigger(fn, time);
         await this.run(fn, time);
+    }
+
+    newEstimation(token, account) {
+        estimationQueue.push({
+            self: this,
+            account: account,
+            token: token
+        });
     }
 
     async subscribeAllTokensEvents() {

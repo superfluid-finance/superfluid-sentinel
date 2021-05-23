@@ -13,6 +13,7 @@ class Config {
         this.GAS_PRICE = process.env.GAS_PRICE;
         this.GAS_LIMIT = process.env.GAS_LIMIT;
         this.CONCURRENCY = process.env.CONCURRENCY !== undefined ? process.env.CONCURRENCY : 1;
+        this.COLD_BOOT = !!process.env.COLD_BOOT;
     }
 }
 

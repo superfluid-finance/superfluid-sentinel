@@ -117,10 +117,18 @@ class Client {
     async _loadSuperTokensFromDB() {
         try {
             console.log("Load Listed SuperTokens from DB");
-            const superTokensDB = await SuperTokenModel.findAll({
-                attributes: ['address'],
-                where: {listed: 1}
-            });
+            let filter;
+            if(this.app.config.LISTEN_MODE == 1) {
+                filter = {
+                    attributes: ['address']
+                };
+            } else {
+                filter = {
+                    attributes: ['address'],
+                    where: {listed: 1}
+                };
+            }
+            const superTokensDB = await SuperTokenModel.findAll(filter);
             for(let sp of superTokensDB) {
                 console.log(sp.address)
                 let superToken = await new this.web3.eth.Contract(ISuperToken.abi, sp.address);
@@ -154,11 +162,16 @@ class Client {
                 let isListed = 0;
                 //listed superToken
                 if(superTokenAddress === superToken._address) {
-                    console.log("Adding listed SuperToken ", superTokenAddress);
+                    console.log("adding listed SuperToken ", superTokenAddress);
                     this.superTokens[superTokenAddress] = superToken;
                     this.superTokensHTTP[superTokenAddress] = await new this.web3HTTP.eth.Contract(ISuperToken.abi, sp);
                     this.superTokensCount++;
                     isListed = 1;
+                } else if(this.app.config.LISTEN_MODE == 1) {
+                    console.log("adding non listed SuperToken ", superTokenAddress);
+                    this.superTokens[superTokenAddress] = superToken;
+                    this.superTokensHTTP[superTokenAddress] = await new this.web3HTTP.eth.Contract(ISuperToken.abi, sp);
+                    this.superTokensCount++;
                 }
                 //persistence database
                 await SuperTokenModel.upsert({

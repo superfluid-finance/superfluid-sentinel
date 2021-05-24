@@ -43,10 +43,10 @@ class App {
 
     async start() {
         try {
-            await this.db.sync();
             if(this.config.COLD_BOOT) {
-                console.debug("dropping database...");
-                await this.db.drop();
+                console.debug("dropping data...");
+                await this.db.sync({ force: true })
+            } else {
                 await this.db.sync();
             }
             await this.client.start();

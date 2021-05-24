@@ -93,10 +93,6 @@ class Protocol {
         this.subs = new Map();
     }
 
-    async createQueues() {
-
-    }
-
     async getAccountRealtimeBalance(token, address, timestamp) {
         try {
             if(timestamp === undefined) {
@@ -156,7 +152,6 @@ class Protocol {
         const arrPromise = new Array();
         for(const key of keys){
             arrPromise.push(
-                //this.client.superTokens[key].getPastEvents(eventName, filter)
                 this.client.superTokensHTTP[key].getPastEvents(eventName, filter)
             )
         }

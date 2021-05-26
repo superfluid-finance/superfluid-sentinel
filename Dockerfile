@@ -15,7 +15,7 @@ RUN GITHUB_TOKEN=$GITHUB_TOKEN npm ci
 RUN rm -f .npmrc
 
 # run lint
-RUN npm run lint
+#RUN npm run lint
 
 # cleanup build tools
 RUN apk del alpine-sdk python

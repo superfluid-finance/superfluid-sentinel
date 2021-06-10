@@ -153,15 +153,24 @@ class Protocol {
         }, {})).filter(i => i.args.flowRate.toString() != "0");
     }
 
-    getAllSuperTokensEvents(eventName, filter) {
+    getAllSuperTokensEvents(eventName, filter, ws = false) {
         const keys = Object.keys(this.client.getSuperTokenInstances());
         const arrPromise = new Array();
-        for(const key of keys){
-            arrPromise.push(
-                this.client.superTokensHTTP[key].getPastEvents(eventName, filter)
-            )
+        if(!ws) {
+            for(const key of keys){
+                arrPromise.push(
+                    this.client.superTokensHTTP[key].getPastEvents(eventName, filter)
+                )
+            }
+            return arrPromise.flat();
         }
-        return arrPromise.flat();
+        console.debug("getting events using ws");
+            for(const key of keys){
+                arrPromise.push(
+                    this.client.superTokens[key].getPastEvents(eventName, filter)
+                )
+            }
+            return arrPromise.flat();
     }
 
     async liquidationDate(token, account) {

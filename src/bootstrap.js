@@ -42,23 +42,27 @@ class Bootstrap {
                     let keepTrying = 1;
                     while(keepTrying > 0) {
                         try {
-                            if(keepTrying > 1) {
+                            if(keepTrying == 2) {
                                 console.debug(`reopen http connection`);
                                 await task.self.app.client.reInitHttp();
-                                console.debug(`new http connection`);
+                            } else if(keepTrying == 4) {
+                                console.debug(`reopen http connection (backup node)`);
+                                await task.self.app.client.reInitHttp(true);
                             }
                             console.log(`#${keepTrying} - ${task.fromBlock} - ${task.toBlock}`);
                             let promiseResult = task.self.app.protocol.getAllSuperTokensEvents("AgreementStateUpdated", {
                                     fromBlock: task.fromBlock,
-                                    toBlock: task.toBlock + keepTrying
-                            });
+                                    toBlock: task.toBlock,
+                            }, keepTrying > 4 ? true : false);
                             pastEvents = pastEvents.concat(await Promise.all(promiseResult));
+                        if(keepTrying >=4){
+                            console.debug(`revert backup to main node`);
+                            await task.self.app.client.reInitHttp();
+                        }
                             keepTrying = 0;
                         } catch(error) {
                             console.debug("error in response");
-                            console.debug(error);
-                            //await this.app.client.reInitHttp();
-                            //queue.unshift(task);
+                            console.error(error);
                             keepTrying++;
                         }
                     }
@@ -75,6 +79,7 @@ class Bootstrap {
                 }
 
                 await queue.drain();
+
                 // normalize web3 events
                 for(let i = 0; i < pastEvents.length; i++) {
                     for(let event of pastEvents[i]) {
@@ -85,93 +90,101 @@ class Bootstrap {
                 }
                 this.app.logger.stopSpinnerWithSuccess("Pulling past events");
                 this.app.logger.log("getting agreements");
+
+
                 queue = async.queue(async function(task) {
                     let keepTrying = 1;
                     while(keepTrying > 0) {
                         try {
-                            if(keepTrying > 1) {
+                            if(keepTrying == 2) {
                                 console.debug(`reopen http connection`);
                                 await task.self.app.client.reInitHttp();
-                                console.debug(`new http connection`);
+                            } else if(keepTrying == 4) {
+                                console.debug(`reopen http connection (backup node)`);
+                                await task.self.app.client.reInitHttp(true);
                             }
                             console.log(`#${keepTrying} - getting agreement: ${task.fromBlock} - ${task.toBlock}`);
-                            let senderFilter = {
-                                filter : {
-                                    "sender" : task.account
-                                },
+                            let filter = {
                                 fromBlock: task.fromBlock,
                                 toBlock: task.toBlock,
                             };
-
-
-                            let allFlowUpdatedEvents = await task.self.app.protocol.getAgreementEvents(
-                                "FlowUpdated",
-                                senderFilter,
-                                keepTrying > 1 ? true : false
-                            );
-
-                            allFlowUpdatedEvents = allFlowUpdatedEvents.map(
-                                task.self.app.models.event.transformWeb3Event
-                            );
-                            allFlowUpdatedEvents.sort(function(a,b) {
-                                return a.blockNumber > b.blockNumber;
-                            }).forEach(e => {
-                                e.agreementId = task.self.app.protocol.generateId(e.sender, e.receiver);
-                                e.sender = e.sender;
-                                e.receiver = e.receiver;
-                                e.superToken = e.token;
-                                e.zchecked = -1;
-
-                                task.senderFlows.set(task.self.app.protocol.generateId(e.superToken, e.agreementId), e);
-                                task.accountTokenInteractions.add(e.token);
-                            });
-
+                            allFlowUpdatedEvents = allFlowUpdatedEvents.concat(await task.self.app.protocol.getAgreementEvents(
+                                    "FlowUpdated",
+                                    filter,
+                                    keepTrying > 4 ? true : false
+                                ));
+                            
+                        if(keepTrying >=4){
+                            console.debug(`revert backup to main node`);
+                            await task.self.app.client.reInitHttp();
+                        }
                             keepTrying = 0;
-
                         } catch(error) {
                             console.debug("error in response");
-                            console.debug(error);
-                            //await this.app.client.reInitHttp();
+                            console.error(error);
                             keepTrying++;
-                            //queue.unshift(task);
                         }
                     }
                 }, this.concurency);
 
-                for(let account of uniqueAccountAgreementPairs) {
-                    let accountTokenInteractions = new Set();
-                    let senderFlows = new Map();
-                    let pullCounter = blockNumber;
-                    while(pullCounter <= currentBlockNumber) {
-                        let end = (pullCounter + pullStep);
-                        queue.push({
-                            self: this,
-                            account: account,
-                            senderFlows: senderFlows,
-                            accountTokenInteractions: accountTokenInteractions,
-                            fromBlock: pullCounter,
-                            toBlock: end > currentBlockNumber ? currentBlockNumber : end
-                        });
-                        pullCounter = end;
-                    }
-                    await queue.drain();
+
+                let allFlowUpdatedEvents = new Array();
+                let accountTokenInteractions = new Set();
+                let senderFlows = new Map();
+                let accounts = new Array();
+                pullCounter = blockNumber;
+                while(pullCounter <= currentBlockNumber) {
+                    let end = (pullCounter + pullStep);
+                    queue.push({
+                        self: this,
+                        fromBlock: pullCounter,
+                        toBlock: end > currentBlockNumber ? currentBlockNumber : end
+                    });
+                    pullCounter = end;
+                }
+
+                await queue.drain();
+                allFlowUpdatedEvents = allFlowUpdatedEvents.map(
+                    this.app.models.event.transformWeb3Event
+                );
+
+                allFlowUpdatedEvents.sort(function(a,b) {
+                    return a.blockNumber > b.blockNumber;
+                }).forEach(e => {
+                    e.agreementId = this.app.protocol.generateId(e.sender, e.receiver);
+                    e.sender = e.sender;
+                    e.receiver = e.receiver;
+                    e.superToken = e.token;
+                    e.zchecked = -1;
+
+                    senderFlows.set(this.app.protocol.generateId(e.superToken, e.agreementId), e);
+                    accounts.push({ account : e.sender, supertoken: e.token});
+                    accountTokenInteractions.add(e.token);
+                });
+
+
+
                     const now = this.app.getTimeUnix();
                     for(let token of accountTokenInteractions) {
                         if(this.app.client.superTokens[token] !== undefined) {
-                            const accountEstimationDate = await this.app.protocol.liquidationDate(token, account);
-                            try {
-                                await EstimationModel.upsert({
-                                    address: account,
-                                    superToken: token,
-                                    zestimation: accountEstimationDate == "Invalid Date" ? -1 : new Date(accountEstimationDate).getTime(),
-                                    zestimationHuman : accountEstimationDate,
-                                    zlastChecked: now,
-                                    found: 0,
-                                    now: (accountEstimationDate == -1 ? true: false),
-                                });
-                            } catch(error) {
-                                console.debug("saving estimation model error");
-                                console.error(error);
+                            let users = [...new Set(accounts.filter(i => i.supertoken == token).map(a => a.account))];
+                            console.log(users);
+                            for(const user of users) {
+                                const accountEstimationDate = await this.app.protocol.liquidationDate(token, user);
+                                try {
+                                    await EstimationModel.upsert({
+                                        address: user,
+                                        superToken: token,
+                                        zestimation: accountEstimationDate == "Invalid Date" ? -1 : new Date(accountEstimationDate).getTime(),
+                                        zestimationHuman : accountEstimationDate,
+                                        zlastChecked: now,
+                                        found: 0,
+                                        now: (accountEstimationDate == -1 ? true: false),
+                                    });
+                                } catch(error) {
+                                    console.debug("saving estimation model error");
+                                    console.error(error);
+                                }
                             }
                             // eslint-disable-next-line no-unused-vars
                             for (let [key, value] of senderFlows) {
@@ -186,14 +199,13 @@ class Bootstrap {
                                             zlastChecked: now
                                         });
                                     } catch(error) {
-                                        console.error("saving agreement model error");
+                                        console.debug("saving agreement model error");
                                         console.error(error);
                                     }
                             }
                             }
                         }
                     }
-                }
 
                 const estimationsNow  = await EstimationModel.findAll({
                     attributes: ['address', 'superToken']
@@ -215,7 +227,7 @@ class Bootstrap {
                     });
                     if(flows.length == 0) {
                         console.debug(`removing ${est.address} from database - no active streams at ${est.superToken}`);
-                        await est.destroy();
+                        //await est.destroy();
                     }
                 }
                 this.app.logger.stopSpinnerWithSuccess("Getting Agreements");

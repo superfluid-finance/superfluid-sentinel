@@ -4,7 +4,15 @@
   "description": "Superfluid community solvency agent",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start-mumbai": "cat .env-prod-mumbai > .env && node main",
+    "start-goerli": "cat .env-prod-goerli > .env && node main",
+    "start-rinkeby": "cat .env-prod-rinkeby > .env && node main",
+    "start-ropsten": "cat .env-prod-ropsten > .env && node main",
+    "start-kovan": "cat .env-prod-kovan > .env && node main",
+    "start-xdai": "cat .env-prod-xdai > .env && node main",
+    "start-matic": "cat .env-prod-matic > .env && node main",
+    "start-arbitrum": "cat .env-prod-arbitrum > .env && node main"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +20,7 @@
   "dependencies": {
     "@superfluid-finance/ethereum-contracts": "dev",
     "@superfluid-finance/js-sdk": "dev",
+    "arb-ethers-web3-bridge": "^0.7.3",
     "async": "^3.2.0",
     "bip39": "^3.0.3",
     "dotenv": "^8.2.0",

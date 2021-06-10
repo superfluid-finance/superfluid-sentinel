@@ -39,17 +39,28 @@ class Bootstrap {
                 let pullCounter = blockNumber;
 
                 var queue = async.queue(async function(task) {
-                    console.log(`${task.fromBlock} - ${task.toBlock}`);
-                    try {
-                        let promiseResult = task.self.app.protocol.getAllSuperTokensEvents("AgreementStateUpdated", {
-                                fromBlock: task.fromBlock,
-                                toBlock: task.toBlock
-                        });
-                        pastEvents = pastEvents.concat(await Promise.all(promiseResult));
-                    } catch(error) {
-                        console.debug("error with retry");
-                        console.error(error);
-                        queue.unshift(task);
+                    let keepTrying = 1;
+                    while(keepTrying > 0) {
+                        try {
+                            if(keepTrying > 1) {
+                                console.debug(`reopen http connection`);
+                                await task.self.app.client.reInitHttp();
+                                console.debug(`new http connection`);
+                            }
+                            console.log(`#${keepTrying} - ${task.fromBlock} - ${task.toBlock}`);
+                            let promiseResult = task.self.app.protocol.getAllSuperTokensEvents("AgreementStateUpdated", {
+                                    fromBlock: task.fromBlock,
+                                    toBlock: task.toBlock + keepTrying
+                            });
+                            pastEvents = pastEvents.concat(await Promise.all(promiseResult));
+                            keepTrying = 0;
+                        } catch(error) {
+                            console.debug("error in response");
+                            console.debug(error);
+                            //await this.app.client.reInitHttp();
+                            //queue.unshift(task);
+                            keepTrying++;
+                        }
                     }
                 }, this.concurency);
 
@@ -73,45 +84,57 @@ class Bootstrap {
                     }
                 }
                 this.app.logger.stopSpinnerWithSuccess("Pulling past events");
-                //this.app.logger.startSpinner("Getting Agreements");
                 this.app.logger.log("getting agreements");
                 queue = async.queue(async function(task) {
-                    //console.log(`${task.account} : ${task.fromBlock} - ${task.toBlock}`);
-                    try {
-                        let senderFilter = {
-                            filter : {
-                                "sender" : task.account
-                            },
-                            fromBlock: task.fromBlock,
-                            toBlock: task.toBlock,
-                        };
+                    let keepTrying = 1;
+                    while(keepTrying > 0) {
+                        try {
+                            if(keepTrying > 1) {
+                                console.debug(`reopen http connection`);
+                                await task.self.app.client.reInitHttp();
+                                console.debug(`new http connection`);
+                            }
+                            console.log(`#${keepTrying} - getting agreement: ${task.fromBlock} - ${task.toBlock}`);
+                            let senderFilter = {
+                                filter : {
+                                    "sender" : task.account
+                                },
+                                fromBlock: task.fromBlock,
+                                toBlock: task.toBlock,
+                            };
 
 
-                        let allFlowUpdatedEvents = await task.self.app.protocol.getAgreementEvents(
-                            "FlowUpdated",
-                            senderFilter
-                        );
+                            let allFlowUpdatedEvents = await task.self.app.protocol.getAgreementEvents(
+                                "FlowUpdated",
+                                senderFilter,
+                                keepTrying > 1 ? true : false
+                            );
 
-                        allFlowUpdatedEvents = allFlowUpdatedEvents.map(
-                            task.self.app.models.event.transformWeb3Event
-                        );
-                        allFlowUpdatedEvents.sort(function(a,b) {
-                            return a.blockNumber > b.blockNumber;
-                        }).forEach(e => {
-                            e.agreementId = task.self.app.protocol.generateId(e.sender, e.receiver);
-                            e.sender = e.sender;
-                            e.receiver = e.receiver;
-                            e.superToken = e.token;
-                            e.zchecked = -1;
+                            allFlowUpdatedEvents = allFlowUpdatedEvents.map(
+                                task.self.app.models.event.transformWeb3Event
+                            );
+                            allFlowUpdatedEvents.sort(function(a,b) {
+                                return a.blockNumber > b.blockNumber;
+                            }).forEach(e => {
+                                e.agreementId = task.self.app.protocol.generateId(e.sender, e.receiver);
+                                e.sender = e.sender;
+                                e.receiver = e.receiver;
+                                e.superToken = e.token;
+                                e.zchecked = -1;
 
-                            task.senderFlows.set(task.self.app.protocol.generateId(e.superToken, e.agreementId), e);
-                            task.accountTokenInteractions.add(e.token);
-                        });
+                                task.senderFlows.set(task.self.app.protocol.generateId(e.superToken, e.agreementId), e);
+                                task.accountTokenInteractions.add(e.token);
+                            });
 
-                    } catch(error) {
-                        console.debug("error with retry");
-                        console.error(error);
-                        queue.unshift(task);
+                            keepTrying = 0;
+
+                        } catch(error) {
+                            console.debug("error in response");
+                            console.debug(error);
+                            //await this.app.client.reInitHttp();
+                            keepTrying++;
+                            //queue.unshift(task);
+                        }
                     }
                 }, this.concurency);
 

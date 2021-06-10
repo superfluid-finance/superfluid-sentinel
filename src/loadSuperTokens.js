@@ -9,7 +9,7 @@ class LoadSuperTokens {
 
     async start() {
         try {
-            console.log("getting Past event to find SuperTokens");
+            console.debug("getting Past event to find SuperTokens");
             console.debug("using concurrency: ", this.concurrency);
             const runningNetwork = await this.app.client.getNetworkId();
             const systemInfo = await SystemModel.findOne();
@@ -37,7 +37,7 @@ class LoadSuperTokens {
             }, this.concurency);
 
             while(pullCounter <= currentBlockNumber) {
-                let end = (pullCounter + parseInt(this.app.config.PULL_STEP));
+                let end = (pullCounter + parseInt(this.app.config.PULL_STEP / 4));
                 queue.push({
                     fromBlock: pullCounter,
                     toBlock: end > currentBlockNumber ? currentBlockNumber : end
@@ -60,10 +60,9 @@ class LoadSuperTokens {
                 await systemInfo.save();
             }
             await this.app.client.loadSuperTokens(tokens);
-            console.log("finish Past event to find SuperTokens");
+            console.debug("finish Past event to find SuperTokens");
         } catch(error) {
             this.app.logger.error(`error getting pasted events\n ${error}`);
-            //process.exit(1);
         }
     }
 }

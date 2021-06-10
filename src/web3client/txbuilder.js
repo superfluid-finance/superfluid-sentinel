@@ -47,7 +47,6 @@ class TxBuilder {
                 ]
             }
         });
-        //console.log("How many estimations: ", estimations.length);
         const wallet = this.app.client.getAccount();
         const chainId = await this.app.client.getNetworkId();
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
@@ -107,7 +106,11 @@ class TxBuilder {
                                 networkAccountNonce++;
                                 const result = await this.sendWithRetry(wallet, txObject, this.timeout);
                                 if(result === undefined) {
+
                                     console.error("error with tx");
+
+                                    //TODO: Resolve this type of errors.
+
                                 }
                             }
                         } catch(error) {
@@ -135,6 +138,8 @@ class TxBuilder {
                 console.debug("Flow don't exist anymore - reclaim nonce");
                 return undefined;
             }
+
+            console.error(signed.error);
             return undefined;
         }
 
@@ -197,7 +202,7 @@ class TxBuilder {
                 gasPrice: gasPrice,
                 gasLimit : txObject.gasLimit
             };
-            const signed = await this.app.client.web3.eth.accounts.signTransaction(
+            const signed = await this.app.client.web3HTTP.eth.accounts.signTransaction(
                 unsignedTx,
                 wallet._privateKey.toString("hex")
             );

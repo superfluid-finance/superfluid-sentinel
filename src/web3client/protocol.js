@@ -12,12 +12,14 @@ async function trigger(fn, ms) {
 const estimationQueue = async.queue(async function(task) {
     try {
         const accountEstimationDate = await task.self.liquidationDate(task.token, task.account);
+        console.debug(`account: ${task.account } estimation from supertoken: ${task.token} - ${accountEstimationDate}`);
         await EstimationModel.upsert({
             address: task.account,
             superToken: task.token,
             zestimation: accountEstimationDate == "Invalid Date" ? -1 : new Date(accountEstimationDate).getTime(),
             zestimationHuman : accountEstimationDate,
             zlastChecked: task.self.app.getTimeUnix(),
+            recalculate : 0,
             found: 0,
             now: (accountEstimationDate == -1 ? true: false),
         });
@@ -130,8 +132,12 @@ class Protocol {
         }
     }
 
-    async getAgreementEvents(eventName, filter) {
-        return this.client.CFAv1.getPastEvents(eventName, filter);
+    async getAgreementEvents(eventName, filter, ws = false) {
+        if(!ws) {
+            return this.client.CFAv1.getPastEvents(eventName, filter);
+        }
+        console.debug("getting events using ws");
+        return this.client.CFAv1WS.getPastEvents(eventName, filter);
     }
 
     getLastFlowUpdated(filter) {
@@ -179,6 +185,7 @@ class Protocol {
     }
 
     newEstimation(token, account) {
+        console.log("Adding new estimation");
         estimationQueue.push({
             self: this,
             account: account,

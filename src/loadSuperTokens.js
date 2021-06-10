@@ -24,7 +24,40 @@ class LoadSuperTokens {
             let pastEvents = new Array();
             let pullCounter = blockNumber;
             let currentBlockNumber = await this.app.client.getCurrentBlockNumber();
+            var queue = async.queue(async function(task) {
+                let keepTrying = 1;
+                while(keepTrying > 0) {
+                    try {
+                            if(keepTrying == 2) {
+                                console.debug(`reopen http connection`);
+                                await task.self.app.client.reInitHttp();
+                            } else if(keepTrying == 4) {
+                                console.debug(`reopen http connection (backup node)`);
+                                await task.self.app.client.reInitHttp(true);
+                            }
+                            console.log(`#${keepTrying} - ${task.fromBlock} - ${task.toBlock}`);
+                            pastEvents = pastEvents.concat(await task.self.app.protocol.getAgreementEvents(
+                                    "FlowUpdated", {
+                                    fromBlock: task.fromBlock,
+                                    toBlock: task.toBlock
+                                },
+                                    keepTrying > 5 ? true : false
+                                ));
+                        console.log(pastEvents);
+                        if(keepTrying >=4){
+                            console.debug(`revert backup to main node`);
+                            await task.self.app.client.reInitHttp();
+                        }
+                        keepTrying = 0;
+                    } catch(error) {
+                        console.debug("error in response");
+                        console.debug(error);
+                        keepTrying++;
+                    }
+                }
+            }, this.concurency);
 
+            /*
             var queue = async.queue(async function(task) {
                 console.log(`${task.fromBlock} - ${task.toBlock}`);
                 pastEvents = pastEvents.concat(
@@ -35,10 +68,12 @@ class LoadSuperTokens {
                         })
                 );
             }, this.concurency);
+            */
 
             while(pullCounter <= currentBlockNumber) {
-                let end = (pullCounter + parseInt(this.app.config.PULL_STEP / 4));
+                let end = (pullCounter + parseInt(this.app.config.PULL_STEP));
                 queue.push({
+                    self: this,
                     fromBlock: pullCounter,
                     toBlock: end > currentBlockNumber ? currentBlockNumber : end
                 });

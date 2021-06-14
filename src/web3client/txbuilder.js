@@ -50,6 +50,7 @@ class TxBuilder {
         const wallet = this.app.client.getAccount();
         const chainId = await this.app.client.getNetworkId();
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
+        const gasPrice = await this.app.client.estimateGasPrice();
         for(const est of estimations) {
             if(new Date(est.zestimation) <= checkDate) {
                 est.recalculate = true;
@@ -85,7 +86,8 @@ class TxBuilder {
                                 superToken: flow.superToken,
                                 flowRate: flow.flowRate,
                                 tx: tx,
-                                gasPrice: parseInt(this.app.config.GAS_PRICE),
+                                gasPrice: gasPrice,
+                                //gasPrice: parseInt(this.app.config.GAS_PRICE),
                                 nonce: networkAccountNonce,
                                 chainId: chainId
                             }

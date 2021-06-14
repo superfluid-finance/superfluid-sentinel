@@ -47,10 +47,10 @@ class TxBuilder {
                 ]
             }
         });
-        //console.log("How many estimations: ", estimations.length);
         const wallet = this.app.client.getAccount();
         const chainId = await this.app.client.getNetworkId();
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
+        const gasPrice = await this.app.client.estimateGasPrice();
         for(const est of estimations) {
             if(new Date(est.zestimation) <= checkDate) {
                 est.recalculate = true;
@@ -86,7 +86,8 @@ class TxBuilder {
                                 superToken: flow.superToken,
                                 flowRate: flow.flowRate,
                                 tx: tx,
-                                gasPrice: parseInt(this.app.config.GAS_PRICE),
+                                gasPrice: gasPrice,
+                                //gasPrice: parseInt(this.app.config.GAS_PRICE),
                                 nonce: networkAccountNonce,
                                 chainId: chainId
                             }
@@ -107,7 +108,11 @@ class TxBuilder {
                                 networkAccountNonce++;
                                 const result = await this.sendWithRetry(wallet, txObject, this.timeout);
                                 if(result === undefined) {
+
                                     console.error("error with tx");
+
+                                    //TODO: Resolve this type of errors.
+
                                 }
                             }
                         } catch(error) {
@@ -135,6 +140,8 @@ class TxBuilder {
                 console.debug("Flow don't exist anymore - reclaim nonce");
                 return undefined;
             }
+
+            console.error(signed.error);
             return undefined;
         }
 
@@ -197,7 +204,7 @@ class TxBuilder {
                 gasPrice: gasPrice,
                 gasLimit : txObject.gasLimit
             };
-            const signed = await this.app.client.web3.eth.accounts.signTransaction(
+            const signed = await this.app.client.web3HTTP.eth.accounts.signTransaction(
                 unsignedTx,
                 wallet._privateKey.toString("hex")
             );

@@ -1,7 +1,7 @@
 class EventModel {
 
     // @title transformWeb3Event
-    // @dev transform one web3 event object to event model for database storage
+    // @dev transform one web3 event object to event model object
     transformWeb3Event(event) {
         try {
         if(event != null && event !== undefined) {

@@ -10,25 +10,38 @@ async function trigger(fn, ms) {
 }
 
 const estimationQueue = async.queue(async function(task) {
-    try {
-        const accountEstimationDate = await task.self.liquidationDate(task.token, task.account);
-        await EstimationModel.upsert({
-            address: task.account,
-            superToken: task.token,
-            zestimation: accountEstimationDate == "Invalid Date" ? -1 : new Date(accountEstimationDate).getTime(),
-            zestimationHuman : accountEstimationDate,
-            zlastChecked: task.self.app.getTimeUnix(),
-            found: 0,
-            now: (accountEstimationDate == -1 ? true: false),
-        });
-    } catch(error) {
-        console.debug("saving estimation model error");
-        console.error(error);
+    let keepTrying = 1;
+    while(keepTrying > 0) {
+        try {
+            const accountEstimationDate = await task.self.liquidationDate(task.token, task.account);
+            console.debug(`account: ${task.account } supertoken: ${task.token} - ${accountEstimationDate}`);
+            await EstimationModel.upsert({
+                address: task.account,
+                superToken: task.token,
+                zestimation: accountEstimationDate == "Invalid Date" ? -1 : new Date(accountEstimationDate).getTime(),
+                zestimationHuman : accountEstimationDate,
+                zlastChecked: task.self.app.getTimeUnix(),
+                recalculate : 0,
+                found: 0,
+                now: (accountEstimationDate == -1 ? true: false),
+            });
+            keepTrying = 0;
+        } catch(error) {
+            keepTrying++;
+            console.log("retry");
+            console.error(error);
+            if(keepTrying > task.self.numRetries) {
+                process.exit(1);
+            }
+        }
     }
 }, 1);
 
 const agreementUpdateQueue = async.queue(async function(task) {
-    try {
+    let keepTrying = 1;
+    while(keepTrying > 0) {
+        try {
+            //TODO:RETRY LOGIC
             const now = Math.floor(new Date().getTime() / 1000);
             console.log('agreementUpdateQueue');
             let senderFilter = {
@@ -38,7 +51,6 @@ const agreementUpdateQueue = async.queue(async function(task) {
                 fromBlock: task.blockNumber,
                 toBlock: task.blockNumber,
             };
-
 
             let allFlowUpdatedEvents = await task.self.app.protocol.getAgreementEvents(
                 "FlowUpdated",
@@ -79,8 +91,15 @@ const agreementUpdateQueue = async.queue(async function(task) {
                     token: event.superToken
                 }]);
             }
-    } catch(error) {
-        console.error(error);
+            keepTrying=0;
+        } catch(error) {
+            keepTrying++;
+            console.log("retry");
+            console.error(error);
+            if(keepTrying > task.self.numRetries) {
+                process.exit(1);
+            }
+        }
     }
 
 }, 1);
@@ -90,6 +109,7 @@ class Protocol {
     constructor(app) {
         this.app = app;
         this.client = this.app.client;
+        this.numRetries = this.app.config.NUM_RETRIES;
         this.subs = new Map();
     }
 
@@ -130,8 +150,12 @@ class Protocol {
         }
     }
 
-    async getAgreementEvents(eventName, filter) {
-        return this.client.CFAv1.getPastEvents(eventName, filter);
+    async getAgreementEvents(eventName, filter, ws = false) {
+        if(!ws) {
+            return this.client.CFAv1.getPastEvents(eventName, filter);
+        }
+        console.debug("getting events using ws");
+        return this.client.CFAv1WS.getPastEvents(eventName, filter);
     }
 
     getLastFlowUpdated(filter) {
@@ -147,12 +171,21 @@ class Protocol {
         }, {})).filter(i => i.args.flowRate.toString() != "0");
     }
 
-    getAllSuperTokensEvents(eventName, filter) {
+    getAllSuperTokensEvents(eventName, filter, ws = false) {
         const keys = Object.keys(this.client.getSuperTokenInstances());
         const arrPromise = new Array();
+        if(!ws) {
+            for(const key of keys){
+                arrPromise.push(
+                    this.client.superTokensHTTP[key].getPastEvents(eventName, filter)
+                )
+            }
+            return arrPromise.flat();
+        }
+        console.debug("getting events using ws");
         for(const key of keys){
             arrPromise.push(
-                this.client.superTokensHTTP[key].getPastEvents(eventName, filter)
+                this.client.superTokens[key].getPastEvents(eventName, filter)
             )
         }
         return arrPromise.flat();
@@ -201,50 +234,49 @@ class Protocol {
         this.app.logger.log("starting listen superToken: " + token);
         this.subs.set(token,
             superToken.events.allEvents(
-            async(err, evt) => {
-                if(err === undefined || err == null) {
-                    this.app.logger.log(evt.event);
-                    let event = this.app.models.event.transformWeb3Event(evt);
-                    switch(event.eventName) {
+                async(err, evt) => {
+                    if(err === undefined || err == null) {
+                        this.app.logger.log(evt.event);
+                        let event = this.app.models.event.transformWeb3Event(evt);
+                        switch(event.eventName) {
 
-                        case "AgreementStateUpdated" : {
-                            agreementUpdateQueue.push({
-                                self: this,
-                                account: event.account,
-                                blockNumber: event.blockNumber
-                            });
-                            break;
-                        }
-                        case "TokenUpgraded" :
-                        case "TokenDowngraded" : {
-                            estimationQueue.push({
-                                self: this,
-                                account: event.account,
-                                token: event.address
-                            });
-                            break;
-                        }
-                        case "Transfer" : {
-                            console.log("adding to queue");
-                            estimationQueue.push([
-                                {
+                            case "AgreementStateUpdated" : {
+                                agreementUpdateQueue.push({
                                     self: this,
-                                    account: event.from,
-                                    token: event.address
-                                },
-                                {
+                                    account: event.account,
+                                    blockNumber: event.blockNumber
+                                });
+                                break;
+                            }
+                            case "TokenUpgraded" :
+                            case "TokenDowngraded" : {
+                                estimationQueue.push({
                                     self: this,
-                                    account: event.to,
+                                    account: event.account,
                                     token: event.address
-                                }
-                            ]);
-                            break;
+                                });
+                                break;
+                            }
+                            case "Transfer" : {
+                                estimationQueue.push([
+                                    {
+                                        self: this,
+                                        account: event.from,
+                                        token: event.address
+                                    },
+                                    {
+                                        self: this,
+                                        account: event.to,
+                                        token: event.address
+                                    }
+                                ]);
+                                break;
+                            }
                         }
-                        }
-                } else {
-                    console.error(err);
-                }
-            })
+                    } else {
+                        console.error(err);
+                    }
+                })
         );
     }
 
@@ -252,42 +284,41 @@ class Protocol {
         const CFA = this.client.CFAv1WS;
         this.app.logger.log("starting listen CFAv1: " + CFA._address);
         CFA.events.FlowUpdated(async(err, evt) => {
-                if(err === undefined || err == null) {
-                    this.app.logger.log(evt.event);
-                    let event = this.app.models.event.transformWeb3Event(evt);
-                    if(this.client.superTokens[event.token] === undefined) {
-                        console.debug("Found new token: ", event.token);
-                        await this.client.loadSuperToken(event.token);
-                        setTimeout(() => subscribeEvents(token), 1000);
-                        estimationQueue.push([
-                            {
-                                self: this,
-                                account: event.sender,
-                                superToken: event.token
-                            },
-                            {
-                                self: this,
-                                account: event.receiver,
-                                superToken: event.token
-                            }
-                        ]);
-                        agreementUpdateQueue.push([
-                            {
-                                self: this,
-                                account: event.sender,
-                                blockNumber: event.blockNumber
-                            },
-                            {
-                                self: this,
-                                account: event.receiver,
-                                blockNumber: event.blockNumber
-                            }
-                        ]);
-                    }
-                } else {
-                    console.error(err);
+            if(err === undefined || err == null) {
+                let event = this.app.models.event.transformWeb3Event(evt);
+                if(this.client.superTokens[event.token] === undefined) {
+                    console.debug("Found new token: ", event.token);
+                    await this.client.loadSuperToken(event.token);
+                    setTimeout(() => subscribeEvents(token), 1000);
+                    estimationQueue.push([
+                        {
+                            self: this,
+                            account: event.sender,
+                            superToken: event.token
+                        },
+                        {
+                            self: this,
+                            account: event.receiver,
+                            superToken: event.token
+                        }
+                    ]);
+                    agreementUpdateQueue.push([
+                        {
+                            self: this,
+                            account: event.sender,
+                            blockNumber: event.blockNumber
+                        },
+                        {
+                            self: this,
+                            account: event.receiver,
+                            blockNumber: event.blockNumber
+                        }
+                    ]);
                 }
-            });
+            } else {
+                console.error(err);
+            }
+        });
     }
 
     generateId(sender, receiver) {

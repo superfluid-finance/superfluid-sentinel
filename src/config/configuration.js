@@ -15,6 +15,7 @@ class Config {
         this.CONCURRENCY = process.env.CONCURRENCY !== undefined ? process.env.CONCURRENCY : 1;
         this.COLD_BOOT = process.env.COLD_BOOT == 1 ? true : false;
         this.LISTEN_MODE = process.env.LISTEN_MODE;
+        this.NUM_RETRIES = 7;
     }
 }
 

@@ -1,13 +1,17 @@
 const Sequelize = require('sequelize');
 const db = require('../db');
 
-const FlowUpdatedModel = db.define("evt_flowupdated", {
+const FlowUpdatedModel = db.define("flowupdated", {
+    hashId: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
     address: {
         type: Sequelize.STRING,
         allowNull: false,
     },
     blockNumber: {
-        type: Sequelize.INTERGER,
+        type: Sequelize.INTEGER,
         allowNull: false,
     },
     superToken: {
@@ -26,12 +30,8 @@ const FlowUpdatedModel = db.define("evt_flowupdated", {
         type: Sequelize.INTEGER,
         allowNull: false,
     },
-    totalSenderFlowRate: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-    },
-    totalReceiverFlowRate: {
-        type: Sequelize.INTEGER,
+    agreementId: {
+        type: Sequelize.STRING,
         allowNull: false,
     },
 });

@@ -2,12 +2,13 @@ const Config = require("./config/configuration");
 const Logger = require("./logger/logger");
 const Client = require("./web3client/client");
 const Protocol = require("./web3client/protocol");
-const LoadSuperTokens = require("./loadSuperTokens");
+const LoadEvents = require("./loadEvents");
 const Liquidation = require("./web3client/txbuilder");
 
 const EventModel = require("./models/EventModel");
 const Bootstrap = require("./bootstrap.js");
 const DB = require("./database/db");
+const Repository = require("./database/repository");
 const utils = require("./utils/utils.js");
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -23,7 +24,7 @@ class App {
         this.logger = new Logger(this);
         this.client = new Client(this);
         this.protocol = new Protocol(this);
-        this.findST = new LoadSuperTokens(this);
+        this.loadEvents = new LoadEvents(this);
         const models = {
             event : new EventModel()
         };
@@ -34,6 +35,7 @@ class App {
         this.genAccounts = utils.generateAccounts;
         this.utils = utils;
         this.db = DB;
+        this.db.queries = new Repository(this);
     }
 
     async run(fn, time) {
@@ -50,8 +52,9 @@ class App {
                 await this.db.sync();
             }
             await this.client.start();
-            await this.findST.start();
+            await this.loadEvents.start();
             await this.bootstrap.start();
+            await this.loadEvents.start();
             await this.bootstrap.start();
             await this.liquidation.start();
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);

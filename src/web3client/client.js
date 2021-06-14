@@ -46,8 +46,8 @@ class Client {
                 console.log("\nWeb3Client: reconnect #" + this.reconnectAttempts);
             });
             this.web3 = new Web3(web3);
-            var web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_NODE, {
-                keepAlive: false
+            const web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_NODE, {
+                keepAlive: true
             });
             this.web3HTTP = new Web3(web3Provider);
             const httpChainId = await this.web3HTTP.eth.net.getId();
@@ -56,26 +56,7 @@ class Client {
                 throw Error("WS and HTTP point to different networks");
             }
             console.debug("chainId: ", await this.getNetworkId());
-            const resolverAddress = SDKConfig(await this.getNetworkId()).resolverAddress;
-            const superfluidIdent = `Superfluid.${this.version}`;
-            console.debug("resolver: ", resolverAddress);
-            this.resolver = new this.web3HTTP.eth.Contract(
-                IResolver.abi,
-                resolverAddress
-            );
-            const superfluidAddress = await this.resolver.methods.get(superfluidIdent).call();
-            console.debug("superfluid: ", superfluidAddress);
-            this.sf = new this.web3HTTP.eth.Contract(
-                ISuperfluid.abi,
-                superfluidAddress
-            );
-            const cfaIdent = this.web3HTTP.utils.sha3(`org.superfluid-finance.agreements.ConstantFlowAgreement.${this.version}`);
-            const cfaAddress = await this.sf.methods.getAgreementClass(
-                cfaIdent
-            ).call();
-            console.log("CFA: ", cfaAddress);
-            this.CFAv1 = new this.web3HTTP.eth.Contract(ICFA.abi, cfaAddress);
-            this.CFAv1WS = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
+            this._loadSuperfluidContracts();
             this.initialize = true;
         } catch(err) {
             this.app.logger.error(`Web3Client: ${err}`);
@@ -90,18 +71,11 @@ class Client {
     }
 
 
-    async reInitHttp(backup = false) {
-        //constant backoff
+    async reInitHttp() {
         await this.backoff(2000);
-        if(backup) {
-            var web3Provider = new Web3.providers.HttpProvider("https://polygon-mainnet.infura.io/v3/86a97a2ccabf42818c3f1b01025b5372");
-            this.web3HTTP.setProvider(web3Provider);
-            await this._loadSuperTokensFromDB();
-        } else {
-            var web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_NODE);
-            this.web3HTTP.setProvider(web3Provider);
-            await this._loadSuperTokensFromDB();
-        }
+        var web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_NODE);
+        this.web3HTTP.setProvider(web3Provider);
+        await this._loadSuperTokensFromDB();
     }
 
     async start() {
@@ -132,6 +106,29 @@ class Client {
             this.app.logger.error(e);
             process.exit(1);
         }
+    }
+
+    async _loadSuperfluidContracts() {
+            const resolverAddress = SDKConfig(await this.getNetworkId()).resolverAddress;
+            const superfluidIdent = `Superfluid.${this.version}`;
+            console.debug("resolver: ", resolverAddress);
+            this.resolver = new this.web3HTTP.eth.Contract(
+                IResolver.abi,
+                resolverAddress
+            );
+            const superfluidAddress = await this.resolver.methods.get(superfluidIdent).call();
+            console.debug("superfluid: ", superfluidAddress);
+            this.sf = new this.web3HTTP.eth.Contract(
+                ISuperfluid.abi,
+                superfluidAddress
+            );
+            const cfaIdent = this.web3HTTP.utils.sha3(`org.superfluid-finance.agreements.ConstantFlowAgreement.${this.version}`);
+            const cfaAddress = await this.sf.methods.getAgreementClass(
+                cfaIdent
+            ).call();
+            console.log("CFA: ", cfaAddress);
+            this.CFAv1 = new this.web3HTTP.eth.Contract(ICFA.abi, cfaAddress);
+            this.CFAv1WS = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
     }
 
     async _loadSuperTokensFromDB() {
@@ -281,6 +278,10 @@ class Client {
 
     async getNodeInfo() {
         return await this.web3HTTP.eth.getNodeInfo();
+    }
+
+    async estimateGasPrice() {
+        return this.web3HTTP.eth.getGasPrice();
     }
 
     async estimateTxGasCost(tx) {

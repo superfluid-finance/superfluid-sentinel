@@ -317,6 +317,7 @@ class Protocol {
                 }
             } else {
                 console.error(err);
+                process.exit(1);
             }
         });
     }

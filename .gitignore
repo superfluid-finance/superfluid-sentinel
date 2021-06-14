@@ -4,3 +4,5 @@ database.sqlite
 .vscode
 
 .env*
+
+.DS_Store

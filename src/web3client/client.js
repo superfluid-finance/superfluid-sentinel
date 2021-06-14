@@ -132,7 +132,6 @@ class Client {
     }
 
     async _loadSuperTokensFromDB() {
-        try {
             console.log("Load Listed SuperTokens from DB");
             let filter;
             if(this.app.config.LISTEN_MODE == 1) {
@@ -154,9 +153,6 @@ class Client {
                 this.superTokensHTTP[sp.address] = superTokenHTTP;
                 this.superTokensCount++;
             }
-        } catch(error) {
-            console.log(error);
-        }
     }
 
     async loadSuperTokens(newSuperTokens) {
@@ -221,13 +217,13 @@ class Client {
             if(superTokenAddress === superToken._address) {
                 console.log("adding listed SuperToken ", superTokenAddress);
                 this.superTokens[superTokenAddress] = superToken;
-                this.superTokensHTTP[superTokenAddress] = await new this.web3HTTP.eth.Contract(ISuperToken.abi, sp);
+                this.superTokensHTTP[superTokenAddress] = await new this.web3HTTP.eth.Contract(ISuperToken.abi, superTokenAddress);
                 this.superTokensCount++;
                 isListed = 1;
             } else if(this.app.config.LISTEN_MODE == 1) {
                 console.log("adding non listed SuperToken ", superToken._address);
                 this.superTokens[superToken._address] = superToken;
-                this.superTokensHTTP[superToken._address] = await new this.web3HTTP.eth.Contract(ISuperToken.abi, sp);
+                this.superTokensHTTP[superToken._address] = await new this.web3HTTP.eth.Contract(ISuperToken.abi, superToken.address);
                 this.superTokensCount++;
             }
             //persistence database

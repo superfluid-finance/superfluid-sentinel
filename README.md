@@ -97,8 +97,14 @@ Each node call to collect information will retry the same operation by default s
 
 After the initial boot phase the agent subscribe to SuperTokens events and operate based on that information. As one double check, if the process exit the reboot will take in consideration the last sucessful boot blockNumber and restart from that point (double checking all the events).
 
+## Liquidation transaction
 
+For each agreement is necessary to perform a liquidation, in this version we are managing only one agent account.
+When the agent submit one transaction it start a timeout clock, when the timeout trigger we resubmit the same transaction (same nonce) with a higher gasPrice.
 
+## Gas Price Estimation
+
+We are now testing the web3 gasEstimation function to give us a base layer that we can work.
 ---
 
 # TODO

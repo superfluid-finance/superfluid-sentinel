@@ -60,8 +60,11 @@ _Check `package.json` to see more options_
 ## Concepts
 
 _Cold Boot_: No existing database at boot.
+
 _Insolvent Account_: Flows from account can be terminated.
+
 _Listed SuperTokens_: SuperTokens register in Superfluid resolver contract.
+
 
 # Code structure
 

@@ -54,14 +54,15 @@ class App {
             await this.client.start();
             await this.loadEvents.start();
             await this.bootstrap.start();
-            await this.loadEvents.start();
-            await this.bootstrap.start();
+            //await this.loadEvents.start();
+            //await this.bootstrap.start();
             await this.liquidation.start();
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             this.run(this.liquidation, 30000);
         } catch(error) {
             console.error(error);
+            process.exit(1);
         }
     }
 }

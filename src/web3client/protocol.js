@@ -13,22 +13,25 @@ const estimationQueue = async.queue(async function(task) {
     let keepTrying = 1;
     while(keepTrying > 0) {
         try {
-            const accountEstimationDate = await task.self.liquidationDate(task.token, task.account);
-            console.debug(`account: ${task.account } supertoken: ${task.token} - ${accountEstimationDate}`);
+            const estimationData = await task.self.liquidationData(task.token, task.account);
+            console.debug(`account: ${task.account } supertoken: ${task.token} - ${estimationData.estimation}`);
+
             await EstimationModel.upsert({
                 address: task.account,
                 superToken: task.token,
-                zestimation: accountEstimationDate == "Invalid Date" ? -1 : new Date(accountEstimationDate).getTime(),
-                zestimationHuman : accountEstimationDate,
+                totalNetFlowRate: estimationData.totalNetFlowRate,
+                totalBalance: estimationData.totalBalance,
+                zestimation: new Date(estimationData.estimation).getTime(),
+                zestimationHuman : estimationData.estimation,
                 zlastChecked: task.self.app.getTimeUnix(),
                 recalculate : 0,
                 found: 0,
-                now: (accountEstimationDate == -1 ? true: false),
+                now: (estimationData.estimation == -1 ? true: false),
             });
+
             keepTrying = 0;
         } catch(error) {
-            keepTrying++;
-            console.log("retry");
+            keepTrying++
             console.error(error);
             if(keepTrying > task.self.numRetries) {
                 process.exit(1);
@@ -94,9 +97,8 @@ const agreementUpdateQueue = async.queue(async function(task) {
             keepTrying=0;
         } catch(error) {
             keepTrying++;
-            console.log("retry");
             console.error(error);
-            if(keepTrying > task.self.numRetries) {
+            if(keepTrying > task.self.numRetries || (error.code !== undefined && error.code == -1)) {
                 process.exit(1);
             }
         }
@@ -124,6 +126,7 @@ class Protocol {
             ).call();
         } catch(error) {
             console.error(error)
+            throw Error(`account balance: ${error}`)
         }
     }
 
@@ -139,6 +142,7 @@ class Protocol {
             ).call();
         } catch(error) {
             console.error(error)
+            throw Error({msg: `account realtime balance: ${error}`, code: -1})
         }
     }
 
@@ -147,6 +151,7 @@ class Protocol {
             return this.client.CFAv1.methods.getNetFlow(token, account).call();
         } catch(error) {
             console.log(error);
+            throw Error(`account flowRate: ${error}`)
         }
     }
 
@@ -191,18 +196,18 @@ class Protocol {
         return arrPromise.flat();
     }
 
-    async liquidationDate(token, account) {
+    async liquidationData(token, account) {
         const now = Math.floor(new Date().getTime() / 1000);
         let arrPromise = [
             this.getUserNetFlow(token, account),
-            this.getAccountRealtimeBalance(token,account,now),
-            this.getAccountAgreementRealtimeBalance(token, account,now)
+            this.getAccountRealtimeBalance(token,account,now)
+            //this.getAccountAgreementRealtimeBalance(token, account,now)
         ];
         arrPromise = await Promise.all(arrPromise);
-        return this._getLiquidationDate(
+        return this._getLiquidationData(
             new BN(arrPromise[0]),
             new BN(arrPromise[1].availableBalance),
-            new BN(arrPromise[2].deposit)
+            //new BN(arrPromise[2].deposit)
         );
     }
 
@@ -227,6 +232,7 @@ class Protocol {
         console.debug("starting draining queues");
         this.run(estimationQueue, 10000);
         this.run(agreementUpdateQueue, 10000);
+        await this._printEstimationsToLog();
     }
 
     async subscribeEvents(token) {
@@ -235,7 +241,8 @@ class Protocol {
         this.subs.set(token,
             superToken.events.allEvents(
                 async(err, evt) => {
-                    if(err === undefined || err == null) {
+                    if (err === undefined || err == null) {
+                        
                         this.app.logger.log(evt.event);
                         let event = this.app.models.event.transformWeb3Event(evt);
                         switch(event.eventName) {
@@ -326,21 +333,37 @@ class Protocol {
         return this.client.web3.utils.soliditySha3(sender, receiver);
     }
 
-    _getLiquidationDate(totalNetFlowRate, totalBalance, totalDeposit) {
-        if(totalNetFlowRate.lt(new BN(0))) {
-            if(totalBalance.add(totalDeposit).lt(new BN(0))) {
-                return -1;
-            } else {
-                let seconds = totalBalance.div(totalNetFlowRate);
-                seconds = isFinite(seconds) ? seconds : 0;
-                let secondsX = Math.abs(isNaN(seconds) ? 0 : seconds);
-                secondsX = Math.round(secondsX);
-                let estimation = new Date();
-                return new Date(estimation.setSeconds(secondsX));
-            }
+    _getLiquidationData(totalNetFlowRate, totalBalance, totalDeposit) {
+
+        let result = {
+            totalNetFlowRate: totalNetFlowRate.toString(),
+            totalBalance: totalBalance.toString(),
+            estimation: new Date(0)
         }
 
-        return new Date(0);
+        if(totalNetFlowRate.lt(new BN(0))) {
+
+            if(totalBalance.lt(new BN(0))) {
+                result.estimation = new Date();
+                return result;
+            } 
+
+            let seconds = totalBalance.div(totalNetFlowRate);
+            seconds = isFinite(seconds) ? seconds : 0;
+            let secondsX = Math.abs(isNaN(seconds) ? 0 : seconds);
+            secondsX = Math.round(secondsX);
+            let estimation = new Date();
+            let dateFuture = new Date(estimation.setSeconds(secondsX));
+            result.estimation = (isNaN(dateFuture) ? new Date("2099-12-31") : dateFuture);
+        }
+
+        return result;
+    }
+
+    async _printEstimationsToLog() {
+        const estimations  = await EstimationModel.findAll({
+            attributes: ['address', 'superToken', 'zestimation'],
+        });
     }
 }
 

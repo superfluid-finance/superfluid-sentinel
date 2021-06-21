@@ -18,7 +18,7 @@ class LoadEvents {
             const lastEventBlockNumber = await FlowUpdatedModel.findOne({
                 order: [['blockNumber', 'DESC']]
             });
-            let blockNumber = lastEventBlockNumber === null 
+            let blockNumber = lastEventBlockNumber === null
                 ? parseInt(this.app.config.EPOCH_BLOCK) : lastEventBlockNumber.blockNumber;
             if(systemInfo !== null) {
                 if(systemInfo.superTokenBlockNumber > blockNumber) {
@@ -28,13 +28,12 @@ class LoadEvents {
                     throw "different network than from the saved data";
                 }
             }
-            const CFA = this.app.client.CFAv1;
             let pullCounter = blockNumber;
             let currentBlockNumber = await this.app.client.getCurrentBlockNumber();
             console.debug(`scanning blocks from ${pullCounter} to ${currentBlockNumber}`);
             var queue = async.queue(async function(task) {
                 let keepTrying = 1;
-                while(keepTrying > 0) {
+                while(true) {
                     try {
                         if(keepTrying == 2) {
                             console.debug(`reopen http connection`);
@@ -46,7 +45,7 @@ class LoadEvents {
                                 fromBlock: task.fromBlock,
                                 toBlock: task.toBlock
                             },
-                            keepTrying > 5 ? true : false
+                            keepTrying > 5
                         );
 
                         result = result.map(task.self.app.models.event.transformWeb3Event);
@@ -63,8 +62,8 @@ class LoadEvents {
                                     agreementId: agreementId,
                                     hashId: hashId
                                 });
-                        } 
-                        keepTrying = 0;
+                        }
+                        break;
                     } catch(error) {
                         keepTrying++;
                         console.log("retry");
@@ -105,7 +104,7 @@ class LoadEvents {
             await this.app.client.loadSuperTokens(tokens.map(({superToken}) => superToken));
             console.debug("finish Past event to find SuperTokens");
         } catch(error) {
-            this.app.logger.error(`error getting pasted events\n ${error}`);
+            this.app.logger.error(`loadEvents \n ${error}`);
             process.exit(1);
         }
     }

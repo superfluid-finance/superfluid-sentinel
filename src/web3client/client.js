@@ -18,7 +18,6 @@ class Client {
         this.CFAv1;
         this.CFAv1WS;
         this.sf;
-        this.agreements = new Map();
         this.superTokens = new Map();
         this.superTokensHTTP = new Map();
         this.superTokensCount = 0;
@@ -29,6 +28,7 @@ class Client {
     }
 
     async initialize() {
+        this.app.logger.debug(`initialize()`);
         try {
             const web3 = new Web3.providers.WebsocketProvider(this.app.config.WS_NODE, {
                 timeout: 10000,
@@ -41,10 +41,11 @@ class Client {
                     auto: true,
                     delay: 50000,
                     onTimeout: false
-                }
+                    //TODO: max attempts
+                } 
             }).on("reconnect", function() {
                 console.log("\nWeb3Client: reconnect #" + this.reconnectAttempts);
-            });
+            })
             this.web3 = new Web3(web3);
             const web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_NODE, {
                 keepAlive: true
@@ -56,11 +57,9 @@ class Client {
                 throw Error("WS and HTTP point to different networks");
             }
             console.debug("chainId: ", await this.getNetworkId());
-            this._loadSuperfluidContracts();
-            this.initialize = true;
         } catch(err) {
             this.app.logger.error(`Web3Client: ${err}`);
-            process.exit(1);
+            throw new Error(`Web3Client: ${err}`);
         }
     }
 
@@ -73,7 +72,9 @@ class Client {
 
     async reInitHttp() {
         await this.backoff(2000);
-        var web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_NODE);
+        var web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_NODE, {
+            keepAlive: true
+        });
         this.web3HTTP.setProvider(web3Provider);
         await this._loadSuperTokensFromDB();
     }
@@ -81,35 +82,28 @@ class Client {
     async start() {
         try {
             await this.initialize();
-        } catch(err) {
-            this.app.logger.error("Initializing framework: ", err);
-            throw err;
-        }
-
-        try {
+            await this._loadSuperfluidContracts();
+            this.initialize = true;
             this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, 100);
+            // Node HTTP
             this.app.logger.startSpinner("Connecting to Node: HTTP");
-            if(await this.web3HTTP.eth.net.isListening()) {
-                this.web3HTTP.eth.transactionConfirmationBlocks = 3;
-                this.app.logger.stopSpinnerWithSuccess("Node connected (HTTP)");
-            } else {
-                this.app.logger.error("Error: Node HTTP not connected");
-            }
+            this.web3HTTP.eth.transactionConfirmationBlocks = 3;
+            this.app.logger.stopSpinnerWithSuccess("Node connected (HTTP)");
+            // Node Websocket
             this.app.logger.startSpinner("Connecting to Node: WS");
-            if(await this.web3.eth.net.isListening()) {
-                this.web3.eth.transactionConfirmationBlocks = 3;
-                this.app.logger.stopSpinnerWithSuccess("Node connected (WS)");
-            } else {
-                this.app.logger.error("Error: Node WS not connected");
-            }
-        } catch(e) {
-            this.app.logger.error(e);
-            process.exit(1);
+            this.web3.eth.transactionConfirmationBlocks = 3;
+            this.app.logger.stopSpinnerWithSuccess("Node connected (WS)");
+        } catch(err) {
+            this.app.logger.error(err);
+            throw err;
         }
     }
 
     async _loadSuperfluidContracts() {
+        this.app.logger.debug(`_loadSuperfluidContracts()`);
+        try {
             const resolverAddress = SDKConfig(await this.getNetworkId()).resolverAddress;
+            //const resolverAddress = "0x9b911F3fbd6A0Adf402f3f5C1d915E9334FED065";
             const superfluidIdent = `Superfluid.${this.version}`;
             console.debug("resolver: ", resolverAddress);
             this.resolver = new this.web3HTTP.eth.Contract(
@@ -123,117 +117,83 @@ class Client {
                 superfluidAddress
             );
             const cfaIdent = this.web3HTTP.utils.sha3(`org.superfluid-finance.agreements.ConstantFlowAgreement.${this.version}`);
-            const cfaAddress = await this.sf.methods.getAgreementClass(
-                cfaIdent
-            ).call();
+            //const cfaIdent = this.web3HTTP.utils.sha3(`org.superfluid-finance.agreements.ConstantFlowAgreement.v1`);
+            const cfaAddress = await this.sf.methods.getAgreementClass(cfaIdent).call();
             console.log("CFA: ", cfaAddress);
             this.CFAv1 = new this.web3HTTP.eth.Contract(ICFA.abi, cfaAddress);
             this.CFAv1WS = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
+        } catch (err) {
+            this.app.logger.error(err);
+            throw Error(`Load Superfluid Contract : ${err}`)
+        }
     }
 
     async _loadSuperTokensFromDB() {
-            console.log("Load Listed SuperTokens from DB");
-            let filter;
-            if(this.app.config.LISTEN_MODE == 1) {
-                filter = {
-                    attributes: ['address']
-                };
-            } else {
-                filter = {
-                    attributes: ['address'],
-                    where: {listed: 1}
-                };
-            }
-            const superTokensDB = await SuperTokenModel.findAll(filter);
-            for(let sp of superTokensDB) {
-                console.log(sp.address)
-                let superToken = await new this.web3.eth.Contract(ISuperToken.abi, sp.address);
-                let superTokenHTTP = await new this.web3HTTP.eth.Contract(ISuperToken.abi, sp.address);
-                this.superTokens[sp.address] = superToken;
-                this.superTokensHTTP[sp.address] = superTokenHTTP;
-                this.superTokensCount++;
-            }
+        console.debug("load supertoken from database");
+        let filter = {
+            attributes: ['address'],
+            where: {listed: 1}
+        };
+
+        if(this.app.config.LISTEN_MODE == 1) {
+            filter = {
+                attributes: ['address']
+            };
+        }
+        const superTokensDB = await SuperTokenModel.findAll(filter);
+        let promises = superTokensDB.map(async (address) => { 
+            return  this.loadSuperToken(address); 
+        })
+        await Promise.all(promises);
     }
 
     async loadSuperTokens(newSuperTokens) {
         await this._loadSuperTokensFromDB();
-        for(let sp of newSuperTokens) {
-            if(this.superTokens[sp] === undefined) {
-                let superToken = await new this.web3.eth.Contract(ISuperToken.abi, sp);
-                const tokenResponse = await Promise.all(
-                    [
-                        superToken.methods.name().call(),
-                        superToken.methods.symbol().call()
-                    ]
-                );
-                let tokenName = tokenResponse[0];
-                let tokenSymbol = tokenResponse[1];
-                console.log(`new token: ${tokenSymbol} - ${tokenName}`);
-                const superTokenAddress = await this.resolver.methods.get(
-                    `supertokens.${this.version}.${tokenSymbol}`
-                ).call();
-                let isListed = 0;
-                //listed superToken
-                if(superTokenAddress === superToken._address) {
-                    console.log("adding listed SuperToken ", superTokenAddress);
-                    this.superTokens[superTokenAddress] = superToken;
-                    this.superTokensHTTP[superTokenAddress] = await new this.web3HTTP.eth.Contract(ISuperToken.abi, sp);
-                    this.superTokensCount++;
-                    isListed = 1;
-                } else if(this.app.config.LISTEN_MODE == 1) {
-                    console.log("adding non listed SuperToken ", superToken._address);
-                    this.superTokens[superToken._address] = superToken;
-                    this.superTokensHTTP[superToken._address] = await new this.web3HTTP.eth.Contract(ISuperToken.abi, sp);
-                    this.superTokensCount++;
-                }
-                //persistence database
-                await SuperTokenModel.upsert({
-                    address: sp,
-                    symbol: tokenSymbol,
-                    name : tokenName,
-                    listed: isListed
-                });
-            }
-        }
+        let promises = newSuperTokens.map(async (token) => { 
+            return  this.loadSuperToken(token); 
+        })
+        await Promise.all(promises)
     }
 
     async loadSuperToken(newSuperToken) {
-        if(this.superTokens[newSuperToken] === undefined) {
-            let superToken = await new this.web3.eth.Contract(ISuperToken.abi, newSuperToken);
-            const tokenResponse = await Promise.all(
-                [
-                    superToken.methods.name().call(),
-                    superToken.methods.symbol().call()
-                ]
-            );
-            let tokenName = tokenResponse[0];
-            let tokenSymbol = tokenResponse[1];
-            console.log(`new token: ${tokenSymbol} - ${tokenName}`);
-            const superTokenAddress = await this.resolver.methods.get(
-                `supertokens.${this.version}.${tokenSymbol}`
-            ).call();
-            let isListed = 0;
-            //listed superToken
-            if(superTokenAddress === superToken._address) {
-                console.log("adding listed SuperToken ", superTokenAddress);
-                this.superTokens[superTokenAddress] = superToken;
-                this.superTokensHTTP[superTokenAddress] = await new this.web3HTTP.eth.Contract(ISuperToken.abi, superTokenAddress);
-                this.superTokensCount++;
-                isListed = 1;
-            } else if(this.app.config.LISTEN_MODE == 1) {
-                console.log("adding non listed SuperToken ", superToken._address);
-                this.superTokens[superToken._address] = superToken;
-                this.superTokensHTTP[superToken._address] = await new this.web3HTTP.eth.Contract(ISuperToken.abi, superToken.address);
-                this.superTokensCount++;
-            }
-            //persistence database
-            await SuperTokenModel.upsert({
-                address: newSuperToken,
-                symbol: tokenSymbol,
-                name : tokenName,
-                listed: isListed
-            });
+        if (this.superTokens.has(newSuperToken)) {
+            return;
         }
+
+        const superTokenWS = new this.web3.eth.Contract(ISuperToken.abi, newSuperToken);
+        const superTokenHTTP = new this.web3HTTP.eth.Contract(ISuperToken.abi, newSuperToken);
+        const [tokenName, tokenSymbol] = await Promise.all(
+            [
+                superTokenWS.methods.name().call(),
+                superTokenWS.methods.symbol().call()
+            ]
+        );
+
+        console.log(`new token: ${tokenSymbol} - ${tokenName}`);
+        const superTokenAddress = await this.resolver.methods.get(
+            `supertokens.${this.version}.${tokenSymbol}`
+        ).call();
+
+        let isListed = 0;
+        if(superTokenAddress === superTokenWS._address) {
+            console.log("adding listed SuperToken ", superTokenAddress);
+            this.superTokens[superTokenAddress] = superTokenWS;
+            this.superTokensHTTP[superTokenAddress] = superTokenHTTP;
+            this.superTokensCount++;
+            isListed = 1;
+        } else if(this.app.config.LISTEN_MODE == 1) {
+            console.log("adding non listed SuperToken ", superTokenWS._address);
+            this.superTokens[superTokenWS._address] = superTokenWS;
+            this.superTokensHTTP[superTokenHTTP._address] = superTokenHTTP;
+            this.superTokensCount++;
+        }
+        //persistence database
+        await SuperTokenModel.upsert({
+            address: newSuperToken,
+            symbol: tokenSymbol,
+            name : tokenName,
+            listed: isListed
+        });
     }
 
     async getNetworkId() {

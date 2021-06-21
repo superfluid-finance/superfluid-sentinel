@@ -22,7 +22,7 @@ class Bootstrap {
         const systemInfo = await SystemModel.findOne();
         let blockNumber = parseInt(this.app.config.EPOCH_BLOCK);
         if(systemInfo !== null) {
-            blockNumber = systemInfo.superTokenBlockNumber;
+            blockNumber = systemInfo.blockNumber;
         }
         const currentBlockNumber = await this.app.client.getCurrentBlockNumber();
         const pullStep = parseInt(this.app.config.PULL_STEP);
@@ -38,24 +38,22 @@ class Bootstrap {
                     let keepTrying = 1;
                     while(keepTrying > 0) {
                         try {
-                            if(keepTrying == 2) {
-                                console.debug(`reopen http connection`);
-                                await task.self.app.client.reInitHttp();
-                            }
-                            const accountEstimationDate = await task.self.app.protocol.liquidationDate(task.superToken, task.account);
+                            const estimationData = await task.self.app.protocol.liquidationData(task.token, task.account);
                             await EstimationModel.upsert({
                                 address: task.account,
-                                superToken: task.superToken,
-                                zestimation: accountEstimationDate == "Invalid Date" ? -1 : new Date(accountEstimationDate).getTime(),
-                                zestimationHuman : accountEstimationDate,
+                                superToken: task.token,
+                                totalNetFlowRate: estimationData.totalNetFlowRate,
+                                totalBalance: estimationData.totalBalance,
+                                zestimation: new Date(estimationData.estimation).getTime(),
+                                zestimationHuman : estimationData.estimation,
                                 zlastChecked: task.self.app.getTimeUnix(),
+                                recalculate : 0,
                                 found: 0,
-                                now: (accountEstimationDate == -1 ? true: false),
+                                now: 0,
                             });
                             keepTrying = 0;
                         } catch(error) {
                             keepTrying++;
-                            console.log("retry");
                             console.error(error);
                             if(keepTrying > task.self.numRetries) {
                                 process.exit(1);
@@ -63,15 +61,13 @@ class Bootstrap {
                         }
                     }
                 }, this.concurency);
-                console.log("getting users");
                 const users = await this.app.db.queries.getAccounts(blockNumber);
                 const now = this.app.getTimeUnix();
                 for(let user of users) {
-                    console.log("adding here");
                     queue.push({
                         self: this,
                         account: user.account,
-                        superToken: user.superToken
+                        token: user.superToken
                     });
                 }
 
@@ -90,9 +86,9 @@ class Bootstrap {
                             flowRate: flow.flowRate,
                             zlastChecked: now
                         });
-                    } catch(error) {
-                        console.debug("saving agreement model error");
-                        console.error(error);
+                    } catch(err) {
+                        console.error(err);
+                        throw Error(`saving AgreementModel: ${err}`);
                     }
                 }
 
@@ -124,7 +120,7 @@ class Bootstrap {
                 console.debug("finish bootstrap");
             } catch(error) {
                 console.log(error);
-                this.app.logger.error(`\nsomething is wrong in getting pasted events\n ${error}`);
+                this.app.logger.error(`\nbootstrap error: \n ${error}`);
                 this.app.logger.stopSpinnerWithError("Bootstrap");
                 process.exit(1);
             }

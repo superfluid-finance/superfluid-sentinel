@@ -45,6 +45,24 @@ class App {
         await this.run(fn, time);
     }
 
+    async shutdown(force = false) {
+        console.debug(`shutting down...`)
+        if(force) {
+            console.error(`force shutdown`);
+            process.exit(1);
+        }
+
+        try {
+            this.protocol.unsubscribeTokens();
+            this.protocol.unsubscribeAgreements();
+            await this.db.close();
+            process.exit(0);
+        } catch(err) {
+            console.error(`shutdown ${err}`);
+            process.exit(1);
+        }
+    }
+
     async start() {
 
         try {
@@ -62,7 +80,8 @@ class App {
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
-            this.run(this.liquidation, 30000);
+            this.run(this.liquidation, 10000);
+            setTimeout(() => this.shutdown(), 1000);
         } catch(error) {
             console.error(error);
             process.exit(1);

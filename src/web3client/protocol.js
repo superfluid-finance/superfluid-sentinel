@@ -115,6 +115,7 @@ class Protocol {
         this.client = this.app.client;
         this.numRetries = this.app.config.NUM_RETRIES;
         this.subs = new Map();
+        this.subsAgreements = new Map();
     }
 
     async getAccountRealtimeBalance(token, address, timestamp) {
@@ -296,11 +297,25 @@ class Protocol {
         }
     }
 
+    unsubscribeTokens() {
+        this.subs.forEach(function(value, key) {
+            console.debug(`unsubscribing to supertoken ${key}`);
+            value.unsubscribe();
+          })
+    }
+
+    unsubscribeAgreements() {
+        this.subsAgreements.forEach(function(value, key) {
+            console.debug(`unsubscribing to agreement ${key}`);
+            value.unsubscribe();
+          })
+    }
+
     async subscribeAgreementEvents() {
         try {
         const CFA = this.client.CFAv1WS;
         this.app.logger.log("starting listen CFAv1: " + CFA._address);
-        CFA.events.FlowUpdated(async(err, evt) => {
+        this.subsAgreements.set(CFA._address, CFA.events.FlowUpdated(async(err, evt) => {
             if(err === undefined || err == null) {
                 let event = this.app.models.event.transformWeb3Event(evt);
                 if(!this.client.isSuperTokenRegister(event.token)) {
@@ -336,7 +351,7 @@ class Protocol {
                 console.error(err);
                 process.exit(1);
             }
-        });
+        }));
         } catch(err) {
             console.error(`agreement subscription ${err}`);
             throw Error(`agreement subscription ${err}`);
@@ -347,7 +362,7 @@ class Protocol {
         try {
         const IDA = this.client.IDAv1WS;
         this.app.logger.log("starting listen IDAv1: " + IDA._address);
-        IDA.events.allEvents(
+        this.subsAgreements.set(IDA._address, IDA.events.allEvents(
             async(err, evt) => {
                 if(err === undefined || err == null) {
                     let event = this.app.models.event.transformWeb3Event(evt);
@@ -390,14 +405,14 @@ class Protocol {
                                         indexId: event.indexId,
                                     });
                                 }
-                            } 
+                            }
                         }
                     }
                 } else {
                     console.error(err);
                     process.exit(1);
                 }
-        });
+        }));
         } catch(err) {
             console.error(`ida agreement subscription ${err}`);
             throw Error(`ida agreement subscription ${err}`);

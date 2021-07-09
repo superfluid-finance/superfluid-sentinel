@@ -51,24 +51,54 @@ const startNode = () => {
     const newProcess = fork(path.join(__dirname, "../bootNode"), []);
 }
 
-describe("Integration scripts tests", async () => {
+const bootNode = () => {
+    app = new App({
+        wsNode: "ws://127.0.0.1:8545",
+        httpNode: "http://127.0.0.1:8545",
+        mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
+        epochBlock: 0,
+        DB: "TestDatabase.sqlite",
+        prv: "test",
+        timeoutFn: 300000,
+        pullStep: 500000,
+        gasPrice:5000000000,
+        concurrency: 1,
+        coldBoot: 1,
+        listenMode: 1,
+        numberRetries: 3,
+        testResolver: process.env.TEST_RESOLVER_ADDRESS
+    });
+    app.start();
+}
 
-    before(async function(done) {
+const closeNode = () => {
+    if(app !== undefined)
+        app.shutdown();
+}
+
+describe("Integration scripts tests", () => {
+
+    before(async function() {
         await setup();
         snapId = await takeSnapshot();
-        startNode();
-        done();
     });
 
-    beforeEach(async (done) => {
+    beforeEach(async () => {
         console.log("Revert to snapshot")
-        await revertToSnapShot(snapId);
-        done();
+        revertToSnapShot(snapId);
+        //Start Node itseft
+        console.log("start agent");
+        bootNode();
     });
-/*
-    it("after", async (done) => {
-        console.log("HERE");
-        done();
+
+
+   afterEach(async () => {
+        closeNode();
     });
-*/
-});
+
+    it("after", async () => {
+        //Start a stream
+        //
+    });
+
+})

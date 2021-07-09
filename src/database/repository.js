@@ -15,7 +15,7 @@ class Repository {
           GROUP BY hashId
           HAVING MAX(blockNumber)
           order by blockNumber desc , superToken, hashId
-      ) AS P 
+      ) AS P
       WHERE P.flowRate <> 0
       UNION ALL
       SELECT * FROM (
@@ -30,9 +30,9 @@ class Repository {
       ORDER BY superToken`;
 
 
-    return this.app.db.query(sqlquery, { 
+    return this.app.db.query(sqlquery, {
       replacements: { bn: fromBlock },
-      type: QueryTypes.SELECT 
+      type: QueryTypes.SELECT
     });
   }
 
@@ -44,8 +44,8 @@ class Repository {
     GROUP BY hashId
     HAVING MAX(blockNumber)
     order by blockNumber desc , superToken, hashId
-) AS P 
-                    WHERE P.flowRate <> 0`;
+    ) AS P
+    WHERE P.flowRate <> 0`;
     return this.app.db.query(sqlquery, {
       replacements: { bn: fromBlock },
       type: QueryTypes.SELECT 
@@ -53,6 +53,17 @@ class Repository {
 
   }
 
+  async getIDASubscribers(superToken, publisher) {
+    const sqlquery = `SELECT DISTINCT subscriber from idaevents IDA
+    INNER JOIN agreements AGR on IDA.subscriber = AGR.sender AND IDA.superToken = AGR.superToken
+    WHERE eventName = "SubscriptionApproved"
+    AND publisher = :pb
+    AND IDA.superToken = :st`;
+    return this.app.db.query(sqlquery, {
+      replacements: [{ pb: publisher }, {st: superToken}],
+      type: QueryTypes.SELECT
+    });
+  }
 }
 
 module.exports = Repository;

@@ -2,14 +2,14 @@ const { Op } = require("sequelize");
 const EstimationModel = require("../database/models/accountEstimationModel");
 const AgreementModel = require("../database/models/agreementModel");
 
-function promiseTimeout(promise, ms){
+function promiseTimeout(promise, ms) {
 
     let timeout = new Promise((resolve, reject) => {
         let id = setTimeout(() => {
             clearTimeout(id);
             reject(new Error("timeout rejection"))
         }, ms)
-    })
+    });
 
     // Returns a race between timeout and promise
     return Promise.race([
@@ -87,7 +87,6 @@ class TxBuilder {
                                 flowRate: flow.flowRate,
                                 tx: tx,
                                 gasPrice: gasPrice,
-                                //gasPrice: parseInt(this.app.config.GAS_PRICE),
                                 nonce: networkAccountNonce,
                                 chainId: chainId
                             }
@@ -117,6 +116,7 @@ class TxBuilder {
                             }
                         } catch(error) {
                             console.error(error);
+                            console.error("HERE");
                         }
                     } else {
                         console.debug(`address ${flow.sender} is solvent at ${flow.superToken} with flow ${flow.flowRate}` );
@@ -131,11 +131,13 @@ class TxBuilder {
 
         const signed = await this.signTx(wallet, txObject);
         if(signed.error !== undefined) {
+
             if(signed.error === "Returned error: replacement transaction underpriced") {
                 console.debug("replacement transaction underpriced")
                 txObject.retry = txObject.retry + 1;
                 return this.sendWithRetry(wallet, txObject, ms);
             }
+
             if(signed.error === "Returned error: execution reverted: CFA: flow does not exist") {
                 console.debug("Flow don't exist anymore - reclaim nonce");
                 return undefined;

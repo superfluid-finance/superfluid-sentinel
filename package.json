@@ -12,17 +12,17 @@
     "xdai": "cat .env-prod-xdai > .env && node main.js",
     "polygon": "cat .env-prod-matic > .env && node main.js",
     "arbitrum": "cat .env-prod-arbitrum > .env && node main",
-
-    "pm2:mumbai":"cat .env-prod-mumbai > .env && pm2 start main.js --name 'Mumbai (Polygon)' --restart-delay=3000 && pm2 monit ",
-    "pm2:goerli":"cat .env-prod-goerli > .env && pm2 start main.js --name 'Goerli' --restart-delay=3000 && pm2 monit ",
-    "pm2:rinkeby":"cat .env-prod-rinkeby > .env && pm2 start main.js --name 'Rinkeby' --restart-delay=3000 && pm2 monit ",
-    "pm2:ropsten":"cat .env-prod-ropsten > .env && pm2 start main.js --name 'Ropsten' --restart-delay=3000 && pm2 monit ",
-    "pm2:kovan":"cat .env-prod-kovan > .env && pm2 start main.js --name 'Kovan' --restart-delay=3000 && pm2 monit ",
+    "pm2:mumbai": "cat .env-prod-mumbai > .env && pm2 start main.js --name 'Mumbai (Polygon)' --restart-delay=3000 && pm2 monit ",
+    "pm2:goerli": "cat .env-prod-goerli > .env && pm2 start main.js --name 'Goerli' --restart-delay=3000 && pm2 monit ",
+    "pm2:rinkeby": "cat .env-prod-rinkeby > .env && pm2 start main.js --name 'Rinkeby' --restart-delay=3000 && pm2 monit ",
+    "pm2:ropsten": "cat .env-prod-ropsten > .env && pm2 start main.js --name 'Ropsten' --restart-delay=3000 && pm2 monit ",
+    "pm2:kovan": "cat .env-prod-kovan > .env && pm2 start main.js --name 'Kovan' --restart-delay=3000 && pm2 monit ",
     "pm2:xdai": "cat .env-prod-xdai > .env && pm2 start main.js --name 'xDAI' --restart-delay=3000 && pm2 monit ",
     "pm2:polygon": "cat .env-prod-matic > .env && pm2 start main.js --name 'Polygon' --restart-delay=3000 && pm2 monit",
     "pm2:prod": "./scripts/pm2Prod.sh",
     "pm2:testnets": "./scripts/pm2Testnets.sh",
-    "pm2:all":"./scripts/pm2All.sh"
+    "pm2:all": "./scripts/pm2All.sh",
+    "test": "mocha"
   },
   "keywords": [],
   "author": "",
@@ -42,7 +42,10 @@
   },
   "devDependencies": {
     "eslint": "^7.24.0",
-    "husky": "^6.0.0"
+    "ganache": "^6.4.4",
+    "ganache-core": "^2.13.2",
+    "husky": "^6.0.0",
+    "mocha": "^9.0.2"
   },
   "husky": {
     "hooks": {

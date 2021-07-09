@@ -4,6 +4,7 @@ const Client = require("./web3client/client");
 const Protocol = require("./web3client/protocol");
 const LoadEvents = require("./loadEvents");
 const Liquidation = require("./web3client/txbuilder");
+const Gas = require("./transaction/gas");
 
 const EventModel = require("./models/EventModel");
 const Bootstrap = require("./bootstrap.js");
@@ -19,11 +20,12 @@ async function trigger(fn, time = 15000) {
 
 class App {
 
-    constructor() {
-        this.config = new Config();
+    constructor(config) {
+        this.config = new Config(config);
         this.logger = new Logger(this);
         this.client = new Client(this);
         this.protocol = new Protocol(this);
+        this.gasEstimator = new Gas(this);
         this.loadEvents = new LoadEvents(this);
         const models = {
             event : new EventModel()
@@ -44,21 +46,22 @@ class App {
     }
 
     async start() {
+
         try {
+
             if(this.config.COLD_BOOT) {
-                console.debug("dropping data...");
-                await this.db.sync({ force: true })
+                await this.db.sync({ force: true });
             } else {
                 await this.db.sync();
             }
+
             await this.client.start();
             await this.loadEvents.start();
             await this.bootstrap.start();
-            //await this.loadEvents.start();
-            //await this.bootstrap.start();
             await this.liquidation.start();
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
+            setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
             this.run(this.liquidation, 30000);
         } catch(error) {
             console.error(error);

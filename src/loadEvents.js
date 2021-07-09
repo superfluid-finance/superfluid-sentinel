@@ -1,5 +1,6 @@
 const SystemModel = require("./database/models/systemModel");
 const FlowUpdatedModel = require("./database/models/flowUpdatedModel");
+const IDAModel = require("./database/models/IDAModel");
 const async = require("async");
 class LoadEvents {
 
@@ -13,7 +14,6 @@ class LoadEvents {
         try {
             console.debug("getting Past event to find SuperTokens");
             console.debug("using concurrency: ", this.concurrency);
-            const runningNetwork = await this.app.client.getNetworkId();
             const systemInfo = await SystemModel.findOne();
             const lastEventBlockNumber = await FlowUpdatedModel.findOne({
                 order: [['blockNumber', 'DESC']]
@@ -24,7 +24,7 @@ class LoadEvents {
                 if(systemInfo.superTokenBlockNumber > blockNumber) {
                     blockNumber = systemInfo.superTokenBlockNumber;
                 }
-                if(runningNetwork !== systemInfo.networkId) {
+                if((await this.app.client.getNetworkId()) !== systemInfo.networkId) {
                     throw "different network than from the saved data";
                 }
             }
@@ -35,11 +35,7 @@ class LoadEvents {
                 let keepTrying = 1;
                 while(true) {
                     try {
-                        if(keepTrying == 2) {
-                            console.debug(`reopen http connection`);
-                            await task.self.app.client.reInitHttp();
-                        }
-                        console.log(`#${keepTrying} - ${task.fromBlock} - ${task.toBlock}`);
+                        console.debug(`#${keepTrying} - ${task.fromBlock} - ${task.toBlock}`);
                         let result = await task.self.app.protocol.getAgreementEvents(
                             "FlowUpdated", {
                                 fromBlock: task.fromBlock,
@@ -48,25 +44,46 @@ class LoadEvents {
                             keepTrying > 5
                         );
 
+                        let resultIDA = await task.self.app.protocol.getIDAAgreementEvents(
+                            "SubscriptionApproved", {
+                                fromBlock: task.fromBlock,
+                                toBlock: task.toBlock
+                            },
+                            keepTrying > 5
+                        );
+
                         result = result.map(task.self.app.models.event.transformWeb3Event);
+                        resultIDA = resultIDA.map(task.self.app.models.event.transformWeb3Event)
+                            .filter(i => i.eventName !== undefined);
+
                         for(let event of result) {
-                                const agreementId = task.self.app.protocol.generateId(event.sender, event.receiver);
-                                const hashId = task.self.app.protocol.generateId(event.token, agreementId); 
-                                await FlowUpdatedModel.upsert({
-                                    address: event.address,
-                                    blockNumber: event.blockNumber,
-                                    superToken: event.token,
-                                    sender: event.sender,
-                                    receiver: event.receiver,
-                                    flowRate: event.flowRate,
-                                    agreementId: agreementId,
-                                    hashId: hashId
-                                });
+                            const agreementId = task.self.app.protocol.generateId(event.sender, event.receiver);
+                            const hashId = task.self.app.protocol.generateId(event.token, agreementId); 
+                            await FlowUpdatedModel.upsert({
+                                address: event.address,
+                                blockNumber: event.blockNumber,
+                                superToken: event.token,
+                                sender: event.sender,
+                                receiver: event.receiver,
+                                flowRate: event.flowRate,
+                                agreementId: agreementId,
+                                hashId: hashId
+                            });
+                        }
+                        for(let event of resultIDA) {
+                            await IDAModel.upsert({
+                                eventName: event.eventName,
+                                address: event.address,
+                                blockNumber: event.blockNumber,
+                                superToken: event.token,
+                                publisher: event.publisher,
+                                subscriber: event.subscriber,
+                                indexId: event.indexId,
+                            });
                         }
                         break;
                     } catch(error) {
                         keepTrying++;
-                        console.log("retry");
                         console.error(error);
                         if(keepTrying > task.self.numRetries) {
                             process.exit(1);

@@ -13,6 +13,7 @@ class Bootstrap {
         this.app = app;
         this.concurrency = this.app.config.CONCURRENCY;
         this.numRetries = this.app.config.NUM_RETRIES;
+        this.listenMode = this.app.config.LISTEN_MODE;
     }
 
     async start() {
@@ -25,33 +26,32 @@ class Bootstrap {
             blockNumber = systemInfo.blockNumber;
         }
         const currentBlockNumber = await this.app.client.getCurrentBlockNumber();
-        const pullStep = parseInt(this.app.config.PULL_STEP);
         if(blockNumber === currentBlockNumber) {
             return;
         }
         //TODO: return if wrong block numbers
         if (blockNumber < currentBlockNumber) {
             try {
-                let pastEvents = new Array();
-                let pullCounter = blockNumber;
                 let queue = async.queue(async function(task) {
                     let keepTrying = 1;
-                    while(keepTrying > 0) {
+                    while(true) {
                         try {
-                            const estimationData = await task.self.app.protocol.liquidationData(task.token, task.account);
-                            await EstimationModel.upsert({
-                                address: task.account,
-                                superToken: task.token,
-                                totalNetFlowRate: estimationData.totalNetFlowRate,
-                                totalBalance: estimationData.totalBalance,
-                                zestimation: new Date(estimationData.estimation).getTime(),
-                                zestimationHuman : estimationData.estimation,
-                                zlastChecked: task.self.app.getTimeUnix(),
-                                recalculate : 0,
-                                found: 0,
-                                now: 0,
-                            });
-                            keepTrying = 0;
+                            if(task.self.app.client.isSuperTokenRegister(task.token)) {
+                                const estimationData = await task.self.app.protocol.liquidationData(task.token, task.account);
+                                await EstimationModel.upsert({
+                                    address: task.account,
+                                    superToken: task.token,
+                                    totalNetFlowRate: estimationData.totalNetFlowRate,
+                                    totalBalance: estimationData.totalBalance,
+                                    zestimation: new Date(estimationData.estimation).getTime(),
+                                    zestimationHuman : estimationData.estimation,
+                                    zlastChecked: task.self.app.getTimeUnix(),
+                                    recalculate : 0,
+                                    found: 0,
+                                    now: 0,
+                                });
+                            }
+                            break;
                         } catch(error) {
                             keepTrying++;
                             console.error(error);

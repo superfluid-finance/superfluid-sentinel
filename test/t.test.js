@@ -1,12 +1,17 @@
 const Environment = require("@superfluid-finance/ethereum-contracts/scripts/deploy-test-environment");
+const IResolver = require("@superfluid-finance/ethereum-contracts/build/contracts/IResolver.json");
+const ICFA = require("@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json");
+const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IInstantDistributionAgreementV1.json");
+const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
+const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
+const IToken = require("@superfluid-finance/ethereum-contracts/build/contracts/TestToken.json");
+const TestGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/TestGovernance.json");
+
 const Web3 = require('web3');
 const ganache = require("../scripts/setGanache");
 const App = require("../src/app");
 
-let app;
-let accounts;
-let snapId;
-let web3;
+let app, accounts, snapId, web3, ida, cfa, host, supertoken, token, gov, resolver, resolverAddress;
 
 const setup = async () => {
     web3 = new Web3(ganache.provider);
@@ -16,7 +21,35 @@ const setup = async () => {
                 console.log(error);
         },{ web3: web3 }
     );
-    //Node Account: 0x868d9f52f84d33261c03c8b77999f83501cf5a99
+    resolverAddress = process.env.TEST_RESOLVER_ADDRESS;
+    const superfluidIdent = `Superfluid.test`;
+    resolver = new web3.eth.Contract(IResolver.abi,resolverAddress);
+    const superfluidAddress = await resolver.methods.get(superfluidIdent).call();
+    host = new web3.eth.Contract(ISuperfluid.abi,superfluidAddress);
+    const cfaIdent = web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
+    const idaIdent = web3.utils.sha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
+    const cfaAddress = await host.methods.getAgreementClass(cfaIdent).call();
+    const idaAddress = await host.methods.getAgreementClass(idaIdent).call();
+    cfa = new web3.eth.Contract(ICFA.abi, cfaAddress);
+    ida = new web3.eth.Contract(IIDA.abi, idaAddress);
+    const superTokenAddress = await resolver.methods.get("supertokens.test.fTUSDx").call();
+    superToken = new web3.eth.Contract(ISuperToken.abi, superTokenAddress);
+    const tokenAddress = await superToken.methods.getUnderlyingToken().call();
+    const govAddress = await resolver.methods.get("TestGovernance.test").call();
+    console.log("Governance Address ", govAddress);
+    token = new web3.eth.Contract(IToken.abi, tokenAddress);
+    /*
+    gov = new web3.eth.Contract(TestGovernance.abi, tokenAddress);
+    await gov.methods.setCFAv1LiquidationPeriod()
+    */
+
+    for(const account of accounts) {
+        await token.methods.mint(account,"10000000000000000000000").send({from: account});
+        await token.methods.approve(superTokenAddress, "10000000000000000000000").send({from: account});
+        await superToken.methods.upgrade("10000000000000000000000").send({from: account, gas:400000});
+    }
+
+    await web3.eth.sendTransaction({to:"0x868d9f52f84d33261c03c8b77999f83501cf5a99", from:accounts[9], value:web3.utils.toWei("10", "ether")})
 };
 
 const takeSnapshot = () => {
@@ -45,19 +78,13 @@ const revertToSnapShot = (id) => {
     })
 }
 
-const startNode = () => {
-    const { fork } = require("child_process");
-    const path = require("path");
-    const newProcess = fork(path.join(__dirname, "../bootNode"), []);
-}
-
 const bootNode = () => {
     app = new App({
         wsNode: "ws://127.0.0.1:8545",
         httpNode: "http://127.0.0.1:8545",
         mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
         epochBlock: 0,
-        DB: "TestDatabase.sqlite",
+        DB: "./TestDatabase.sqlite",
         prv: "test",
         timeoutFn: 300000,
         pullStep: 500000,
@@ -66,7 +93,7 @@ const bootNode = () => {
         coldBoot: 1,
         listenMode: 1,
         numberRetries: 3,
-        testResolver: process.env.TEST_RESOLVER_ADDRESS
+        testResolver: resolverAddress
     });
     app.start();
 }
@@ -74,6 +101,20 @@ const bootNode = () => {
 const closeNode = () => {
     if(app !== undefined)
         app.shutdown();
+}
+
+const waitForEvent = async (eventName) => {
+    while(true) {
+        try {
+            const blockNumber = await web3.eth.getBlockNumber();
+            const events = await superToken.getPastEvents(eventName, {fromBlock: blockNumber, toBlock: blockNumber});
+            if(events.length > 0) {
+                return events;
+            }
+        } catch(err) {
+            console.log(err);
+        }
+    }
 }
 
 describe("Integration scripts tests", () => {
@@ -91,14 +132,35 @@ describe("Integration scripts tests", () => {
         bootNode();
     });
 
-
    afterEach(async () => {
         closeNode();
     });
 
-    it("after", async () => {
-        //Start a stream
-        //
+    it("Create a CFA stream", async () => {
+        const data = cfa.methods.createFlow(
+            superToken._address,
+            accounts[2],
+            "100000000000",
+            "0x"
+        ).encodeABI();
+        await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
+        await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
+        console.log(await superToken.methods.balanceOf(accounts[0]).call());
+        const result = await waitForEvent("AgreementLiquidatedBy");
     });
 
+/*
+    it("22222 Create a CFA stream", async () => {
+        const data = cfa.methods.createFlow(
+            superToken._address,
+            accounts[4],
+            "100000000000",
+            "0x"
+        ).encodeABI();
+        await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[3], gas: 1000000});
+        await superToken.methods.transferAll(accounts[9]).send({from: accounts[3], gas: 1000000});
+        console.log(await superToken.methods.balanceOf(accounts[0]).call());
+        const result = await waitForEvent("AgreementLiquidatedBy");
+    });
+*/
 })

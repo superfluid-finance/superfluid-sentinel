@@ -8,26 +8,17 @@ on:
     branches:
       - '*'
 jobs:
-
   build:
+    name: Build and test of dev branch
 
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [12.x]
-
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        node-version: [12.x, 14.x]
 
     steps:
-
       - uses: actions/checkout@v2
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
 
       - name: Show contexts
         run: |
@@ -37,151 +28,12 @@ jobs:
           echo github.ref: ${{ github.ref }}
           echo github.head_ref: ${{ github.head_ref }}
           echo github.base_ref: ${{ github.base_ref }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
 
-      - name: Determine version
+      - name: Install, lint, build, and test
         run: |
-          VERSION=`basename "$GITHUB_REF"`
-          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Version is $VERSION"
-
-      - name: Building docker image (dev and prod_testnets)
-        if: github.ref == 'refs/heads/master'
-        run: |
-          echo "RELEASE_VERSION is $RELEASE_VERSION"
-          make VERSION=$RELEASE_VERSION build
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          ECR_URI: 403009971608.dkr.ecr.eu-west-2.amazonaws.com
-          AWS_DEFAULT_REGION: eu-west-2
-
-      - name: Push docker image (dev and prod_testnets)
-        # only push for master brach push
-        if: github.ref == 'refs/heads/master'
-        run: |
-          echo "RELEASE_VERSION is $RELEASE_VERSION"
-          make VERSION=$RELEASE_VERSION ecr-push
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          ECR_URI: 403009971608.dkr.ecr.eu-west-2.amazonaws.com
-          AWS_DEFAULT_REGION: eu-west-2
-
-      - name: Building docker image (prod_mainnet)
-        if: github.ref == 'refs/heads/release'
-        run: |
-          echo "RELEASE_VERSION is $RELEASE_VERSION"
-          make VERSION=$RELEASE_VERSION build
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.PROD_MAINNETS_BUILD_AGENT_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_MAINNETS_BUILD_AGENT_AWS_SECRET_ACCESS_KEY }}
-          ECR_URI: 862336426459.dkr.ecr.eu-west-2.amazonaws.com
-          AWS_DEFAULT_REGION: eu-west-2
-
-      - name: Push docker image (prod_mainnet)
-        # only push for master brach push
-        if: github.ref == 'refs/heads/release'
-        run: |
-          echo "RELEASE_VERSION is $RELEASE_VERSION"
-          make VERSION=$RELEASE_VERSION ecr-push
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.PROD_MAINNETS_BUILD_AGENT_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_MAINNETS_BUILD_AGENT_AWS_SECRET_ACCESS_KEY }}
-          ECR_URI: 862336426459.dkr.ecr.eu-west-2.amazonaws.com
-          AWS_DEFAULT_REGION: eu-west-2
-
-  deploy-testnets:
-
-    needs: build
-
-    # only deploy for master branch push
-    if: github.event_name  == 'push'
-
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        env_network: [dev-goerli, prod-goerli, prod-rinkeby, prod-ropsten, prod-mumbai, prod-kovan]
-
-    env:
-      AWS_DEFAULT_REGION: eu-west-2
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-    steps:
-
-      - name: Stop ECS ${{ matrix.env_network }} community-solvency service
-        if: github.ref == 'refs/heads/master' && github.event_name  == 'push'
-        run: >
-          aws ecs update-service
-          --cluster solvency-infra
-          --service ${{ matrix.env_network }}-community-solvency
-          --task-definition ${{ matrix.env_network }}-community-solvency
-          --desired-count 0
-
-      - name: Update ECS ${{ matrix.env_network }} community-solvency service
-        if: github.ref == 'refs/heads/master' && github.event_name  == 'push'
-        run: >
-          aws ecs update-service
-          --cluster solvency-infra
-          --service ${{ matrix.env_network }}-community-solvency
-          --task-definition ${{ matrix.env_network }}-community-solvency
-          --desired-count 1
-          --force-new-deployment
-
-      - name: Wait ECS ${{ matrix.env_network }} community-solvency service stabilize
-        if: github.ref == 'refs/heads/master' && github.event_name  == 'push'
-        run: >
-          timeout 300
-          aws ecs wait services-stable
-          --cluster solvency-infra
-          --services ${{ matrix.env_network }}-community-solvency
-
-  deploy-mainnet:
-
-    needs: build
-
-    # only deploy for master branch push
-    if: github.event_name  == 'push'
-
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        env_network: [prod-xdai, prod-matic]
-
-    env:
-      AWS_DEFAULT_REGION: eu-west-2
-      AWS_ACCESS_KEY_ID: ${{ secrets.PROD_MAINNETS_BUILD_AGENT_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_MAINNETS_BUILD_AGENT_AWS_SECRET_ACCESS_KEY }}
-
-    steps:
-
-      - name: Stop ECS ${{ matrix.env_network }} community-solvency service
-        if: github.ref == 'refs/heads/release' && github.event_name  == 'push'
-        run: >
-          aws ecs update-service
-          --cluster solvency-infra
-          --service ${{ matrix.env_network }}-community-solvency
-          --task-definition ${{ matrix.env_network }}-community-solvency
-          --desired-count 0
-
-      - name: Update ECS ${{ matrix.env_network }} solvency-agent service
-        if: github.ref == 'refs/heads/release' && github.event_name  == 'push'
-        run: >
-          aws ecs update-service
-          --cluster solvency-infra
-          --service ${{ matrix.env_network }}-community-solvency
-          --task-definition ${{ matrix.env_network }}-community-solvency
-          --desired-count 1
-          --force-new-deployment
-
-      - name: Wait ECS ${{ matrix.env_network }} community-solvency service stabilize
-        if: github.ref == 'refs/heads/release' && github.event_name  == 'push'
-        run: >
-          timeout 300
-          aws ecs wait services-stable
-          --cluster solvency-infra
-          --services ${{ matrix.env_network }}-community-solvency
+          npm install
+          npx mocha -t 1000000000000000000 test/t.test.js

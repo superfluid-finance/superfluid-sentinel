@@ -7,9 +7,13 @@ const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contra
 const IToken = require("@superfluid-finance/ethereum-contracts/build/contracts/TestToken.json");
 const TestGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/TestGovernance.json");
 
+const expect = require('chai').expect
 const Web3 = require('web3');
+const traveler = require("ganache-time-traveler");
 const ganache = require("../scripts/setGanache");
 const App = require("../src/app");
+
+const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
 
 let app, accounts, snapId, web3, ida, cfa, host, supertoken, token, gov, resolver, resolverAddress;
 
@@ -49,7 +53,7 @@ const setup = async () => {
         await superToken.methods.upgrade("10000000000000000000000").send({from: account, gas:400000});
     }
 
-    await web3.eth.sendTransaction({to:"0x868d9f52f84d33261c03c8b77999f83501cf5a99", from:accounts[9], value:web3.utils.toWei("10", "ether")})
+    await web3.eth.sendTransaction({to:AGENT_ACCOUNT, from:accounts[9], value:web3.utils.toWei("10", "ether")})
 };
 
 const takeSnapshot = () => {
@@ -78,6 +82,15 @@ const revertToSnapShot = (id) => {
     })
 }
 
+async function timeTravelOnce(time = TEST_TRAVEL_TIME) {
+    const block1 = await web3.eth.getBlock("latest");
+    console.log("current block time", block1.timestamp);
+    console.log(`time traveler going to the future +${time}...`);
+    await traveler.advanceTimeAndBlock(time);
+    const block2 = await web3.eth.getBlock("latest");
+    console.log("new block time", block2.timestamp);
+}
+
 const bootNode = () => {
     app = new App({
         wsNode: "ws://127.0.0.1:8545",
@@ -98,9 +111,9 @@ const bootNode = () => {
     app.start();
 }
 
-const closeNode = () => {
+const closeNode = async () => {
     if(app !== undefined)
-        app.shutdown();
+        return app.shutdown();
 }
 
 const waitForEvent = async (eventName) => {
@@ -145,22 +158,9 @@ describe("Integration scripts tests", () => {
         ).encodeABI();
         await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
         await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
+        await timeTravelOnce(60);
         console.log(await superToken.methods.balanceOf(accounts[0]).call());
         const result = await waitForEvent("AgreementLiquidatedBy");
+        expect(result[0].returnValues.liquidatorAccount).to.equal(AGENT_ACCOUNT);
     });
-
-/*
-    it("22222 Create a CFA stream", async () => {
-        const data = cfa.methods.createFlow(
-            superToken._address,
-            accounts[4],
-            "100000000000",
-            "0x"
-        ).encodeABI();
-        await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[3], gas: 1000000});
-        await superToken.methods.transferAll(accounts[9]).send({from: accounts[3], gas: 1000000});
-        console.log(await superToken.methods.balanceOf(accounts[0]).call());
-        const result = await waitForEvent("AgreementLiquidatedBy");
-    });
-*/
 })

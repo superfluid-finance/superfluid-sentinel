@@ -107,6 +107,14 @@ class LoadEvents {
                 group: ['superToken']
             });
 
+            /*const IDATokens =  await IDAModel.findAll({
+                    attributes: ['superToken'],
+                    group: ['superToken']
+                });
+*/
+
+            //console.log(IDATokens)
+
             //fresh database
             if(systemInfo === null) {
                 await SystemModel.create({
@@ -119,6 +127,7 @@ class LoadEvents {
                 await systemInfo.save();
             }
             await this.app.client.loadSuperTokens(tokens.map(({superToken}) => superToken));
+            //await this.app.client.loadSuperTokens(IDATokens.map(({superToken}) => superToken));
             console.debug("finish Past event to find SuperTokens");
         } catch(error) {
             this.app.logger.error(`loadEvents \n ${error}`);

@@ -62,7 +62,7 @@ class TxBuilder {
                 });
 
                 for(const flow of flows) {
-                    console.log(`${flow.superToken} : ${flow.sender} - ${flow.receiver}`);
+                    console.log(`token:${flow.superToken} sender: ${flow.sender} -> ${flow.receiver}`);
                     const tx = this.app.client.sf.methods.callAgreement(
                         this.app.client.CFAv1._address,
                         this.app.client.CFAv1.methods.deleteFlow(
@@ -72,6 +72,9 @@ class TxBuilder {
                             "0x").encodeABI(),
                         "0x"
                     ).encodeABI();
+
+                    //const result = await this.app.client.superTokens[flow.superToken].methods.isAccountCriticalNow(est.address).call()
+                    //console.log(`Query Insolvent: ${flow.superToken} : ${est.address} - result ${result}`);
 
                     if(await this.app.client.superTokens[flow.superToken]
                         .methods.isAccountCriticalNow(est.address).call())
@@ -116,7 +119,7 @@ class TxBuilder {
                             }
                         } catch(error) {
                             console.error(error);
-                            console.error("HERE");
+                            process.exit(1);
                         }
                     } else {
                         console.debug(`address ${flow.sender} is solvent at ${flow.superToken} with flow ${flow.flowRate}` );

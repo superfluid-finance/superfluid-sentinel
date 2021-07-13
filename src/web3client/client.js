@@ -27,7 +27,7 @@ class Client {
         this.web3;
         this.web3HTTP;
         this.version = this.app.config.PROTOCOL_RELEASE_VERSION;
-        this.initialize;
+        this.isInitialized;
     }
 
     async initialize() {
@@ -70,8 +70,9 @@ class Client {
         try {
             await this.initialize();
             await this._loadSuperfluidContracts();
-            this.initialize = true;
+            this.isInitialized = true;
             this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, 100);
+            console.log("Node account: ", this.agentAccounts.address);
             // Node HTTP
             this.app.logger.startSpinner("Connecting to Node: HTTP");
             this.web3HTTP.eth.transactionConfirmationBlocks = 3;

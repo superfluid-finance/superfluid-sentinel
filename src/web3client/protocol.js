@@ -2,6 +2,7 @@ const async = require("async");
 const BN = require("bn.js");
 const EstimationModel = require("../database/models/accountEstimationModel");
 const AgreementModel =  require("../database/models/agreementModel");
+const IDAModel = require("../database/models/IDAModel");
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function trigger(fn, ms) {
@@ -33,9 +34,9 @@ const estimationQueue = async.queue(async function(task) {
                 console.debug(`reject account: ${task.account } supertoken: ${task.token} not listed`);
             }
             break;
-        } catch(error) {
+        } catch(err) {
             keepTrying++
-            console.error(error);
+            console.error(`agreementUpdateQueue: ${err}`);
             if(keepTrying > task.self.numRetries) {
                 process.exit(1);
             }
@@ -97,9 +98,9 @@ const agreementUpdateQueue = async.queue(async function(task) {
                 }]);
             }
             break;
-        } catch(error) {
+        } catch(err) {
             keepTrying++;
-            console.error(error);
+            console.error(`agreementUpdateQueue: ${err}`);
             if(keepTrying > task.self.numRetries) {
                 process.exit(1);
             }
@@ -129,9 +130,9 @@ class Protocol {
                 timestamp
             ).call();
 
-        } catch(error) {
-            console.error(error)
-            throw Error(`account balance (${token}): ${error}`)
+        } catch(err) {
+            console.error(err)
+            throw Error(`account balance (${token}): ${err}`)
         }
     }
 
@@ -145,39 +146,54 @@ class Protocol {
                 account,
                 timestamp
             ).call();
-        } catch(error) {
-            console.error(error)
-            throw Error({msg: `account realtime balance: ${error}`, code: -1})
+        } catch(err) {
+            console.error(err)
+            throw Error({msg: `account realtime balance: ${err}`, code: -1})
         }
     }
 
     async getUserNetFlow(token, account) {
         try {
             return this.client.CFAv1.methods.getNetFlow(token, account).call();
-        } catch(error) {
-            console.log(error);
-            throw Error(`account flowRate: ${error}`)
+        } catch(err) {
+            console.error(err);
+            throw Error(`account flowRate: ${err}`);
         }
     }
 
     async getAgreementEvents(eventName, filter, ws = false) {
-        if(!ws) {
-            return this.client.CFAv1.getPastEvents(eventName, filter);
+        try {
+            if(!ws) {
+                return this.client.CFAv1.getPastEvents(eventName, filter);
+            }
+            return this.client.CFAv1WS.getPastEvents(eventName, filter);
+        } catch(err) {
+            console.error(err);
+            throw Error(`getAgreementEvents: ${err}`);
         }
-        return this.client.CFAv1WS.getPastEvents(eventName, filter);
     }
 
     async getIDAAgreementEvents(eventName, filter, ws = false) {
-        if(!ws) {
-            return this.client.IDAv1.getPastEvents(eventName, filter);
+        try {
+            if(!ws) {
+                return this.client.IDAv1.getPastEvents(eventName, filter);
+            }
+            return this.client.IDAv1WS.getPastEvents(eventName, filter);
+        } catch(err) {
+            console.error(err);
+            throw Error(`getAgreementEvents: ${err}`);
         }
-        return this.client.IDAv1WS.getPastEvents(eventName, filter);
     }
 
     getLastFlowUpdated(filter) {
-        return this.getLastFlowUpdated(
-            this.getAgreementEvents("FlowUpdated", filter)
-        );
+        try {
+            return this.getLastFlowUpdated(
+                this.getAgreementEvents("FlowUpdated", filter)
+            );
+        } catch(err) {
+            console.error(err);
+            throw Error(`getLastFlowUpdated: ${err}`);
+        }
     }
 
     getLatestFlows(flows) {
@@ -188,35 +204,45 @@ class Protocol {
     }
 
     getAllSuperTokensEvents(eventName, filter, ws = false) {
-        const keys = Object.keys(this.client.getSuperTokenInstances());
-        const arrPromise = new Array();
-        if(!ws) {
+        try {
+            const keys = Object.keys(this.client.getSuperTokenInstances());
+            const arrPromise = new Array();
+            if(!ws) {
+                for(const key of keys){
+                    arrPromise.push(
+                        this.client.superTokensHTTP[key].getPastEvents(eventName, filter)
+                    )
+                }
+                return arrPromise.flat();
+            }
             for(const key of keys){
                 arrPromise.push(
-                    this.client.superTokensHTTP[key].getPastEvents(eventName, filter)
+                    this.client.superTokens[key].getPastEvents(eventName, filter)
                 )
             }
             return arrPromise.flat();
+        } catch(err) {
+            console.error(err);
+            throw Error(`getAllSuperTokensEvents: ${err}`);
         }
-        for(const key of keys){
-            arrPromise.push(
-                this.client.superTokens[key].getPastEvents(eventName, filter)
-            )
-        }
-        return arrPromise.flat();
     }
 
     async liquidationData(token, account) {
-        const now = Math.floor(new Date().getTime() / 1000);
-        let arrPromise = [
-            this.getUserNetFlow(token, account),
-            this.getAccountRealtimeBalance(token,account,now)
-        ];
-        arrPromise = await Promise.all(arrPromise);
-        return this._getLiquidationData(
-            new BN(arrPromise[0]),
-            new BN(arrPromise[1].availableBalance),
-        );
+        try {
+            const now = Math.floor(new Date().getTime() / 1000);
+            let arrPromise = [
+                this.getUserNetFlow(token, account),
+                this.getAccountRealtimeBalance(token,account,now)
+            ];
+            arrPromise = await Promise.all(arrPromise);
+            return this._getLiquidationData(
+                new BN(arrPromise[0]),
+                new BN(arrPromise[1].availableBalance),
+            );
+        } catch(err) {
+            console.error(err);
+            throw Error(`getAllSuperTokensEvents: ${err}`);
+        }
     }
 
     async run(fn, time) {
@@ -233,13 +259,18 @@ class Protocol {
     }
 
     async subscribeAllTokensEvents() {
-        const superTokenInstances = this.client.getSuperTokenInstances();
-        for(let key of Object.keys(superTokenInstances)) {
-            this.subscribeEvents(key);
+        try {
+            const superTokenInstances = this.client.getSuperTokenInstances();
+            for(let key of Object.keys(superTokenInstances)) {
+                this.subscribeEvents(key);
+            }
+            console.debug("starting draining queues");
+            this.run(estimationQueue, 10000);
+            this.run(agreementUpdateQueue, 10000);
+        } catch(err) {
+            console.error(err);
+            throw Error(`subscribeAllTokensEvents: ${err}`);
         }
-        console.debug("starting draining queues");
-        this.run(estimationQueue, 10000);
-        this.run(agreementUpdateQueue, 10000);
     }
 
     async subscribeEvents(token) {
@@ -367,7 +398,6 @@ class Protocol {
                 if(err === undefined || err == null) {
                     let event = this.app.models.event.transformWeb3Event(evt);
                     if(this.client.isSuperTokenRegister(event.token)) {
-
                         console.debug(`IDA: ${event.eventName} detected`);
                         switch(event.eventName) {
                             case "IndexUpdated" : {
@@ -407,6 +437,8 @@ class Protocol {
                                 }
                             }
                         }
+                    } else {
+                        console.debug(`token:${event.token} is not register`);
                     }
                 } else {
                     console.error(err);
@@ -419,7 +451,12 @@ class Protocol {
         }
     }
     generateId(sender, receiver) {
-        return this.client.web3.utils.soliditySha3(sender, receiver);
+        try {
+            return this.client.web3.utils.soliditySha3(sender, receiver);
+        } catch(err) {
+            console.error(`${err}`);
+            throw Error(`generateId: ${err}`);
+        }
     }
 
     _getLiquidationData(totalNetFlowRate, totalBalance, totalDeposit) {
@@ -444,12 +481,6 @@ class Protocol {
         }
 
         return result;
-    }
-
-    async _printEstimationsToLog() {
-        const estimations  = await EstimationModel.findAll({
-            attributes: ['address', 'superToken', 'zestimation'],
-        });
     }
 }
 

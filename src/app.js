@@ -56,8 +56,8 @@ class App {
             this.protocol.unsubscribeTokens();
             this.protocol.unsubscribeAgreements();
             //await this.db.close();
-            //process.exit(0);
-            //return;
+            process.exit(0);
+            //return "exit";
         } catch(err) {
             console.error(`agent shutdown ${err}`);
             process.exit(1);

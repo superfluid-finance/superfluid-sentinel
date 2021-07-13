@@ -9,7 +9,7 @@ on:
       - '*'
 jobs:
   build:
-    name: Build and test of dev branch
+    name: Build and test of feature branches
 
     runs-on: ubuntu-latest
 

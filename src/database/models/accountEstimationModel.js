@@ -10,6 +10,13 @@ const AccountEstimationModel = db.define("estimations", {
         type: Sequelize.STRING,
         primaryKey: true
     },
+
+    totalNetFlowRate: {
+        type: Sequelize.STRING,
+    },
+    totalBalance: {
+        type: Sequelize.STRING,
+    },
     zestimation: {
         type: Sequelize.INTEGER,
         allowNull: false,

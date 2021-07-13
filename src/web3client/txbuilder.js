@@ -2,14 +2,14 @@ const { Op } = require("sequelize");
 const EstimationModel = require("../database/models/accountEstimationModel");
 const AgreementModel = require("../database/models/agreementModel");
 
-function promiseTimeout(promise, ms){
+function promiseTimeout(promise, ms) {
 
     let timeout = new Promise((resolve, reject) => {
         let id = setTimeout(() => {
             clearTimeout(id);
             reject(new Error("timeout rejection"))
         }, ms)
-    })
+    });
 
     // Returns a race between timeout and promise
     return Promise.race([
@@ -62,7 +62,7 @@ class TxBuilder {
                 });
 
                 for(const flow of flows) {
-                    console.log(`${flow.superToken} : ${flow.sender} - ${flow.receiver}`);
+                    console.log(`token:${flow.superToken} sender: ${flow.sender} -> ${flow.receiver}`);
                     const tx = this.app.client.sf.methods.callAgreement(
                         this.app.client.CFAv1._address,
                         this.app.client.CFAv1.methods.deleteFlow(
@@ -72,6 +72,9 @@ class TxBuilder {
                             "0x").encodeABI(),
                         "0x"
                     ).encodeABI();
+
+                    //const result = await this.app.client.superTokens[flow.superToken].methods.isAccountCriticalNow(est.address).call()
+                    //console.log(`Query Insolvent: ${flow.superToken} : ${est.address} - result ${result}`);
 
                     if(await this.app.client.superTokens[flow.superToken]
                         .methods.isAccountCriticalNow(est.address).call())
@@ -87,7 +90,6 @@ class TxBuilder {
                                 flowRate: flow.flowRate,
                                 tx: tx,
                                 gasPrice: gasPrice,
-                                //gasPrice: parseInt(this.app.config.GAS_PRICE),
                                 nonce: networkAccountNonce,
                                 chainId: chainId
                             }
@@ -117,6 +119,7 @@ class TxBuilder {
                             }
                         } catch(error) {
                             console.error(error);
+                            process.exit(1);
                         }
                     } else {
                         console.debug(`address ${flow.sender} is solvent at ${flow.superToken} with flow ${flow.flowRate}` );
@@ -131,11 +134,13 @@ class TxBuilder {
 
         const signed = await this.signTx(wallet, txObject);
         if(signed.error !== undefined) {
+
             if(signed.error === "Returned error: replacement transaction underpriced") {
                 console.debug("replacement transaction underpriced")
                 txObject.retry = txObject.retry + 1;
                 return this.sendWithRetry(wallet, txObject, ms);
             }
+
             if(signed.error === "Returned error: execution reverted: CFA: flow does not exist") {
                 console.debug("Flow don't exist anymore - reclaim nonce");
                 return undefined;

@@ -21,6 +21,9 @@ class EventModel {
                 receiver: event.returnValues.receiver,
                 to: event.returnValues.to,
                 from: event.returnValues.from,
+                publisher: event.returnValues.publisher,
+                indexId: event.returnValues.indexId,
+                subscriber: event.returnValues.subscriber,
                 amount: event.returnValues.amount,
                 value: event.returnValues.value,
                 flowRate: (isNaN(parseInt(event.returnValues.flowRate)) ?

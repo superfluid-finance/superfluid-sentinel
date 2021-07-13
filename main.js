@@ -7,3 +7,5 @@ async function main() {
 }
 
 main();
+//TODO: check if - else when there are not needed. Reduce to one if that returns
+//TODO: Apply backoff algo to WS reconnection

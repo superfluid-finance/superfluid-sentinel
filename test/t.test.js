@@ -92,7 +92,7 @@ async function timeTravelOnce(time = TEST_TRAVEL_TIME) {
     console.log("new block time", block2.timestamp);
 }
 
-const bootNode = () => {
+const bootNode = async () => {
     app = new App({
         wsNode: "ws://127.0.0.1:8545",
         httpNode: "http://127.0.0.1:8545",
@@ -110,22 +110,27 @@ const bootNode = () => {
         testResolver: resolverAddress
     });
     app.start();
+    while(!app.isInitialized()) {
+        await delay(3000);
+    }
 }
 
-const closeNode = async () => {
+const closeNode = async (force = false) => {
     if(app !== undefined)
-        return app.shutdown();
+        return app.shutdown(force);
 }
 
 const waitForEvent = async (eventName, blockNumber) => {
     while(true) {
         try {
             const newBlockNumber = await web3.eth.getBlockNumber();
+            console.log(`${blockNumber} - ${newBlockNumber}`);
             const events = await superToken.getPastEvents(eventName, {fromBlock: blockNumber, toBlock: newBlockNumber});
             if(events.length > 0) {
                 return events;
             }
-            await delay(150);
+            await delay(1000);
+            await timeTravelOnce(1);
         } catch(err) {
             console.log(err);
         }
@@ -143,31 +148,80 @@ describe("Integration scripts tests", () => {
     before(async function() {
         await setup();
         snapId = await takeSnapshot();
+        //await bootNode();
     });
 
     beforeEach(async () => {
         console.log("Revert to snapshot")
         revertToSnapShot(snapId);
-        //Start Node itseft
-        console.log("start agent");
-        bootNode();
+        //bootNode();
     });
 
    afterEach(async () => {
-        closeNode();
+        //closeNode();
     });
 
-    it("Create a CFA stream", async () => {
-        const data = cfa.methods.createFlow(
-            superToken._address,
-            accounts[2],
-            "100000000000",
-            "0x"
-        ).encodeABI();
-        await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
-        const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
-        await timeTravelOnce(60);
-        const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
-        expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+    after(async () => {
+        closeNode(true);
     });
+
+
+    it("Create a CFA stream", async () => {
+        try {
+            const data = cfa.methods.createFlow(
+                superToken._address,
+                accounts[2],
+                "100000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
+            await bootNode();
+            const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
+            await timeTravelOnce(60);
+            const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
+            expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+            //closeNode(true);
+        } catch(err) {
+            console.error(err);
+            closeNode(true);
+        }
+    });
+
+    it("Create IDA", async () => {
+        try {
+            const cfaData = cfa.methods.createFlow(
+                superToken._address,
+                accounts[2],
+                "100000000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, cfaData, "0x").send({from: accounts[5], gas: 1000000});
+            await bootNode();
+            const data = ida.methods.createIndex(
+                superToken._address, 6, "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(ida._address, data, "0x").send({from: accounts[5], gas: 1000000});
+            const subscriptionData = ida.methods.updateSubscription(
+                superToken._address, 6, accounts[1], 100, "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(ida._address, subscriptionData, "0x").send({from: accounts[5], gas: 1000000});
+            const approveSubData = ida.methods.approveSubscription(
+                    superToken._address,accounts[5],6,"0x"
+                ).encodeABI();
+            await host.methods.callAgreement(ida._address, approveSubData, "0x").send({from: accounts[1], gas: 1000000});
+            const balance = await superToken.methods.realtimeBalanceOfNow(accounts[5]).call();
+            const distData =  ida.methods.distribute(
+                superToken._address,
+                6,
+                balance.availableBalance,
+                "0x"
+            ).encodeABI();
+            const tx = await host.methods.callAgreement(ida._address, distData, "0x").send({from: accounts[5], gas: 1000000});
+            const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
+            expectLiquidation(result[0], AGENT_ACCOUNT, accounts[5]);
+        } catch(err) {
+            console.error(err);
+            closeNode(true);
+        }
+    })
 })

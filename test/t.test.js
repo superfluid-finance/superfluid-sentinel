@@ -17,6 +17,7 @@ const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
 
 let app, accounts, snapId, web3, ida, cfa, host, supertoken, token, gov, resolver, resolverAddress;
 
+const delay = ms => new Promise(res => setTimeout(res, ms))
 const setup = async () => {
     web3 = new Web3(ganache.provider);
     accounts = await web3.eth.getAccounts();
@@ -116,18 +117,25 @@ const closeNode = async () => {
         return app.shutdown();
 }
 
-const waitForEvent = async (eventName) => {
+const waitForEvent = async (eventName, blockNumber) => {
     while(true) {
         try {
-            const blockNumber = await web3.eth.getBlockNumber();
-            const events = await superToken.getPastEvents(eventName, {fromBlock: blockNumber, toBlock: blockNumber});
+            const newBlockNumber = await web3.eth.getBlockNumber();
+            const events = await superToken.getPastEvents(eventName, {fromBlock: blockNumber, toBlock: newBlockNumber});
             if(events.length > 0) {
                 return events;
             }
+            await delay(150);
         } catch(err) {
             console.log(err);
         }
     }
+}
+
+const expectLiquidation = (event, node, account) => {
+    expect(event.returnValues.liquidatorAccount).to.equal(node);
+    expect(event.returnValues.bailoutAmount).to.equal("0");
+    expect(event.returnValues.penaltyAccount).to.equal(account);
 }
 
 describe("Integration scripts tests", () => {
@@ -157,10 +165,9 @@ describe("Integration scripts tests", () => {
             "0x"
         ).encodeABI();
         await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
-        await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
+        const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
         await timeTravelOnce(60);
-        console.log(await superToken.methods.balanceOf(accounts[0]).call());
-        const result = await waitForEvent("AgreementLiquidatedBy");
-        expect(result[0].returnValues.liquidatorAccount).to.equal(AGENT_ACCOUNT);
+        const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
+        expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
     });
 })

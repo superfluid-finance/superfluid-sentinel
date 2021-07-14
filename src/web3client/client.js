@@ -27,7 +27,7 @@ class Client {
         this.web3;
         this.web3HTTP;
         this.version = this.app.config.PROTOCOL_RELEASE_VERSION;
-        this.isInitialized;
+        this.isInitialized = false;
     }
 
     async initialize() {
@@ -60,6 +60,7 @@ class Client {
                 throw Error("WS and HTTP point to different networks");
             }
             console.debug("chainId: ", await this.getNetworkId());
+            this.isInitialized = true;
         } catch(err) {
             this.app.logger.error(`Web3Client: ${err}`);
             throw new Error(`Web3Client: ${err}`);
@@ -70,7 +71,7 @@ class Client {
         try {
             await this.initialize();
             await this._loadSuperfluidContracts();
-            this.isInitialized = true;
+            
             this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, 100);
             console.log("Node account: ", this.agentAccounts.address);
             // Node HTTP

@@ -45,6 +45,10 @@ class App {
         await this.run(fn, time);
     }
 
+    isInitialized() {
+        return this.client.isInitialized;
+    }
+
     async shutdown(force = false) {
         console.debug(`agent shutting down...`)
         if(force) {
@@ -56,8 +60,8 @@ class App {
             this.protocol.unsubscribeTokens();
             this.protocol.unsubscribeAgreements();
             //await this.db.close();
-            process.exit(0);
-            //return "exit";
+            //process.exit(0);
+            return "exit";
         } catch(err) {
             console.error(`agent shutdown ${err}`);
             process.exit(1);
@@ -81,7 +85,7 @@ class App {
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
-            this.run(this.liquidation, 30000);
+            this.run(this.liquidation, 10000);
         } catch(error) {
             console.error(error);
             process.exit(1);

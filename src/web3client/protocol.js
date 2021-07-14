@@ -282,6 +282,7 @@ class Protocol {
                     async(err, evt) => {
                         if (err === undefined || err == null) {
                             let event = this.app.models.event.transformWeb3Event(evt);
+                            console.debug(`${event.eventName} detected`);
                             switch(event.eventName) {
                                 case "AgreementStateUpdated" : {
                                     agreementUpdateQueue.push({

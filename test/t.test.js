@@ -180,7 +180,6 @@ describe("Integration scripts tests", () => {
             await timeTravelOnce(60);
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
-            //closeNode(true);
         } catch(err) {
             console.error(err);
             closeNode(true);

@@ -53,7 +53,7 @@ class App {
         console.debug(`agent shutting down...`)
         if(force) {
             console.error(`force shutdown`);
-            process.exit(1);
+            process.exit(0);
         }
 
         try {

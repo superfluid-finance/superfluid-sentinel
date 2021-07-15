@@ -49,6 +49,10 @@ class App {
         return this.client.isInitialized;
     }
 
+    async getEstimations() {
+        return this.db.queries.getEstimations();
+    }
+
     async shutdown(force = false) {
         console.debug(`agent shutting down...`)
         if(force) {

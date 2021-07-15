@@ -8,6 +8,8 @@ class Config {
             this.MNEMONIC = config.mnemonic;
             this.EPOCH_BLOCK = config.epochBlock;
             this.DB = config.DB;
+            process.env.DB = this.DB;
+            console.log(process.env.DB);
             this.PROTOCOL_RELEASE_VERSION = config.prv;
             this.TIMEOUT_FN = config.timeoutFn;
             this.PULL_STEP = config.pullStep;

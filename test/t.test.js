@@ -17,7 +17,11 @@ const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
 
 let app, accounts, snapId, web3, ida, cfa, host, supertoken, token, gov, resolver, resolverAddress;
 
-const delay = ms => new Promise(res => setTimeout(res, ms))
+const delay = ms => new Promise(res => setTimeout(res, ms));
+const exitWithError = (error) => {
+    console.error(error);
+    process.exit(1);
+}
 const setup = async () => {
     web3 = new Web3(ganache.provider);
     accounts = await web3.eth.getAccounts();
@@ -98,7 +102,7 @@ const bootNode = async () => {
         httpNode: "http://127.0.0.1:8545",
         mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
         epochBlock: 0,
-        DB: "./TestDatabase.sqlite",
+        DB: "./mydatabase.sqlite",
         prv: "test",
         timeoutFn: 300000,
         pullStep: 500000,
@@ -121,6 +125,7 @@ const closeNode = async (force = false) => {
 }
 
 const waitForEvent = async (eventName, blockNumber) => {
+    await printEstimations();
     while(true) {
         try {
             const newBlockNumber = await web3.eth.getBlockNumber();
@@ -132,9 +137,18 @@ const waitForEvent = async (eventName, blockNumber) => {
             await delay(1000);
             await timeTravelOnce(1);
         } catch(err) {
-            console.log(err);
+            exitWithError(err);
         }
     }
+}
+
+const printEstimations = async () => {
+    console.log("==========ESTIMATIONS==========");
+    const estimations = await app.getEstimations();
+    for(const est of estimations) {
+        console.log(`SuperToken: ${est.superToken} - account: ${est.address} : ${new Date(est.zestimation) }`);
+    }
+    console.log("===============================");
 }
 
 const expectLiquidation = (event, node, account) => {
@@ -153,7 +167,7 @@ describe("Integration scripts tests", () => {
 
     beforeEach(async () => {
         console.log("Revert to snapshot")
-        revertToSnapShot(snapId);
+        await revertToSnapShot(snapId.id);
         //bootNode();
     });
 
@@ -164,7 +178,6 @@ describe("Integration scripts tests", () => {
     after(async () => {
         closeNode(true);
     });
-
 
     it("Create a CFA stream", async () => {
         try {
@@ -181,8 +194,35 @@ describe("Integration scripts tests", () => {
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
         } catch(err) {
-            console.error(err);
-            closeNode(true);
+            exitWithError(err);
+        }
+    });
+
+    it("Create small stream then updated to bigger stream", async () => {
+        try {
+            const data = cfa.methods.createFlow(
+                superToken._address,
+                accounts[2],
+                "1000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
+            await bootNode();
+            await timeTravelOnce(60);
+            const dataUpdate = cfa.methods.updateFlow(
+                superToken._address,
+                accounts[2],
+                "1000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, dataUpdate, "0x").send({from: accounts[0], gas: 1000000});
+            await timeTravelOnce(60);
+            const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
+            //await timeTravelOnce(60);
+            const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
+            expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+        } catch(err) {
+            exitWithError(err);
         }
     });
 
@@ -219,8 +259,7 @@ describe("Integration scripts tests", () => {
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[5]);
         } catch(err) {
-            console.error(err);
-            closeNode(true);
+            exitWithError(err);
         }
     })
 })

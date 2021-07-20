@@ -227,6 +227,33 @@ describe("Integration scripts tests", () => {
         }
     });
 
+    it("Create one out going stream and receive a smaller incoming stream", async () => {
+        try {
+            const sendingFlowData = cfa.methods.createFlow(
+                superToken._address,
+                accounts[2],
+                "1000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, sendingFlowData, "0x").send({from: accounts[0], gas: 1000000});
+            await bootNode();
+            await timeTravelOnce(60);
+            const receivingFlowData = cfa.methods.createFlow(
+                superToken._address,
+                accounts[0],
+                "10000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, receivingFlowData, "0x").send({from: accounts[2], gas: 1000000});
+            await timeTravelOnce(60);
+            const tx = await superToken.methods.transferAll(accounts[5]).send({from: accounts[0], gas: 1000000});
+            const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
+            expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
+
     it("Create IDA", async () => {
         try {
             const cfaData = cfa.methods.createFlow(
@@ -262,5 +289,6 @@ describe("Integration scripts tests", () => {
         } catch(err) {
             exitWithError(err);
         }
-    })
+    });
+
 });

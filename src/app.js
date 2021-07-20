@@ -5,6 +5,7 @@ const Protocol = require("./web3client/protocol");
 const LoadEvents = require("./loadEvents");
 const Liquidation = require("./web3client/txbuilder");
 const Gas = require("./transaction/gas");
+const Time = require("./utils/time");
 
 const EventModel = require("./models/EventModel");
 const Bootstrap = require("./bootstrap.js");
@@ -33,6 +34,7 @@ class App {
         this.models = models;
         this.liquidation = new Liquidation(this);
         this.bootstrap = new Bootstrap(this);
+        this.time = new Time(this);
         this.getTimeUnix = utils.getTimeUnix;
         this.genAccounts = utils.generateAccounts;
         this.utils = utils;
@@ -55,14 +57,18 @@ class App {
 
     async shutdown(force = false) {
         console.debug(`agent shutting down...`)
+        this.time.resetTime();
         if(force) {
             console.error(`force shutdown`);
             process.exit(0);
         }
 
         try {
+            this.time.resetTime();
             this.protocol.unsubscribeTokens();
             this.protocol.unsubscribeAgreements();
+            //this.client.web3.currentProvider.disconnect();
+            //this.client.web3HTTP.currentProvider.disconnect();
             //await this.db.close();
             //process.exit(0);
             return "exit";
@@ -72,8 +78,11 @@ class App {
         }
     }
 
-    async start() {
+    setTime(time) {
+        this.time.setTime(time);
+    }
 
+    async start() {
         try {
 
             if(this.config.COLD_BOOT) {

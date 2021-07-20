@@ -27,9 +27,11 @@ class TxBuilder {
 
     async start() {
         console.log("Running liquidation");
-        let now = new Date();
-        let checkDate = new Date();
-        checkDate.setDate(now.getDate());
+        //let now = new Date();
+        //let checkDate = new Date();
+        //checkDate.setDate(now.getDate());
+        let checkDate = this.app.time.getTime();
+        console.log(`------> ${checkDate.getTime()}`)
         const estimations  = await EstimationModel.findAll({
             attributes: ['address', 'superToken', 'zestimation'],
             where:

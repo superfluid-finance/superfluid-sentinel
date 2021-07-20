@@ -94,6 +94,8 @@ async function timeTravelOnce(time = TEST_TRAVEL_TIME) {
     await traveler.advanceTimeAndBlock(time);
     const block2 = await web3.eth.getBlock("latest");
     console.log("new block time", block2.timestamp);
+    app.setTime(block2.timestamp * 1000);
+    return block2.timestamp;
 }
 
 const bootNode = async () => {
@@ -184,13 +186,12 @@ describe("Integration scripts tests", () => {
             const data = cfa.methods.createFlow(
                 superToken._address,
                 accounts[2],
-                "100000000000",
+                "10000000000000000",
                 "0x"
             ).encodeABI();
             await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
             await bootNode();
             const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
-            await timeTravelOnce(60);
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
         } catch(err) {
@@ -262,4 +263,4 @@ describe("Integration scripts tests", () => {
             exitWithError(err);
         }
     })
-})
+});

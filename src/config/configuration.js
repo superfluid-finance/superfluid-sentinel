@@ -17,7 +17,8 @@ class Config {
             this.COLD_BOOT = config.coldBoot;
             this.LISTEN_MODE = config.listenMode;
             this.NUM_RETRIES = config.numberRetries;
-            this.TEST_RESOLVER = config.testResolver;
+            this.TEST_RESOLVER = config.testResolver
+            this.shutdownOnError = false;
 
         } else {
             this.WS_NODE = process.env.WS_NODE;

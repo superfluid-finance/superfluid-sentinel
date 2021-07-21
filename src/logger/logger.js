@@ -8,8 +8,8 @@ class Logger {
         this.logs = new Array();
         this.logger = winston.createLogger({
             transports: [
-                new winston.transports.Console(),
-                new ArrayTransport({ array: this.logs, json: true, level: 'error' })
+                new winston.transports.Console({'timestamp':true}),
+                new ArrayTransport({ array: this.logs, json: true, level: "error" })
             ]
         });
     }
@@ -28,6 +28,9 @@ class Logger {
 
     error(message) {
         this.logger.error(message);
+        if(this.config.shutdownOnError) {
+            this.app.shutdown();
+        }
     }
 
     warn(message) {

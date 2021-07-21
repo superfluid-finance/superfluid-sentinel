@@ -241,11 +241,13 @@ class Protocol {
             );
         } catch(err) {
             console.error(err);
-            throw Error(`getAllSuperTokensEvents: ${err}`);
+            throw Error(`liquidationData: ${err}`);
         }
     }
 
     async run(fn, time) {
+        if(this.app._isShutdown)
+            return;
         await trigger(fn, time);
         await this.run(fn, time);
     }
@@ -329,18 +331,23 @@ class Protocol {
         }
     }
 
-    unsubscribeTokens() {
+    async unsubscribeTokens() {
+        
         this.subs.forEach(function(value, key) {
             console.debug(`unsubscribing to supertoken ${key}`);
             value.unsubscribe();
-          })
+          });
+        await estimationQueue.drain();
+        estimationQueue.kill();
     }
 
-    unsubscribeAgreements() {
+    async unsubscribeAgreements() {
         this.subsAgreements.forEach(function(value, key) {
             console.debug(`unsubscribing to agreement ${key}`);
             value.unsubscribe();
-          })
+        });
+        await agreementUpdateQueue.drain();
+        agreementUpdateQueue.kill();
     }
 
     async subscribeAgreementEvents() {

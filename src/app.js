@@ -40,9 +40,12 @@ class App {
         this.utils = utils;
         this.db = DB;
         this.db.queries = new Repository(this);
+        this._isShutdown
     }
 
     async run(fn, time) {
+        if(this._isShutdown)
+            return;
         await trigger(fn, time);
         await this.run(fn, time);
     }
@@ -56,6 +59,7 @@ class App {
     }
 
     async shutdown(force = false) {
+        this._isShutdown = true;
         console.debug(`agent shutting down...`)
         this.time.resetTime();
         if(force) {
@@ -64,13 +68,13 @@ class App {
         }
 
         try {
-            this.time.resetTime();
-            this.protocol.unsubscribeTokens();
-            this.protocol.unsubscribeAgreements();
-            //this.client.web3.currentProvider.disconnect();
-            //this.client.web3HTTP.currentProvider.disconnect();
-            //await this.db.close();
+            await this.protocol.unsubscribeTokens();
+            await this.protocol.unsubscribeAgreements();
+            this.client.web3.currentProvider.disconnect();
+            this.client.web3HTTP.currentProvider.disconnect();
+            await this.db.close();
             //process.exit(0);
+            this.time.resetTime();
             return "exit";
         } catch(err) {
             console.error(`agent shutdown ${err}`);
@@ -84,7 +88,7 @@ class App {
 
     async start() {
         try {
-
+            this._isShutdown = false;
             if(this.config.COLD_BOOT) {
                 await this.db.sync({ force: true });
             } else {

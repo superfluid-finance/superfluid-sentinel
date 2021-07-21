@@ -1,4 +1,4 @@
-const { QueryTypes, Op, ValidationError } = require("sequelize");
+const { QueryTypes, Op } = require("sequelize");
 const EstimationModel = require("../database/models/accountEstimationModel");
 
 class Repository {
@@ -64,6 +64,16 @@ class Repository {
       replacements: [{ pb: publisher }, {st: superToken}],
       type: QueryTypes.SELECT
     });
+  }
+
+  async getAddressEstimation(address) {
+    return EstimationModel.findAll({
+      attributes: ['address', 'superToken', 'zestimation'],
+      where:
+      {
+          address:  address
+      }
+  });
   }
 
   async getEstimations() {

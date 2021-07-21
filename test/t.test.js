@@ -254,6 +254,35 @@ describe("Integration scripts tests", () => {
         }
     });
 
+    it.only("Create a stream with big flow rate, then update the stream with smaller flow rate", async () => {
+        try {
+            const flowData = cfa.methods.createFlow(
+                superToken._address,
+                accounts[2],
+                "1000000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, flowData, "0x").send({from: accounts[0], gas: 1000000});
+            await bootNode();
+            await timeTravelOnce(60);
+            const firstEstimatin = await app.db.queries.getAddressEstimation(accounts[0]);
+            const updateData = cfa.methods.updateFlow(
+                superToken._address,
+                accounts[2],
+                "1",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, updateData, "0x").send({from: accounts[0], gas: 1000000});
+            await timeTravelOnce(60);
+            const secondEstimation = await app.db.queries.getAddressEstimation(accounts[0]);
+            expect(firstEstimatin[0].zestimation).to.not.equal(32503593600000);
+            //the stream is soo small that we mark as not a real estimation
+            expect(secondEstimation[0].zestimation).to.equal(32503593600000);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
+
     it("Create IDA", async () => {
         try {
             const cfaData = cfa.methods.createFlow(

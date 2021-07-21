@@ -75,13 +75,13 @@ class Client {
             this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, 100);
             console.log("Node account: ", this.agentAccounts.address);
             // Node HTTP
-            this.app.logger.startSpinner("Connecting to Node: HTTP");
+            this.app.logger.info("Connecting to Node: HTTP");
             this.web3HTTP.eth.transactionConfirmationBlocks = 3;
-            this.app.logger.stopSpinnerWithSuccess("Node connected (HTTP)");
+            this.app.logger.info("Node connected (HTTP)");
             // Node Websocket
-            this.app.logger.startSpinner("Connecting to Node: WS");
+            this.app.logger.info("Connecting to Node: WS");
             this.web3.eth.transactionConfirmationBlocks = 3;
-            this.app.logger.stopSpinnerWithSuccess("Node connected (WS)");
+            this.app.logger.info("Node connected (WS)");
         } catch(err) {
             this.app.logger.error(err);
             throw err;

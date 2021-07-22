@@ -284,8 +284,7 @@ describe("Integration scripts tests", () => {
         }
     });
 
-
-    it.only("Create two outgoing streams, and new total outflow rate should apply to the agent estimation logic", async () => {
+    it("Create two outgoing streams, and new total outflow rate should apply to the agent estimation logic", async () => {
         try {
             const flowData = cfa.methods.createFlow(
                 superToken._address,
@@ -373,6 +372,34 @@ describe("Integration scripts tests", () => {
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[5]);
         } catch(err) {
+            exitWithError(err);
+        }
+    });
+
+
+    it.only("Start node, subscribe to new Token and perform estimation", async () => {
+        try {
+            await bootNode();
+            const data = cfa.methods.createFlow(
+                superToken._address,
+                accounts[2],
+                "10000000000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
+            while(true) {
+                const estimation = await app.db.queries.getAddressEstimation(accounts[0]);
+                if(estimation.length > 0) {
+                    console.log(estimation);
+                    break;
+                }
+                await delay(1000);
+            }
+            await delay(1000);
+            const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
+            const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
+            expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+        } catch(err) {
             exitWithError(err);
         }
     });

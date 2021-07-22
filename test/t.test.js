@@ -87,14 +87,15 @@ const revertToSnapShot = (id) => {
     })
 }
 
-async function timeTravelOnce(time = TEST_TRAVEL_TIME) {
+async function timeTravelOnce(time, setAppTime = false) {
     const block1 = await web3.eth.getBlock("latest");
     console.log("current block time", block1.timestamp);
     console.log(`time traveler going to the future +${time}...`);
     await traveler.advanceTimeAndBlock(time);
     const block2 = await web3.eth.getBlock("latest");
     console.log("new block time", block2.timestamp);
-    app.setTime(block2.timestamp * 1000);
+    if(setAppTime)
+        app.setTime(block2.timestamp * 1000);
     return block2.timestamp;
 }
 
@@ -137,7 +138,7 @@ const waitForEvent = async (eventName, blockNumber) => {
                 return events;
             }
             await delay(1000);
-            await timeTravelOnce(1);
+            await timeTravelOnce(1, true);
         } catch(err) {
             exitWithError(err);
         }
@@ -194,6 +195,7 @@ describe("Integration scripts tests", () => {
             const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+            console.log(app.logger.logs);
         } catch(err) {
             exitWithError(err);
         }
@@ -254,7 +256,62 @@ describe("Integration scripts tests", () => {
         }
     });
 
-    it.only("Create a stream with big flow rate, then update the stream with smaller flow rate", async () => {
+    it("Create one out going stream and receive a bigger incoming stream", async () => {
+        try {
+            const sendingFlowData = cfa.methods.createFlow(
+                superToken._address,
+                accounts[2],
+                "100000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, sendingFlowData, "0x").send({from: accounts[0], gas: 1000000});
+            await bootNode();
+            const receivingFlowData = cfa.methods.createFlow(
+                superToken._address,
+                accounts[0],
+                "1000000000000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, receivingFlowData, "0x").send({from: accounts[5], gas: 1000000});
+            await timeTravelOnce(10000, true);
+            await printEstimations();
+            const estimation = await app.db.queries.getAddressEstimation(accounts[0]);
+            console.log(estimation);
+            //the stream is soo small that we mark as not a real estimation
+            //expect(secondEstimation[0].zestimation).to.equal(32503593600000);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
+
+
+    it.only("Create two outgoing streams, and new total outflow rate should apply to the agent estimation logic", async () => {
+        try {
+            const flowData = cfa.methods.createFlow(
+                superToken._address,
+                accounts[2],
+                "100000000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, flowData, "0x").send({from: accounts[0], gas: 1000000});
+            await bootNode();
+            await timeTravelOnce(3600, true);
+            const flowData2 = cfa.methods.createFlow(
+                superToken._address,
+                accounts[3],
+                "1000000000000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, flowData2, "0x").send({from: accounts[0], gas: 1000000});
+            await timeTravelOnce(7000, true);
+            const result = await waitForEvent("AgreementLiquidatedBy", 0);
+            expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
+
+    it("Create a stream with big flow rate, then update the stream with smaller flow rate", async () => {
         try {
             const flowData = cfa.methods.createFlow(
                 superToken._address,

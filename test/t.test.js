@@ -160,6 +160,11 @@ const expectLiquidation = (event, node, account) => {
     expect(event.returnValues.penaltyAccount).to.equal(account);
 }
 
+const expectBailout = (event, node, account) => {
+    expect(event.returnValues.liquidatorAccount).to.equal(node);
+    expect(event.returnValues.bailoutAmount).not.equal("0");
+    expect(event.returnValues.penaltyAccount).to.equal(account);
+}
 describe("Integration scripts tests", () => {
 
     before(async function() {
@@ -376,8 +381,7 @@ describe("Integration scripts tests", () => {
         }
     });
 
-
-    it.only("Start node, subscribe to new Token and perform estimation", async () => {
+    it("Start node, subscribe to new Token and perform estimation", async () => {
         try {
             await bootNode();
             const data = cfa.methods.createFlow(
@@ -403,5 +407,23 @@ describe("Integration scripts tests", () => {
             exitWithError(err);
         }
     });
-
+    it.only("When token is listed afterwards, and there is already existing negative accounts, liquidations should still be performed", async () => {
+        try {
+            const data = cfa.methods.createFlow(
+                superToken._address,
+                accounts[2],
+                "10000000000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
+            const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
+            const timestamp = timeTravelOnce(3600);
+            await bootNode();
+            app.setTime(timestamp * 1000);
+            const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
+            expectBailout(result[0], AGENT_ACCOUNT, accounts[0]);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
 });

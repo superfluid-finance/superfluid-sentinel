@@ -9,7 +9,6 @@ class Config {
             this.EPOCH_BLOCK = config.epochBlock;
             this.DB = config.DB;
             process.env.DB = this.DB;
-            console.log(process.env.DB);
             this.PROTOCOL_RELEASE_VERSION = config.prv;
             this.TIMEOUT_FN = config.timeoutFn;
             this.PULL_STEP = config.pullStep;
@@ -19,6 +18,7 @@ class Config {
             this.NUM_RETRIES = config.numberRetries;
             this.TEST_RESOLVER = config.testResolver
             this.shutdownOnError = false;
+            this.retryTx = false;
 
         } else {
             this.WS_NODE = process.env.WS_NODE;

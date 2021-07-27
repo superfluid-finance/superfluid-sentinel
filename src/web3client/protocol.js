@@ -36,7 +36,7 @@ const estimationQueue = async.queue(async function(task) {
             break;
         } catch(err) {
             keepTrying++
-            console.error(`agreementUpdateQueue: ${err}`);
+            this.app.logger.error(err);
             if(keepTrying > task.self.numRetries) {
                 process.exit(1);
             }
@@ -332,7 +332,7 @@ class Protocol {
     }
 
     async unsubscribeTokens() {
-        
+
         this.subs.forEach(function(value, key) {
             console.debug(`unsubscribing to supertoken ${key}`);
             value.unsubscribe();
@@ -353,7 +353,7 @@ class Protocol {
     async subscribeAgreementEvents() {
         try {
         const CFA = this.client.CFAv1WS;
-        this.app.logger.log("starting listen CFAv1: " + CFA._address);
+        this.app.logger.info("starting listen CFAv1: " + CFA._address);
         this.subsAgreements.set(CFA._address, CFA.events.FlowUpdated(async(err, evt) => {
             if(err === undefined || err == null) {
                 let event = this.app.models.event.transformWeb3Event(evt);
@@ -387,12 +387,12 @@ class Protocol {
                     ]);
                 }
             } else {
-                console.error(err);
+                this.app.logger.error(err);
                 process.exit(1);
             }
         }));
         } catch(err) {
-            console.error(`agreement subscription ${err}`);
+            this.app.logger.error(err);
             throw Error(`agreement subscription ${err}`);
         }
     }
@@ -449,12 +449,12 @@ class Protocol {
                         console.debug(`token:${event.token} is not register`);
                     }
                 } else {
-                    console.error(err);
+                    this.app.logger.error(err);
                     process.exit(1);
                 }
         }));
         } catch(err) {
-            console.error(`ida agreement subscription ${err}`);
+            this.app.logger.error(err);
             throw Error(`ida agreement subscription ${err}`);
         }
     }
@@ -462,7 +462,7 @@ class Protocol {
         try {
             return this.client.web3.utils.soliditySha3(sender, receiver);
         } catch(err) {
-            console.error(`${err}`);
+            this.app.logger.error(err);
             throw Error(`generateId: ${err}`);
         }
     }

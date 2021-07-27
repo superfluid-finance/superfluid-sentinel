@@ -407,7 +407,7 @@ describe("Integration scripts tests", () => {
             exitWithError(err);
         }
     });
-    it.only("When token is listed afterwards, and there is already existing negative accounts, liquidations should still be performed", async () => {
+    it("When token is listed afterwards, and there is already existing negative accounts, liquidations should still be performed", async () => {
         try {
             const data = cfa.methods.createFlow(
                 superToken._address,
@@ -425,5 +425,20 @@ describe("Integration scripts tests", () => {
         } catch(err) {
             exitWithError(err);
         }
+    });
+
+    it.only("Scale gas on timeout", async () => {
+        await bootNode();
+        app.config.retryTx = true;
+        const data = cfa.methods.createFlow(
+            superToken._address,
+            accounts[2],
+            "10000000000000000",
+            "0x"
+        ).encodeABI();
+        await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
+        const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
+        const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
+        expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
     });
 });

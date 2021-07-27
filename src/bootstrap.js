@@ -118,9 +118,8 @@ class Bootstrap {
                 systemInfo.blockNumber = currentBlockNumber;
                 await systemInfo.save();
                 console.debug("finish bootstrap");
-            } catch(error) {
-                console.log(error);
-                this.app.logger.error(`\nbootstrap error: \n ${error}`);
+            } catch(err) {
+                this.app.logger.error(err);
                 process.exit(1);
             }
         } else {

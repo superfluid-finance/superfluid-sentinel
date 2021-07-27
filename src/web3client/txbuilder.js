@@ -113,11 +113,8 @@ class TxBuilder {
                                 networkAccountNonce++;
                                 const result = await this.sendWithRetry(wallet, txObject, this.timeout);
                                 if(result === undefined) {
-
                                     console.error("error with tx");
-
                                     //TODO: Resolve this type of errors.
-
                                 }
                             }
                         } catch(error) {
@@ -155,10 +152,22 @@ class TxBuilder {
 
         try {
             console.log("waiting until timeout");
-            const tx =  await promiseTimeout(
-                this.app.client.web3HTTP.eth.sendSignedTransaction(signed.tx.rawTransaction),
-                ms
-            );
+            let tx;
+            if(this.app.config.retryTx) {
+                tx =  await promiseTimeout(
+                    this.app.client.sendSignTxTimeout(
+                        signed.tx.rawTransaction,
+                        ms * 2,
+                        3
+                        ),
+                    ms
+                );
+            } else {
+                tx =  await promiseTimeout(
+                    this.app.client.web3HTTP.eth.sendSignedTransaction(signed.tx.rawTransaction),
+                    ms
+                );
+            }
             return tx;
 
         } catch(error) {
@@ -198,7 +207,7 @@ class TxBuilder {
             if(txObject.retry > 1) {
                 console.log("update gas price");
                 console.log("old gasprice: ", txObject.gasPrice);
-                gasPrice = Math.ceil(txObject.gasPrice + txObject.gasPrice * txObject.step * (txObject.retry - 1));
+                gasPrice = Math.ceil(parseInt(txObject.gasPrice) + parseInt(txObject.gasPrice) * txObject.step * (txObject.retry - 1));
                 txObject.gasPrice = gasPrice;
                 console.log("new gasprice: ", gasPrice);
             }

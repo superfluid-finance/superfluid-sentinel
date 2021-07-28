@@ -36,4 +36,4 @@ jobs:
       - name: Install, lint, build, and test
         run: |
           npm install
-          npx mocha -t 1000000 test/t.test.js
+          npx mocha -t 1000000 test/integration.test.js

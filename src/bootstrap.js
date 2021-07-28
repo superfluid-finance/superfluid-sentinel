@@ -114,14 +114,12 @@ class Bootstrap {
                         await est.destroy();
                     }
                 }
-                this.app.logger.stopSpinnerWithSuccess("Getting Agreements");
+                this.app.logger.info("Getting Agreements");
                 systemInfo.blockNumber = currentBlockNumber;
                 await systemInfo.save();
                 console.debug("finish bootstrap");
-            } catch(error) {
-                console.log(error);
-                this.app.logger.error(`\nbootstrap error: \n ${error}`);
-                this.app.logger.stopSpinnerWithError("Bootstrap");
+            } catch(err) {
+                this.app.logger.error(err);
                 process.exit(1);
             }
         } else {

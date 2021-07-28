@@ -12,20 +12,20 @@ class Gas {
                 to: txObject.target,
                 data: txObject.tx
                 });
-            return {gasLimit : result, error: undefined};
+            return { gasLimit : result, error: undefined };
         } catch(err) {
-            return {gasLimit : undefined, error: err};
+            return { gasLimit : undefined, error: err };
         }
     }
 
     async getPrice() {
         try {
             const price = this.app.client.web3HTTP.eth.getGasPrice();
-            return {gasPrice: price, error: undefined};
+            return { gasPrice: price, error: undefined };
         } catch(err) {
-            return {gasPrice : undefined, error: err};
+            return { gasPrice : undefined, error: err };
         }
     }
 }
-    
+
 module.exports = Gas;

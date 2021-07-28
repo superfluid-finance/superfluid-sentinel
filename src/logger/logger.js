@@ -1,52 +1,40 @@
-const ora = require("ora");
+const winston = require("winston");
+const ArrayTransport = require("winston-array-transport");
 
 class Logger {
 
     constructor(app) {
-        this.spinner = new ora({
-            spinner: "dots6"
-        });
         this.app = app;
-    }
-
-    startSpinner(message) {
-        this.spinner.start(message);
-    }
-
-    stopSpinnerWithSuccess(message) {
-        this.spinner.succeed(message);
-    }
-
-    stopSpinnerWithError(message) {
-        this.spinner.fail(message);
-    }
-
-    spotSpinnerWithWarn(message) {
-        this.spinner.warn(message);
-    }
-
-    spotSpinnerWithInfo(message) {
-        this.spinner.info(message);
+        this.logs = new Array();
+        this.logger = winston.createLogger({
+            transports: [
+                new winston.transports.Console({'timestamp':true}),
+                new ArrayTransport({ array: this.logs, json: true, level: "error" })
+            ]
+        });
     }
 
     log(message) {
-        console.log(message);
+        this.logger.log("info", message);
     }
 
     info(message) {
-        console.info(message);
+        this.logger.info(message);
     }
 
     debug(message) {
-        console.debug(message);
+        this.logger.debug(message);
     }
 
     error(message) {
-        console.error(message);
+        this.logger.error(message);
+        if(this.config.shutdownOnError) {
+            this.app.shutdown();
+        }
     }
 
     warn(message) {
-        console.warn(message);
+        this.logger.warn(message);
     }
 }
 

@@ -8,6 +8,7 @@ class Config {
             this.MNEMONIC = config.mnemonic;
             this.EPOCH_BLOCK = config.epochBlock;
             this.DB = config.DB;
+            process.env.DB = this.DB;
             this.PROTOCOL_RELEASE_VERSION = config.prv;
             this.TIMEOUT_FN = config.timeoutFn;
             this.PULL_STEP = config.pullStep;
@@ -15,7 +16,9 @@ class Config {
             this.COLD_BOOT = config.coldBoot;
             this.LISTEN_MODE = config.listenMode;
             this.NUM_RETRIES = config.numberRetries;
-            this.TEST_RESOLVER = config.testResolver;
+            this.TEST_RESOLVER = config.testResolver
+            this.shutdownOnError = false;
+            this.retryTx = false;
 
         } else {
             this.WS_NODE = process.env.WS_NODE;

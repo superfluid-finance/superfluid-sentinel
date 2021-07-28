@@ -1,4 +1,5 @@
-const { QueryTypes, Op, ValidationError } = require("sequelize");
+const { QueryTypes, Op } = require("sequelize");
+const EstimationModel = require("../database/models/accountEstimationModel");
 
 class Repository {
 
@@ -48,7 +49,7 @@ class Repository {
     WHERE P.flowRate <> 0`;
     return this.app.db.query(sqlquery, {
       replacements: { bn: fromBlock },
-      type: QueryTypes.SELECT 
+      type: QueryTypes.SELECT
     });
 
   }
@@ -63,6 +64,31 @@ class Repository {
       replacements: [{ pb: publisher }, {st: superToken}],
       type: QueryTypes.SELECT
     });
+  }
+
+  async getAddressEstimation(address) {
+    return EstimationModel.findAll({
+      attributes: ['address', 'superToken', 'zestimation'],
+      where:
+      {
+          address:  address
+      }
+  });
+  }
+
+  async getEstimations() {
+    return EstimationModel.findAll({
+      attributes: ['address', 'superToken', 'zestimation'],
+      where:
+      {
+          [Op.or]: [
+              { now : true},
+              {
+                  zestimation: { [Op.gt]: 0 }
+              }
+          ]
+      }
+  });
   }
 }
 

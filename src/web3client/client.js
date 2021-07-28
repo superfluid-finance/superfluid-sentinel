@@ -27,11 +27,10 @@ class Client {
         this.web3;
         this.web3HTTP;
         this.version = this.app.config.PROTOCOL_RELEASE_VERSION;
-        this.isInitialized;
+        this.isInitialized = false;
     }
 
     async initialize() {
-        this.app.logger.debug(`initialize()`);
         try {
             const web3 = new Web3.providers.WebsocketProvider(this.app.config.WS_NODE, {
                 timeout: 10000,
@@ -60,27 +59,28 @@ class Client {
                 throw Error("WS and HTTP point to different networks");
             }
             console.debug("chainId: ", await this.getNetworkId());
+            this.isInitialized = true;
         } catch(err) {
-            this.app.logger.error(`Web3Client: ${err}`);
+            this.app.logger.error(err);
             throw new Error(`Web3Client: ${err}`);
         }
     }
 
     async start() {
         try {
+            this.app.logger.info(`Web3Client start`);
             await this.initialize();
             await this._loadSuperfluidContracts();
-            this.isInitialized = true;
             this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, 100);
-            console.log("Node account: ", this.agentAccounts.address);
+            this.app.logger.info(`Node account: ${this.agentAccounts.address}`);
             // Node HTTP
-            this.app.logger.startSpinner("Connecting to Node: HTTP");
+            this.app.logger.info("Connecting to Node: HTTP");
             this.web3HTTP.eth.transactionConfirmationBlocks = 3;
-            this.app.logger.stopSpinnerWithSuccess("Node connected (HTTP)");
+            this.app.logger.info("Node connected (HTTP)");
             // Node Websocket
-            this.app.logger.startSpinner("Connecting to Node: WS");
+            this.app.logger.info("Connecting to Node: WS");
             this.web3.eth.transactionConfirmationBlocks = 3;
-            this.app.logger.stopSpinnerWithSuccess("Node connected (WS)");
+            this.app.logger.info("Node connected (WS)");
         } catch(err) {
             this.app.logger.error(err);
             throw err;
@@ -114,8 +114,8 @@ class Client {
             const idaIdent = this.web3HTTP.utils.sha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
             const cfaAddress = await this.sf.methods.getAgreementClass(cfaIdent).call();
             const idaAddress = await this.sf.methods.getAgreementClass(idaIdent).call();
-            console.log("CFA: ", cfaAddress);
-            console.log("IDA: ", idaAddress);
+            this.app.logger.info(`CFA address: ${cfaAddress}`);
+            this.app.logger.info(`IDA address: ${cfaAddress}`);
             this.CFAv1 = new this.web3HTTP.eth.Contract(ICFA.abi, cfaAddress);
             this.CFAv1WS = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
             this.IDAv1 = new this.web3HTTP.eth.Contract(IIDA.abi, idaAddress);
@@ -145,7 +145,7 @@ class Client {
             })
             await Promise.all(promises);
         } catch(err) {
-            console.error(`load DB SuperTokens ${err}`);
+            this.app.logger.error(err);
             throw new Error(`load DB SuperTokens: ${err}`);
         }
     }
@@ -158,7 +158,7 @@ class Client {
         })
         await Promise.all(promises)
         } catch(err) {
-            console.error(`Load SuperTokens ${err}`);
+            this.app.logger.error(err);
             throw new Error(`Load SuperTokens ${err}`);
         }
     }
@@ -176,21 +176,19 @@ class Client {
                 superTokenWS.methods.symbol().call()
             ]
         );
-
-        console.log(`token: ${tokenSymbol} - ${tokenName} : ${newSuperToken}`);
         const superTokenAddress = await this.resolver.methods.get(
             `supertokens.${this.version}.${tokenSymbol}`
         ).call();
 
         let isListed = 0;
         if(superTokenAddress === superTokenWS._address) {
-            console.log("adding listed SuperToken ", superTokenAddress);
+            this.app.logger.info(`add listed SuperToken (${tokenSymbol} -  ${tokenName}): ${superTokenAddress}`);
             this.superTokens[superTokenAddress] = superTokenWS;
             this.superTokensHTTP[superTokenAddress] = superTokenHTTP;
             this.superTokensCount++;
             isListed = 1;
         } else if(this.app.config.LISTEN_MODE == 1) {
-            console.log("adding non listed SuperToken ", superTokenWS._address);
+            this.app.logger.info(`add non listed SuperToken (${tokenSymbol} -  ${tokenName}): ${superTokenAddress}`);
             console.log(this.app.config.LISTEN_MODE);
             this.superTokens[superTokenWS._address] = superTokenWS;
             this.superTokensHTTP[superTokenHTTP._address] = superTokenHTTP;
@@ -240,7 +238,7 @@ class Client {
     async getCurrentBlockNumber() {
         return await new this.web3HTTP.eth.getBlockNumber();
     }
-
+    //Add parameter
     async estimateGasPrice() {
         return this.web3HTTP.eth.getGasPrice();
     }
@@ -259,6 +257,16 @@ class Client {
             return 0;
         }
 
+    }
+
+    async sendSignTxTimeout(tx, ms, retries) {
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+        while(retries > 0) {
+            await delay(ms);
+            retries--;
+        }
+
+        return this.web3HTTP.eth.sendSignedTransaction(tx);
     }
 }
 

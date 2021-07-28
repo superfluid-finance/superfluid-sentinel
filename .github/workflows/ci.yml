@@ -1,15 +1,12 @@
 name: Dev CI/CD
 
 on:
-  push:
-    branches:
-      - '*'
   pull_request:
-    branches:
-      - '*'
+    types: [opened, reopened, ready_for_review, synchronize]
+
 jobs:
   build:
-    name: Build and test of feature branches
+    name: Build and test of feature branch
 
     runs-on: ubuntu-latest
 

@@ -12,8 +12,8 @@ class LoadEvents {
 
     async start() {
         try {
-            console.debug("getting Past event to find SuperTokens");
-            console.debug("using concurrency: ", this.concurrency);
+            this.app.logger.info("getting Past event to find SuperTokens");
+            this.app.logger.info(`using concurrency: ${this.concurrency}`);
             const systemInfo = await SystemModel.findOne();
             const lastEventBlockNumber = await FlowUpdatedModel.findOne({
                 order: [['blockNumber', 'DESC']]
@@ -30,12 +30,12 @@ class LoadEvents {
             }
             let pullCounter = blockNumber;
             let currentBlockNumber = await this.app.client.getCurrentBlockNumber();
-            console.debug(`scanning blocks from ${pullCounter} to ${currentBlockNumber}`);
+            this.app.logger.info(`scanning blocks from ${pullCounter} to ${currentBlockNumber}`);
             var queue = async.queue(async function(task) {
                 let keepTrying = 1;
                 while(true) {
                     try {
-                        console.debug(`#${keepTrying} - ${task.fromBlock} - ${task.toBlock}`);
+                        this.app.logger.info(`#${keepTrying}-${task.fromBlock}-${task.toBlock}`);
                         let result = await task.self.app.protocol.getAgreementEvents(
                             "FlowUpdated", {
                                 fromBlock: task.fromBlock,
@@ -58,7 +58,7 @@ class LoadEvents {
 
                         for(let event of result) {
                             const agreementId = task.self.app.protocol.generateId(event.sender, event.receiver);
-                            const hashId = task.self.app.protocol.generateId(event.token, agreementId); 
+                            const hashId = task.self.app.protocol.generateId(event.token, agreementId);
                             await FlowUpdatedModel.upsert({
                                 address: event.address,
                                 blockNumber: event.blockNumber,
@@ -82,9 +82,9 @@ class LoadEvents {
                             });
                         }
                         break;
-                    } catch(error) {
+                    } catch(err) {
                         keepTrying++;
-                        console.error(error);
+                        this.app.logger.error(err);
                         if(keepTrying > task.self.numRetries) {
                             process.exit(1);
                         }
@@ -111,7 +111,7 @@ class LoadEvents {
                     attributes: ['superToken'],
                     group: ['superToken']
                 });
-*/
+            */
 
             //console.log(IDATokens)
 
@@ -129,8 +129,8 @@ class LoadEvents {
             await this.app.client.loadSuperTokens(tokens.map(({superToken}) => superToken));
             //await this.app.client.loadSuperTokens(IDATokens.map(({superToken}) => superToken));
             console.debug("finish Past event to find SuperTokens");
-        } catch(error) {
-            this.app.logger.error(`loadEvents \n ${error}`);
+        } catch(err) {
+            this.app.logger.error(err);
             process.exit(1);
         }
     }

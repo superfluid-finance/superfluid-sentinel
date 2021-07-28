@@ -5,6 +5,7 @@ const Protocol = require("./web3client/protocol");
 const LoadEvents = require("./loadEvents");
 const Liquidation = require("./web3client/txbuilder");
 const Gas = require("./transaction/gas");
+const Time = require("./utils/time");
 
 const EventModel = require("./models/EventModel");
 const Bootstrap = require("./bootstrap.js");
@@ -33,41 +34,61 @@ class App {
         this.models = models;
         this.liquidation = new Liquidation(this);
         this.bootstrap = new Bootstrap(this);
+        this.time = new Time(this);
         this.getTimeUnix = utils.getTimeUnix;
         this.genAccounts = utils.generateAccounts;
         this.utils = utils;
         this.db = DB;
         this.db.queries = new Repository(this);
+        this._isShutdown
     }
 
     async run(fn, time) {
+        if(this._isShutdown)
+            return;
         await trigger(fn, time);
         await this.run(fn, time);
     }
 
+    isInitialized() {
+        return this.client.isInitialized;
+    }
+
+    async getEstimations() {
+        return this.db.queries.getEstimations();
+    }
+
     async shutdown(force = false) {
+        this._isShutdown = true;
         console.debug(`agent shutting down...`)
+        this.time.resetTime();
         if(force) {
             console.error(`force shutdown`);
-            process.exit(1);
+            process.exit(0);
         }
 
         try {
-            this.protocol.unsubscribeTokens();
-            this.protocol.unsubscribeAgreements();
-            //await this.db.close();
-            process.exit(0);
-            //return "exit";
+            await this.protocol.unsubscribeTokens();
+            await this.protocol.unsubscribeAgreements();
+            this.client.web3.currentProvider.disconnect();
+            this.client.web3HTTP.currentProvider.disconnect();
+            await this.db.close();
+            //process.exit(0);
+            this.time.resetTime();
+            return "exit";
         } catch(err) {
             console.error(`agent shutdown ${err}`);
             process.exit(1);
         }
     }
 
+    setTime(time) {
+        this.time.setTime(time);
+    }
+
     async start() {
-
         try {
-
+            this._isShutdown = false;
             if(this.config.COLD_BOOT) {
                 await this.db.sync({ force: true });
             } else {
@@ -81,7 +102,7 @@ class App {
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
-            this.run(this.liquidation, 30000);
+            this.run(this.liquidation, 10000);
         } catch(error) {
             console.error(error);
             process.exit(1);

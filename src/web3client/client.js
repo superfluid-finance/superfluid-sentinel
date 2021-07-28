@@ -259,6 +259,22 @@ class Client {
 
     }
 
+    async disconnect() {
+        this.web3.currentProvider.disconnect();
+        this.web3HTTP.currentProvider.disconnect();
+    }
+
+    async sendSignedTransaction(tx) {
+        return this.web3HTTP.eth.sendSignedTransaction(tx);
+    }
+
+    async signTransaction(unsignedTx, pk) {
+        return this.web3HTTP.eth.accounts.signTransaction(
+            unsignedTx,
+            pk
+        );
+    }
+
     async sendSignTxTimeout(tx, ms, retries) {
         const delay = ms => new Promise(res => setTimeout(res, ms));
         while(retries > 0) {

@@ -3,7 +3,7 @@ const Logger = require("./logger/logger");
 const Client = require("./web3client/client");
 const Protocol = require("./web3client/protocol");
 const LoadEvents = require("./loadEvents");
-const Liquidation = require("./web3client/txbuilder");
+const TxBuilder = require("./web3client/txbuilder");
 const Gas = require("./transaction/gas");
 const Time = require("./utils/time");
 
@@ -32,7 +32,7 @@ class App {
             event : new EventModel()
         };
         this.models = models;
-        this.liquidation = new Liquidation(this);
+        this.txbuilder = new TxBuilder(this);
         this.bootstrap = new Bootstrap(this);
         this.time = new Time(this);
         this.getTimeUnix = utils.getTimeUnix;
@@ -70,8 +70,7 @@ class App {
         try {
             await this.protocol.unsubscribeTokens();
             await this.protocol.unsubscribeAgreements();
-            this.client.web3.currentProvider.disconnect();
-            this.client.web3HTTP.currentProvider.disconnect();
+            this.client.disconnect();
             await this.db.close();
             //process.exit(0);
             this.time.resetTime();
@@ -98,11 +97,11 @@ class App {
             await this.client.start();
             await this.loadEvents.start();
             await this.bootstrap.start();
-            await this.liquidation.start();
+            await this.txbuilder.start();
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
-            this.run(this.liquidation, 10000);
+            this.run(this.txbuilder, 10000);
         } catch(error) {
             console.error(error);
             process.exit(1);

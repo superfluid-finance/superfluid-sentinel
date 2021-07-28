@@ -22,7 +22,7 @@ class TxBuilder {
 
     constructor(app) {
         this.app = app;
-        this.timeout = this.app.config.TIMEOUT_FN;
+        this.timeout = 10000//this.app.config.TIMEOUT_FN;
     }
 
     async start() {
@@ -164,7 +164,7 @@ class TxBuilder {
                 );
             } else {
                 tx =  await promiseTimeout(
-                    this.app.client.web3HTTP.eth.sendSignedTransaction(signed.tx.rawTransaction),
+                    this.app.client.sendSignedTransaction(signed.tx.rawTransaction),
                     ms
                 );
             }
@@ -221,7 +221,7 @@ class TxBuilder {
                 gasPrice: gasPrice,
                 gasLimit : txObject.gasLimit
             };
-            const signed = await this.app.client.web3HTTP.eth.accounts.signTransaction(
+            const signed = await this.app.client.signTransaction(
                 unsignedTx,
                 wallet._privateKey.toString("hex")
             );

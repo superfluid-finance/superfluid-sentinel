@@ -35,7 +35,7 @@ class LoadEvents {
                 let keepTrying = 1;
                 while(true) {
                     try {
-                        this.app.logger.info(`#${keepTrying}-${task.fromBlock}-${task.toBlock}`);
+                        task.self.app.logger.info(`#${keepTrying}-${task.fromBlock}-${task.toBlock}`);
                         let result = await task.self.app.protocol.getAgreementEvents(
                             "FlowUpdated", {
                                 fromBlock: task.fromBlock,
@@ -84,7 +84,7 @@ class LoadEvents {
                         break;
                     } catch(err) {
                         keepTrying++;
-                        this.app.logger.error(err);
+                        task.self.app.logger.error(err);
                         if(keepTrying > task.self.numRetries) {
                             process.exit(1);
                         }

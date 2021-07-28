@@ -28,6 +28,7 @@ class Client {
         this.web3HTTP;
         this.version = this.app.config.PROTOCOL_RELEASE_VERSION;
         this.isInitialized = false;
+        this._testMode;
     }
 
     async initialize() {
@@ -264,8 +265,17 @@ class Client {
         this.web3HTTP.currentProvider.disconnect();
     }
 
-    async sendSignedTransaction(tx) {
-        return this.web3HTTP.eth.sendSignedTransaction(tx);
+    async sendSignedTransaction(signed) {
+        if(this._testMode === "TIMEOUT_ON_LOW_GAS_PRICE") {
+            if(signed.tx.txObject.gasPrice <= this._testOption.minimumGas) {
+                const delay = ms => new Promise(res => setTimeout(res, ms));
+                await delay(signed.tx.timeout * 2);
+            } else {
+                return this.web3HTTP.eth.sendSignedTransaction(signed.tx.rawTransaction);
+            }
+        } else {
+            return this.web3HTTP.eth.sendSignedTransaction(signed.tx.rawTransaction);
+        }
     }
 
     async signTransaction(unsignedTx, pk) {
@@ -275,14 +285,19 @@ class Client {
         );
     }
 
-    async sendSignTxTimeout(tx, ms, retries) {
+    async _sendSignTxTimeout(tx, ms, retries) {
         const delay = ms => new Promise(res => setTimeout(res, ms));
         while(retries > 0) {
             await delay(ms);
             retries--;
         }
 
-        return this.web3HTTP.eth.sendSignedTransaction(tx);
+        return this.sendSignedTransaction(tx);
+    }
+
+    setTestFlag(flag, options) {
+        this._testMode = flag;
+        this._testOption = options;
     }
 }
 

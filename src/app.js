@@ -3,7 +3,7 @@ const Logger = require("./logger/logger");
 const Client = require("./web3client/client");
 const Protocol = require("./web3client/protocol");
 const LoadEvents = require("./loadEvents");
-const TxBuilder = require("./web3client/txbuilder");
+const Liquidator = require("./web3client/liquidator");
 const Gas = require("./transaction/gas");
 const Time = require("./utils/time");
 
@@ -32,7 +32,7 @@ class App {
             event : new EventModel()
         };
         this.models = models;
-        this.txbuilder = new TxBuilder(this);
+        this.liquidator = new Liquidator(this);
         this.bootstrap = new Bootstrap(this);
         this.time = new Time(this);
         this.getTimeUnix = utils.getTimeUnix;
@@ -85,6 +85,12 @@ class App {
         this.time.setTime(time);
     }
 
+    setTestFlag(flag, options) {
+        console.log("Setting flasgs");
+        console.log("flag ", flag);
+        this.client.setTestFlag(flag, options);
+    }
+
     async start() {
         try {
             this._isShutdown = false;
@@ -97,11 +103,11 @@ class App {
             await this.client.start();
             await this.loadEvents.start();
             await this.bootstrap.start();
-            await this.txbuilder.start();
+            await this.liquidator.start();
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
-            this.run(this.txbuilder, 10000);
+            this.run(this.liquidator, 10000);
         } catch(error) {
             console.error(error);
             process.exit(1);

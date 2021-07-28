@@ -22,10 +22,16 @@ class TxBuilder {
 
     constructor(app) {
         this.app = app;
-        this.timeout = 10000//this.app.config.TIMEOUT_FN;
+        this.timeout = 5000//this.app.config.TIMEOUT_FN;
+        this.runningMux = false;
     }
 
     async start() {
+        if(this.runningMux) {
+            this.app.logger.warn("running liquidation skip - already running");
+            return;
+        }
+        this.runningMux = true;
         console.log("Running liquidation");
         //let now = new Date();
         //let checkDate = new Date();
@@ -76,9 +82,6 @@ class TxBuilder {
                         "0x"
                     ).encodeABI();
 
-                    //const result = await this.app.client.superTokens[flow.superToken].methods.isAccountCriticalNow(est.address).call()
-                    //console.log(`Query Insolvent: ${flow.superToken} : ${est.address} - result ${result}`);
-
                     if(await this.app.client.superTokens[flow.superToken]
                         .methods.isAccountCriticalNow(est.address).call())
                     {
@@ -128,11 +131,13 @@ class TxBuilder {
                 }
             }
         }
+        this.runningMux = false;
     }
 
     async sendWithRetry(wallet, txObject, ms) {
 
         const signed = await this.signTx(wallet, txObject);
+        signed.tx.timeout = ms;
         if(signed.error !== undefined) {
 
             if(signed.error === "Returned error: replacement transaction underpriced") {
@@ -152,22 +157,11 @@ class TxBuilder {
 
         try {
             console.log("waiting until timeout");
-            let tx;
-            if(this.app.config.retryTx) {
-                tx =  await promiseTimeout(
-                    this.app.client.sendSignTxTimeout(
-                        signed.tx.rawTransaction,
-                        ms * 2,
-                        3
-                        ),
-                    ms
-                );
-            } else {
-                tx =  await promiseTimeout(
-                    this.app.client.sendSignedTransaction(signed.tx.rawTransaction),
-                    ms
-                );
-            }
+            const tx =  await promiseTimeout(
+                this.app.client.sendSignedTransaction(signed),
+                ms
+            );
+
             return tx;
 
         } catch(error) {
@@ -225,6 +219,7 @@ class TxBuilder {
                 unsignedTx,
                 wallet._privateKey.toString("hex")
             );
+            signed.txObject = txObject;
             return { tx: signed, error: undefined };
         } catch(error) {
             return { tx: undefined, error: error};

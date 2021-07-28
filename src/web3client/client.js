@@ -67,7 +67,7 @@ class Client {
         }
     }
 
-    async start() {
+    async init() {
         try {
             this.app.logger.info(`Web3Client start`);
             await this.initialize();

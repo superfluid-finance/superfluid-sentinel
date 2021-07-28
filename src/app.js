@@ -20,7 +20,7 @@ async function trigger(fn, time = 15000) {
 }
 
 class App {
-
+    //Load all dependancies needed to run the agent
     constructor(config) {
         this.config = new Config(config);
         this.logger = new Logger(this);
@@ -49,15 +49,16 @@ class App {
         await trigger(fn, time);
         await this.run(fn, time);
     }
-
+    //return if client module is initialized
     isInitialized() {
         return this.client.isInitialized;
     }
-
+    //return estimations saved on database
     async getEstimations() {
         return this.db.queries.getEstimations();
     }
 
+    //close agent processes and exit
     async shutdown(force = false) {
         this._isShutdown = true;
         console.debug(`agent shutting down...`)
@@ -72,7 +73,6 @@ class App {
             await this.protocol.unsubscribeAgreements();
             this.client.disconnect();
             await this.db.close();
-            //process.exit(0);
             this.time.resetTime();
             return "exit";
         } catch(err) {
@@ -81,10 +81,14 @@ class App {
         }
     }
 
+    //set agent time.
+    //Note: the agent will not update this timestamp.
+    //Use a external service to update when needed. ex. ganache
     setTime(time) {
         this.time.setTime(time);
     }
 
+    //Set client testing flags to change behavior
     setTestFlag(flag, options) {
         console.log("Setting flasgs");
         console.log("flag ", flag);
@@ -95,18 +99,24 @@ class App {
         try {
             this._isShutdown = false;
             if(this.config.COLD_BOOT) {
+                //drop existing database to force a full boot
                 await this.db.sync({ force: true });
             } else {
                 await this.db.sync();
             }
 
-            await this.client.start();
+            //create all web3 infrastruture needed
+            await this.client.init();
+            //Collect events to detect superTokens and accounts
             await this.loadEvents.start();
+            //query balances to make liquidations estimations
             await this.bootstrap.start();
+            //run one time the liquidation job as soon as possible
             await this.liquidator.start();
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
+            //run liquidation job every x seconds
             this.run(this.liquidator, 10000);
         } catch(error) {
             console.error(error);

@@ -7,9 +7,10 @@ on:
   pull_request:
     branches:
       - '*'
+
 jobs:
   build:
-    name: Build and test of dev branch
+    name: Build and test of feature branch
 
     runs-on: ubuntu-latest
 

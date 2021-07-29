@@ -129,7 +129,6 @@ class Client {
 
     async _loadSuperTokensFromDB() {
         try {
-            console.debug("load supertoken from database");
             let filter = {
                 attributes: ['address'],
                 where: {listed: 1}
@@ -141,9 +140,9 @@ class Client {
                 };
             }
             const superTokensDB = await SuperTokenModel.findAll(filter);
-            let promises = superTokensDB.map(async (address) => {
-                return  this.loadSuperToken(address);
-            })
+            let promises = superTokensDB.map(async (token) => {
+                return this.loadSuperToken(token.address);
+            });
             await Promise.all(promises);
         } catch(err) {
             this.app.logger.error(err);
@@ -153,11 +152,11 @@ class Client {
 
     async loadSuperTokens(newSuperTokens) {
         try {
-        await this._loadSuperTokensFromDB();
-        let promises = newSuperTokens.map(async (token) => {
-            return  this.loadSuperToken(token);
-        })
-        await Promise.all(promises)
+            await this._loadSuperTokensFromDB();
+            let promises = newSuperTokens.map(async (token) => {
+                return  this.loadSuperToken(token);
+            })
+            await Promise.all(promises);
         } catch(err) {
             this.app.logger.error(err);
             throw new Error(`Load SuperTokens ${err}`);
@@ -168,7 +167,6 @@ class Client {
         if (this.superTokens.has(newSuperToken)) {
             return;
         }
-
         const superTokenWS = new this.web3.eth.Contract(ISuperToken.abi, newSuperToken);
         const superTokenHTTP = new this.web3HTTP.eth.Contract(ISuperToken.abi, newSuperToken);
         const [tokenName, tokenSymbol] = await Promise.all(
@@ -180,7 +178,6 @@ class Client {
         const superTokenAddress = await this.resolver.methods.get(
             `supertokens.${this.version}.${tokenSymbol}`
         ).call();
-
         let isListed = 0;
         if(superTokenAddress === superTokenWS._address) {
             this.app.logger.info(`add listed SuperToken (${tokenSymbol} -  ${tokenName}): ${superTokenAddress}`);

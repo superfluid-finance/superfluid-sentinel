@@ -17,9 +17,8 @@ class Bootstrap {
     }
 
     async start() {
-        console.debug("collecting events from the last boot or epoch block");
-        console.debug("using concurrency: ", this.concurrency);
-
+        this.app.logger.info("starting bootstrap");
+        this.app.logger.info(`using concurrency: ${this.concurrency}`);
         const systemInfo = await SystemModel.findOne();
         let blockNumber = parseInt(this.app.config.EPOCH_BLOCK);
         if(systemInfo !== null) {
@@ -37,6 +36,7 @@ class Bootstrap {
                     while(true) {
                         try {
                             if(task.self.app.client.isSuperTokenRegister(task.token)) {
+                                //task.self.app.logger.info(`getting info account: ${task.account} from supertoken:${task.token}`);
                                 const estimationData = await task.self.app.protocol.liquidationData(task.token, task.account);
                                 await EstimationModel.upsert({
                                     address: task.account,
@@ -110,14 +110,13 @@ class Bootstrap {
                         }
                     });
                     if(flows.length == 0) {
-                        console.debug(`${est.address} - no active streams at ${est.superToken}`);
+                        //console.debug(`${est.address} - no active streams at ${est.superToken}`);
                         await est.destroy();
                     }
                 }
-                this.app.logger.info("Getting Agreements");
                 systemInfo.blockNumber = currentBlockNumber;
                 await systemInfo.save();
-                console.debug("finish bootstrap");
+                this.app.logger.info("finish bootstrap");
             } catch(err) {
                 this.app.logger.error(err);
                 process.exit(1);

@@ -35,7 +35,7 @@ class LoadEvents {
                 let keepTrying = 1;
                 while(true) {
                     try {
-                        task.self.app.logger.info(`#${keepTrying}-${task.fromBlock}-${task.toBlock}`);
+                        task.self.app.logger.info(`getting blocks: trying #${keepTrying} - from:${task.fromBlock} to:${task.toBlock}`);
                         let result = await task.self.app.protocol.getAgreementEvents(
                             "FlowUpdated", {
                                 fromBlock: task.fromBlock,
@@ -106,15 +106,6 @@ class LoadEvents {
                 attributes: ['superToken'],
                 group: ['superToken']
             });
-
-            /*const IDATokens =  await IDAModel.findAll({
-                    attributes: ['superToken'],
-                    group: ['superToken']
-                });
-            */
-
-            //console.log(IDATokens)
-
             //fresh database
             if(systemInfo === null) {
                 await SystemModel.create({
@@ -127,8 +118,7 @@ class LoadEvents {
                 await systemInfo.save();
             }
             await this.app.client.loadSuperTokens(tokens.map(({superToken}) => superToken));
-            //await this.app.client.loadSuperTokens(IDATokens.map(({superToken}) => superToken));
-            console.debug("finish Past event to find SuperTokens");
+            this.app.logger.info("finish Past event to find SuperTokens");
         } catch(err) {
             this.app.logger.error(err);
             process.exit(1);

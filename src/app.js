@@ -20,7 +20,9 @@ async function trigger(fn, time = 15000) {
 }
 
 class App {
-    //Load all dependancies needed to run the agent
+    /*
+     * @dev Load all dependancies needed to run the agent
+    */
     constructor(config) {
         this.config = new Config(config);
         this.logger = new Logger(this);
@@ -111,6 +113,11 @@ class App {
             await this.loadEvents.start();
             //query balances to make liquidations estimations
             await this.bootstrap.start();
+            //cold boot take some time, we missed some blocks in the boot phase, run again to be near real.time
+            if(this.config.COLD_BOOT == 1) {
+                await this.loadEvents.start();
+                await this.bootstrap.start();
+            }
             //run one time the liquidation job as soon as possible
             await this.liquidator.start();
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);

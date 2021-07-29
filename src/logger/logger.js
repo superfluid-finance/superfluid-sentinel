@@ -28,7 +28,7 @@ class Logger {
 
     error(message) {
         this.logger.error(message);
-        if(this.config.shutdownOnError) {
+        if(this.app.config.shutdownOnError) {
             this.app.shutdown();
         }
     }

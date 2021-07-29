@@ -8,7 +8,6 @@ class Time {
 
     getTime() {
         if(this.baseTime === undefined) {
-            console.log("Base date is not defined: ", new Date())
             return new Date();
         }
 

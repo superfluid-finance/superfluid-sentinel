@@ -3,7 +3,7 @@ const Logger = require("./logger/logger");
 const Client = require("./web3client/client");
 const Protocol = require("./web3client/protocol");
 const LoadEvents = require("./loadEvents");
-const Liquidation = require("./web3client/txbuilder");
+const Liquidator = require("./web3client/liquidator");
 const Gas = require("./transaction/gas");
 const Time = require("./utils/time");
 
@@ -20,7 +20,9 @@ async function trigger(fn, time = 15000) {
 }
 
 class App {
-
+    /*
+     * @dev Load all dependancies needed to run the agent
+    */
     constructor(config) {
         this.config = new Config(config);
         this.logger = new Logger(this);
@@ -32,7 +34,7 @@ class App {
             event : new EventModel()
         };
         this.models = models;
-        this.liquidation = new Liquidation(this);
+        this.liquidator = new Liquidator(this);
         this.bootstrap = new Bootstrap(this);
         this.time = new Time(this);
         this.getTimeUnix = utils.getTimeUnix;
@@ -49,15 +51,16 @@ class App {
         await trigger(fn, time);
         await this.run(fn, time);
     }
-
+    //return if client module is initialized
     isInitialized() {
         return this.client.isInitialized;
     }
-
+    //return estimations saved on database
     async getEstimations() {
         return this.db.queries.getEstimations();
     }
 
+    //close agent processes and exit
     async shutdown(force = false) {
         this._isShutdown = true;
         console.debug(`agent shutting down...`)
@@ -70,10 +73,8 @@ class App {
         try {
             await this.protocol.unsubscribeTokens();
             await this.protocol.unsubscribeAgreements();
-            this.client.web3.currentProvider.disconnect();
-            this.client.web3HTTP.currentProvider.disconnect();
+            this.client.disconnect();
             await this.db.close();
-            //process.exit(0);
             this.time.resetTime();
             return "exit";
         } catch(err) {
@@ -82,27 +83,48 @@ class App {
         }
     }
 
+    //set agent time.
+    //Note: the agent will not update this timestamp.
+    //Use a external service to update when needed. ex. ganache
     setTime(time) {
         this.time.setTime(time);
+    }
+
+    //Set client testing flags to change behavior
+    setTestFlag(flag, options) {
+        console.log("Setting flasgs");
+        console.log("flag ", flag);
+        this.client.setTestFlag(flag, options);
     }
 
     async start() {
         try {
             this._isShutdown = false;
             if(this.config.COLD_BOOT) {
+                //drop existing database to force a full boot
                 await this.db.sync({ force: true });
             } else {
                 await this.db.sync();
             }
 
-            await this.client.start();
+            //create all web3 infrastruture needed
+            await this.client.init();
+            //Collect events to detect superTokens and accounts
             await this.loadEvents.start();
+            //query balances to make liquidations estimations
             await this.bootstrap.start();
-            await this.liquidation.start();
+            //cold boot take some time, we missed some blocks in the boot phase, run again to be near real.time
+            if(this.config.COLD_BOOT == 1) {
+                await this.loadEvents.start();
+                await this.bootstrap.start();
+            }
+            //run one time the liquidation job as soon as possible
+            await this.liquidator.start();
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
-            this.run(this.liquidation, 10000);
+            //run liquidation job every x seconds
+            this.run(this.liquidator, 10000);
         } catch(error) {
             console.error(error);
             process.exit(1);

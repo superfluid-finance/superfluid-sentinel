@@ -344,6 +344,10 @@ describe("Integration scripts tests", () => {
         }
     });
 
+    it("Should not make liquidations from not subscribed tokens", async () => {
+
+    });
+
     it("Create IDA", async () => {
         try {
             const cfaData = cfa.methods.createFlow(
@@ -407,6 +411,7 @@ describe("Integration scripts tests", () => {
             exitWithError(err);
         }
     });
+
     it("When token is listed afterwards, and there is already existing negative accounts, liquidations should still be performed", async () => {
         try {
             const data = cfa.methods.createFlow(
@@ -428,8 +433,9 @@ describe("Integration scripts tests", () => {
     });
 
     it.only("Scale gas on timeout", async () => {
+
         await bootNode();
-        app.config.retryTx = true;
+        app.setTestFlag("TIMEOUT_ON_LOW_GAS_PRICE", { minimumGas: 4000000000});
         const data = cfa.methods.createFlow(
             superToken._address,
             accounts[2],

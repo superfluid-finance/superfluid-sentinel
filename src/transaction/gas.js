@@ -7,7 +7,7 @@ class Gas {
     async getLimit(wallet, txObject) {
         try {
             console.log(this.app.client);
-            const result = await this.app.client.web3HTTP.eth.estimateGas({
+            const result = await this.app.client.estimateGas({
                 from: wallet.address,
                 to: txObject.target,
                 data: txObject.tx
@@ -20,7 +20,7 @@ class Gas {
 
     async getPrice() {
         try {
-            const price = this.app.client.web3HTTP.eth.getGasPrice();
+            const price = this.app.client.getGasPrice();
             return { gasPrice: price, error: undefined };
         } catch(err) {
             return { gasPrice : undefined, error: err };

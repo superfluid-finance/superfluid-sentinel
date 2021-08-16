@@ -31,11 +31,8 @@ class TxBuilder {
             this.app.logger.warn("running liquidation skip - already running");
             return;
         }
-        this.runningMux = true;
-        //let now = new Date();
-        //let checkDate = new Date();
-        //checkDate.setDate(now.getDate());
-        let checkDate = this.app.time.getTime();
+        //this.runningMux = true;
+        let checkDate = this.app.time.getTimeWithDelay(this.app.config.LIQUIDATION_DELAY);
         const estimations  = await EstimationModel.findAll({
             attributes: ['address', 'superToken', 'zestimation'],
             where:
@@ -47,7 +44,7 @@ class TxBuilder {
                             zestimation: { [Op.gt]: 0 }
                         },
                         {
-                            zestimation: { [Op.lte]: checkDate.getTime()}
+                            zestimation: { [Op.lte]: checkDate}
                         }
                       ]
                     }
@@ -129,7 +126,7 @@ class TxBuilder {
                 }
             }
         }
-        this.runningMux = false;
+        //this.runningMux = false;
     }
 
     async sendWithRetry(wallet, txObject, ms) {

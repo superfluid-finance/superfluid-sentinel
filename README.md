@@ -1,7 +1,7 @@
 # Superfluid Community Solvency Agent
 
 - This agent uses both HTTP and WS connection to EVM node.
-- Use sqlite as database layer, easy to change this if needed.
+- Use sqlite as database layer.
 - As this version the parameters are passing as env. variables.
 
 
@@ -59,11 +59,15 @@ _Check `package.json` to see more options_
 
 ## Concepts
 
-_Cold Boot_: No existing database at boot.
+_Cold Boot_: Fresh database at boot. (Old information will be deleted)
 
-_Insolvent Account_: Flows from account can be terminated.
+_Critical Account_: Flows that can be terminated.
+
+_Insolvent Account_: Sender account is negative.
 
 _Listed SuperTokens_: SuperTokens register in Superfluid resolver contract.
+
+_Non Listed SuperTokens_: SuperTokens not register in Superfluid resolver contract.
 
 
 # Code structure
@@ -109,27 +113,3 @@ When the agent submit one transaction it start a timeout clock, when the timeout
 
 We are now testing the web3 gasEstimation function to give us a base layer that we can work.
 ---
-
-# TODO
-
-## Parameters
-- Feed app parameters by env and args.
-
-## Account Management
-- Nonce management
-- Manager multi accounts
-
-## Transaction Management
-- Remove from database terminated flows (from event subscription module)
-- Retry strategy
-
-## Error management
-- Proper error management and resilience strategy
-
-## Misc
-- Remove all dependancies from JS-SDK (Superfluid)
-
-
-# Nodejs
-Find memory leaks
-

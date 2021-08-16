@@ -186,7 +186,7 @@ class Client {
             this.superTokensCount++;
             isListed = 1;
         } else if(this.app.config.LISTEN_MODE == 1) {
-            this.app.logger.info(`add non listed SuperToken (${tokenSymbol} -  ${tokenName}): ${superTokenAddress}`);
+            this.app.logger.info(`add non listed SuperToken (${tokenSymbol} -  ${tokenName}): ${newSuperToken}`);
             console.log(this.app.config.LISTEN_MODE);
             this.superTokens[superTokenWS._address] = superTokenWS;
             this.superTokensHTTP[superTokenHTTP._address] = superTokenHTTP;

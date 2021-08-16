@@ -92,8 +92,6 @@ class App {
 
     //Set client testing flags to change behavior
     setTestFlag(flag, options) {
-        console.log("Setting flasgs");
-        console.log("flag ", flag);
         this.client.setTestFlag(flag, options);
     }
 

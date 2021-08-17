@@ -31,7 +31,7 @@ class TxBuilder {
             this.app.logger.warn("running liquidation skip - already running");
             return;
         }
-        //this.runningMux = true;
+        this.runningMux = true;
         let checkDate = this.app.time.getTimeWithDelay(this.app.config.LIQUIDATION_DELAY);
         const estimations  = await EstimationModel.findAll({
             attributes: ['address', 'superToken', 'zestimation'],
@@ -83,7 +83,7 @@ class TxBuilder {
                         try {
                             const txObject = {
                                 retry : 1,
-                                step : 0.15,
+                                step : 1.15,
                                 target: this.app.client.sf._address,
                                 flowSender: flow.sender,
                                 flowReceiver: flow.receiver,
@@ -126,15 +126,14 @@ class TxBuilder {
                 }
             }
         }
-        //this.runningMux = false;
+        this.runningMux = false;
     }
 
     async sendWithRetry(wallet, txObject, ms) {
 
         const signed = await this.signTx(wallet, txObject);
-        signed.tx.timeout = ms;
         if(signed.error !== undefined) {
-
+            console.log(signed.error);
             if(signed.error === "Returned error: replacement transaction underpriced") {
                 console.debug("replacement transaction underpriced")
                 txObject.retry = txObject.retry + 1;
@@ -152,6 +151,7 @@ class TxBuilder {
 
         try {
             console.log("waiting until timeout");
+            signed.tx.timeout = ms;
             const tx =  await promiseTimeout(
                 this.app.client.sendSignedTransaction(signed),
                 ms
@@ -171,7 +171,6 @@ class TxBuilder {
                 txObject.gasPrice += 10;
                 return this.sendWithRetry(wallet, txObject, ms);
             }
-
             console.log(error);
         }
     }
@@ -191,12 +190,18 @@ class TxBuilder {
     }
 
     async signTx(wallet, txObject) {
+        console.log("SIGNING TX");
         try {
             let gasPrice = txObject.gasPrice;
             if(txObject.retry > 1) {
                 console.log("update gas price");
                 console.log("old gasprice: ", txObject.gasPrice);
-                gasPrice = Math.ceil(parseInt(txObject.gasPrice) + parseInt(txObject.gasPrice) * txObject.step * (txObject.retry - 1));
+                if(this.app.config.MAX_GAS_FEE !== undefined && parseInt(txObject.gasPrice) >= this.app.config.MAX_GAS_FEE) {
+                    console.log("Hit gas limit of ", this.app.config.MAX_GAS_FEE);
+                    gasPrice = parseInt(txObject.gasPrice) + 1;
+                } else {
+                    gasPrice = Math.ceil(parseInt(txObject.gasPrice) * txObject.step);
+                }
                 txObject.gasPrice = gasPrice;
                 console.log("new gasprice: ", gasPrice);
             }

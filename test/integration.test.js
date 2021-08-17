@@ -115,7 +115,8 @@ const bootNode = async (delayParam = 0) => {
         listenMode: 1,
         numberRetries: 3,
         testResolver: resolverAddress,
-        liquidationDelay: delayParam
+        liquidationDelay: delayParam,
+        maxFee: 4000000000
     });
     app.start();
     while(!app.isInitialized()) {
@@ -349,7 +350,7 @@ describe("Integration scripts tests", () => {
 
     });
 
-    it.only("Should use delay paramater when sending liquidation", async () => {
+    it("Should use delay paramater when sending liquidation", async () => {
         const data = cfa.methods.createFlow(
             superToken._address,
             accounts[2],
@@ -363,6 +364,8 @@ describe("Integration scripts tests", () => {
         const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
         expect(result[0].returnValues.liquidatorAccount).to.equal(AGENT_ACCOUNT);
     });
+
+   
 
     it("Create IDA", async () => {
         try {
@@ -452,6 +455,21 @@ describe("Integration scripts tests", () => {
 
         await bootNode();
         app.setTestFlag("TIMEOUT_ON_LOW_GAS_PRICE", { minimumGas: 4000000000});
+        const data = cfa.methods.createFlow(
+            superToken._address,
+            accounts[2],
+            "10000000000000000",
+            "0x"
+        ).encodeABI();
+        await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
+        const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
+        const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
+        expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+    });
+
+    it.only("Should hit gas limit and and only 1 wei", async () => {
+        await bootNode();
+        app.setTestFlag("TIMEOUT_ON_LOW_GAS_PRICE", { minimumGas: 4022714370});
         const data = cfa.methods.createFlow(
             superToken._address,
             accounts[2],

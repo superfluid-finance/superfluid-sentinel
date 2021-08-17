@@ -6,7 +6,6 @@ class Gas {
 
     async getLimit(wallet, txObject) {
         try {
-            console.log(this.app.client);
             const result = await this.app.client.estimateGas({
                 from: wallet.address,
                 to: txObject.target,

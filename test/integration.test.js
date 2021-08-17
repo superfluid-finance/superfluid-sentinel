@@ -99,7 +99,7 @@ async function timeTravelOnce(time, setAppTime = false) {
     return block2.timestamp;
 }
 
-const bootNode = async () => {
+const bootNode = async (delayParam = 0) => {
     app = new App({
         wsNode: "ws://127.0.0.1:8545",
         httpNode: "http://127.0.0.1:8545",
@@ -114,7 +114,8 @@ const bootNode = async () => {
         coldBoot: 1,
         listenMode: 1,
         numberRetries: 3,
-        testResolver: resolverAddress
+        testResolver: resolverAddress,
+        liquidationDelay: delayParam
     });
     app.start();
     while(!app.isInitialized()) {
@@ -348,6 +349,21 @@ describe("Integration scripts tests", () => {
 
     });
 
+    it.only("Should use delay paramater when sending liquidation", async () => {
+        const data = cfa.methods.createFlow(
+            superToken._address,
+            accounts[2],
+            "100000000000",
+            "0x"
+        ).encodeABI();
+        await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
+        await bootNode(3600);
+        const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
+        await timeTravelOnce(3580, true);
+        const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
+        expect(result[0].returnValues.liquidatorAccount).to.equal(AGENT_ACCOUNT);
+    });
+
     it("Create IDA", async () => {
         try {
             const cfaData = cfa.methods.createFlow(
@@ -432,7 +448,7 @@ describe("Integration scripts tests", () => {
         }
     });
 
-    it.only("Scale gas on timeout", async () => {
+    it("Scale gas on timeout", async () => {
 
         await bootNode();
         app.setTestFlag("TIMEOUT_ON_LOW_GAS_PRICE", { minimumGas: 4000000000});

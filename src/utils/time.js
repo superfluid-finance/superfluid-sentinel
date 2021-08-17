@@ -16,10 +16,10 @@ class Time {
 
     getTimeWithDelay(delaySeconds) {
         if(this.baseTime === undefined) {
-            return new Date().getTime() + delaySeconds * 1000
+            return new Date().getTime() - (delaySeconds * 1000);
         }
 
-        return new Date(this.baseTime).getTime() + delaySeconds * 1000;
+        return new Date(this.baseTime).getTime() - (delaySeconds * 1000);
     }
 
     setTime(time) {

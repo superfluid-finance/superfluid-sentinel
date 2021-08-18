@@ -171,7 +171,6 @@ class TxBuilder {
                 txObject.gasPrice += 10;
                 return this.sendWithRetry(wallet, txObject, ms);
             }
-            console.log(error);
         }
     }
 
@@ -190,7 +189,6 @@ class TxBuilder {
     }
 
     async signTx(wallet, txObject) {
-        console.log("SIGNING TX");
         try {
             let gasPrice = txObject.gasPrice;
             if(txObject.retry > 1) {

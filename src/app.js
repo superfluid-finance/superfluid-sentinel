@@ -76,7 +76,7 @@ class App {
             this.client.disconnect();
             await this.db.close();
             this.time.resetTime();
-            return "exit";
+            return;
         } catch(err) {
             console.error(`agent shutdown ${err}`);
             process.exit(1);

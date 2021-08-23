@@ -19,7 +19,7 @@ class Config {
             this.TEST_RESOLVER = config.testResolver
             this.shutdownOnError = false;
             this.LIQUIDATION_DELAY = config.liquidationDelay || 0;
-            this.MAX_GAS_FEE = config.maxFee || 0;
+            this.MAX_GAS_FEE = config.maxFee;
         } else {
             this.WS_NODE = process.env.WS_NODE;
             this.HTTP_NODE = process.env.HTTP_NODE;
@@ -35,7 +35,7 @@ class Config {
             this.COLD_BOOT = process.env.COLD_BOOT == 1 ? true : false;
             this.LISTEN_MODE = process.env.LISTEN_MODE;
             this.LIQUIDATION_DELAY = process.env.LIQUIDATION_DELAY || 0;
-            this.MAX_GAS_FEE = config.maxFee || 0;
+            this.MAX_GAS_FEE = process.env.MAX_GAS_FEE;
             this.NUM_RETRIES = 7;
             this.shutdownOnError = false;
         }

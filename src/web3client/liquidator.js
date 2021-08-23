@@ -22,7 +22,7 @@ class TxBuilder {
 
     constructor(app) {
         this.app = app;
-        this.timeout = 5000//this.app.config.TIMEOUT_FN;
+        this.timeout = 10000//this.app.config.TIMEOUT_FN;
         this.runningMux = false;
     }
 

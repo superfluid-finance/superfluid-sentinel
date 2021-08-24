@@ -30,7 +30,22 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install, lint, build, and test
+      - name: Install, lint & build
         run: |
-          npm install
-          npx mocha -t 1000000 test/integration.test.js
+          npm ci
+
+      - name: run node integration test
+        run: |
+          npx mocha -t 1000000 test/node.integration.test.js
+
+      - name: run gas integration test
+        run: |
+          npx mocha -t 1000000 test/gas.integration.test.js
+
+      - name: run ida integration test
+        run: |
+          npx mocha -t 1000000 test/ida.integration.test.js
+
+      - name: run cfa integration test
+        run: |
+          npx mocha -t 1000000 test/cfa.integration.test.js

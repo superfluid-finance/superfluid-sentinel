@@ -49,7 +49,6 @@ const agreementUpdateQueue = async.queue(async function(task) {
     while(true) {
         try {
             const now = Math.floor(new Date().getTime() / 1000);
-            console.log('agreementUpdateQueue');
             let senderFilter = {
                 filter : {
                     "sender" : task.account

@@ -2,7 +2,7 @@ class Time {
 
     construtor(app) {
         this.app = app;
-        //save time we want agent to be in
+        //save time
         this.baseTime;
     }
 
@@ -12,6 +12,14 @@ class Time {
         }
 
         return new Date(this.baseTime);
+    }
+
+    getTimeWithDelay(delaySeconds) {
+        if(this.baseTime === undefined) {
+            return new Date().getTime() - (delaySeconds * 1000);
+        }
+
+        return new Date(this.baseTime).getTime() - (delaySeconds * 1000);
     }
 
     setTime(time) {

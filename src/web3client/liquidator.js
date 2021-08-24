@@ -22,7 +22,7 @@ class TxBuilder {
 
     constructor(app) {
         this.app = app;
-        this.timeout = 5000//this.app.config.TIMEOUT_FN;
+        this.timeout = 10000//this.app.config.TIMEOUT_FN;
         this.runningMux = false;
     }
 
@@ -32,10 +32,7 @@ class TxBuilder {
             return;
         }
         this.runningMux = true;
-        //let now = new Date();
-        //let checkDate = new Date();
-        //checkDate.setDate(now.getDate());
-        let checkDate = this.app.time.getTime();
+        let checkDate = this.app.time.getTimeWithDelay(this.app.config.LIQUIDATION_DELAY);
         const estimations  = await EstimationModel.findAll({
             attributes: ['address', 'superToken', 'zestimation'],
             where:
@@ -47,7 +44,7 @@ class TxBuilder {
                             zestimation: { [Op.gt]: 0 }
                         },
                         {
-                            zestimation: { [Op.lte]: checkDate.getTime()}
+                            zestimation: { [Op.lte]: checkDate}
                         }
                       ]
                     }
@@ -86,7 +83,7 @@ class TxBuilder {
                         try {
                             const txObject = {
                                 retry : 1,
-                                step : 0.15,
+                                step : 1.15,
                                 target: this.app.client.sf._address,
                                 flowSender: flow.sender,
                                 flowReceiver: flow.receiver,
@@ -135,9 +132,8 @@ class TxBuilder {
     async sendWithRetry(wallet, txObject, ms) {
 
         const signed = await this.signTx(wallet, txObject);
-        signed.tx.timeout = ms;
         if(signed.error !== undefined) {
-
+            console.log(signed.error);
             if(signed.error === "Returned error: replacement transaction underpriced") {
                 console.debug("replacement transaction underpriced")
                 txObject.retry = txObject.retry + 1;
@@ -155,6 +151,7 @@ class TxBuilder {
 
         try {
             console.log("waiting until timeout");
+            signed.tx.timeout = ms;
             const tx =  await promiseTimeout(
                 this.app.client.sendSignedTransaction(signed),
                 ms
@@ -174,8 +171,6 @@ class TxBuilder {
                 txObject.gasPrice += 10;
                 return this.sendWithRetry(wallet, txObject, ms);
             }
-
-            console.log(error);
         }
     }
 
@@ -199,7 +194,12 @@ class TxBuilder {
             if(txObject.retry > 1) {
                 console.log("update gas price");
                 console.log("old gasprice: ", txObject.gasPrice);
-                gasPrice = Math.ceil(parseInt(txObject.gasPrice) + parseInt(txObject.gasPrice) * txObject.step * (txObject.retry - 1));
+                if(this.app.config.MAX_GAS_FEE !== undefined && parseInt(txObject.gasPrice) >= this.app.config.MAX_GAS_FEE) {
+                    console.log("Hit gas limit of ", this.app.config.MAX_GAS_FEE);
+                    gasPrice = parseInt(txObject.gasPrice) + 1;
+                } else {
+                    gasPrice = Math.ceil(parseInt(txObject.gasPrice) * txObject.step);
+                }
                 txObject.gasPrice = gasPrice;
                 console.log("new gasprice: ", gasPrice);
             }

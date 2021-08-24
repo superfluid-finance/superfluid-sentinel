@@ -76,7 +76,7 @@ class App {
             this.client.disconnect();
             await this.db.close();
             this.time.resetTime();
-            return "exit";
+            return;
         } catch(err) {
             console.error(`agent shutdown ${err}`);
             process.exit(1);
@@ -92,8 +92,6 @@ class App {
 
     //Set client testing flags to change behavior
     setTestFlag(flag, options) {
-        console.log("Setting flasgs");
-        console.log("flag ", flag);
         this.client.setTestFlag(flag, options);
     }
 

@@ -27,7 +27,7 @@ class Config {
             this.EPOCH_BLOCK = process.env.EPOCH_BLOCK || 0;
             this.DB = process.env.DB || "database.sqlite";
             this.PROTOCOL_RELEASE_VERSION = process.env.PROTOCOL_RELEASE_VERSION;
-            this.TIMEOUT_FN = process.env.TIMEOUT_FN || 60000;
+            this.TIMEOUT_FN = process.env.TIMEOUT_FN || 10000;
             this.PULL_STEP = process.env.PULL_STEP || 10000;
             this.GAS_PRICE = process.env.GAS_PRICE;
             this.GAS_LIMIT = process.env.GAS_LIMIT;

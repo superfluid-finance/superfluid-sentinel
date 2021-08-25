@@ -3,6 +3,7 @@ const BN = require("bn.js");
 const EstimationModel = require("../database/models/accountEstimationModel");
 const AgreementModel =  require("../database/models/agreementModel");
 const IDAModel = require("../database/models/IDAModel");
+const { Op } = require("sequelize");
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function trigger(fn, ms) {
@@ -226,6 +227,9 @@ class Protocol {
         }
     }
 
+    async isAccountCriticalNow(superToken, account) {
+        return await this.app.client.superTokens[superToken].methods.isAccountCriticalNow(account).call();
+    }
     async liquidationData(token, account) {
         try {
             const now = Math.floor(new Date().getTime() / 1000);
@@ -265,7 +269,6 @@ class Protocol {
             for(let key of Object.keys(superTokenInstances)) {
                 this.subscribeEvents(key);
             }
-            console.debug("starting draining queues");
             this.run(estimationQueue, 10000);
             this.run(agreementUpdateQueue, 10000);
         } catch(err) {
@@ -457,6 +460,29 @@ class Protocol {
             throw Error(`ida agreement subscription ${err}`);
         }
     }
+
+    async checkFlow(superToken, sender, receiver) {
+        try {
+            const result = await this.app.client.CFAv1.methods.getFlow(superToken, sender, receiver).call();
+            if(result.flowRate !== "0") {
+                return result;
+            } else {
+                await AgreementModel.destroy({
+                    where: {
+                        [Op.and]: [
+                          { superToken: superToken },
+                          { sender: sender },
+                          { receiver: receiver}
+                        ]
+                      }
+                });
+            }
+        } catch(err) {
+            console.error(err);
+            throw Error(`checkFlow : ${err}`)
+        }
+    }
+
     generateId(sender, receiver) {
         try {
             return this.client.web3.utils.soliditySha3(sender, receiver);

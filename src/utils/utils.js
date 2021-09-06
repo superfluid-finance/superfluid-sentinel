@@ -21,9 +21,26 @@ function generateAccounts(mnemonic, accountIndex) {
     return { address: wallet.getAddressString(), _privateKey: wallet.privateKey, _publicKey: wallet.publicKey};
 }
 
+function promiseTimeout(promise, ms) {
+
+    let timeout = new Promise((resolve, reject) => {
+        let id = setTimeout(() => {
+            clearTimeout(id);
+            reject(new Error("timeout rejection"))
+        }, ms)
+    });
+
+    // Returns a race between timeout and promise
+    return Promise.race([
+        promise,
+        timeout
+    ]);
+}
+
 module.exports = {
     getTimeUnix,
     getNextMonthUnix,
     checkOrCreate,
     generateAccounts,
+    promiseTimeout
 };

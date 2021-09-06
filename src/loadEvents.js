@@ -12,8 +12,7 @@ class LoadEvents {
 
     async start() {
         try {
-            this.app.logger.info("getting Past event to find SuperTokens");
-            this.app.logger.info(`using concurrency: ${this.concurrency}`);
+            this.app.logger.info("getting past event to find SuperTokens");
             const systemInfo = await SystemModel.findOne();
             const lastEventBlockNumber = await FlowUpdatedModel.findOne({
                 order: [['blockNumber', 'DESC']]
@@ -25,7 +24,7 @@ class LoadEvents {
                     blockNumber = systemInfo.superTokenBlockNumber;
                 }
                 if((await this.app.client.getNetworkId()) !== systemInfo.networkId) {
-                    throw "different network than from the saved data";
+                    throw new Error("different network than from the saved data");
                 }
             }
             let pullCounter = blockNumber;

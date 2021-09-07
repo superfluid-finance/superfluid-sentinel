@@ -20,6 +20,8 @@ class Config {
             this.shutdownOnError = false;
             this.LIQUIDATION_DELAY = config.liquidationDelay || 0;
             this.MAX_GAS_FEE = config.maxFee;
+            this.CLO_ADDR = config.cloAddr;
+            this.PRIVATE_KEY = config.PRIVATE_KEY;
         } else {
             this.WS_NODE = process.env.WS_NODE;
             this.HTTP_NODE = process.env.HTTP_NODE;
@@ -28,7 +30,7 @@ class Config {
             this.DB = process.env.DB || "database.sqlite";
             this.PROTOCOL_RELEASE_VERSION = process.env.PROTOCOL_RELEASE_VERSION;
             this.TIMEOUT_FN = process.env.TIMEOUT_FN || 10000;
-            this.PULL_STEP = process.env.PULL_STEP || 10000;
+            this.PULL_STEP = process.env.PULL_STEP || 2000;
             this.GAS_PRICE = process.env.GAS_PRICE;
             this.GAS_LIMIT = process.env.GAS_LIMIT;
             this.CONCURRENCY = process.env.CONCURRENCY !== undefined ? process.env.CONCURRENCY : 1;
@@ -38,6 +40,8 @@ class Config {
             this.MAX_GAS_FEE = process.env.MAX_GAS_FEE;
             this.NUM_RETRIES = 7;
             this.shutdownOnError = false;
+            this.CLO_ADDR = process.env.CLO_ADDR;
+            this.PRIVATE_KEY = process.env.PRIVATE_KEY;
         }
     }
 }

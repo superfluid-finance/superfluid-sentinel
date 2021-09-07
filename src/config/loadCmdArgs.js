@@ -1,5 +1,6 @@
 require("dotenv").config();
 const program = require("commander");
+const package = require("../../package.json");
 program.version(package.version);
 program
     .description("Superfluid Community Agent")

@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("./loadCmdArgs");
 class Config {
 
     constructor(config) {
@@ -23,8 +23,8 @@ class Config {
             this.CLO_ADDR = config.cloAddr;
             this.PRIVATE_KEY = config.PRIVATE_KEY;
         } else {
-            this.WS_NODE = process.env.WS_NODE;
-            this.HTTP_NODE = process.env.HTTP_NODE;
+            this.WS_RPC_NODE = process.env.WS_NODE;
+            this.HTTP_RPC_NODE = process.env.HTTP_NODE;
             this.MNEMONIC = process.env.MNEMONIC;
             this.EPOCH_BLOCK = process.env.EPOCH_BLOCK || 0;
             this.DB = process.env.DB || "database.sqlite";

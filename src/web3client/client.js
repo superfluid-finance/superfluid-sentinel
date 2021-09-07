@@ -34,7 +34,7 @@ class Client {
 
     async initialize() {
         try {
-            const web3 = new Web3.providers.WebsocketProvider(this.app.config.WS_NODE, {
+            const web3 = new Web3.providers.WebsocketProvider(this.app.config.WS_RPC_NODE, {
                 timeout: 10000,
                 clientConfig: {
                     maxReceivedFrameSize: 100000000,
@@ -51,7 +51,7 @@ class Client {
                 console.log("\nWeb3Client: reconnect #" + this.reconnectAttempts);
             })
             this.web3 = new Web3(web3);
-            const web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_NODE, {
+            const web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_RPC_NODE, {
                 keepAlive: true
             });
             this.web3HTTP = new Web3(web3Provider);

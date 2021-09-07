@@ -6,7 +6,8 @@ const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IIn
 const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
 const SuperTokenModel = require("./../database/models/superTokenModel");
-
+const CLO = require("../inc/Clown.json");
+//const BatchContract = require("../inc/BatchLiquidator.json");
 /*
  *   Web3 and superfluid client:
  * - Create web3 connections
@@ -44,9 +45,9 @@ class Client {
                     auto: true,
                     delay: 50000,
                     onTimeout: false
-                    //TODO: max attempts
                 }
             }).on("reconnect", function() {
+                //this.app.logger(`client.initialize() - reconnect #${this.reconnectAttempts}`);
                 console.log("\nWeb3Client: reconnect #" + this.reconnectAttempts);
             })
             this.web3 = new Web3(web3);
@@ -62,7 +63,7 @@ class Client {
             console.debug("chainId: ", await this.getNetworkId());
             this.isInitialized = true;
         } catch(err) {
-            this.app.logger.error(err);
+            this.app.logger.error(`client.initialize() - ${err}`);
             throw new Error(`Web3Client: ${err}`);
         }
     }
@@ -72,7 +73,14 @@ class Client {
             this.app.logger.info(`Web3Client start`);
             await this.initialize();
             await this._loadSuperfluidContracts();
-            this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, 100);
+            if(this.app.config.PRIVATE_KEY !== undefined) {
+                this.app.logger.info("using provided private key");
+                const account = this.web3.eth.accounts.privateKeyToAccount(this.app.config.PRIVATE_KEY);
+                this.agentAccounts = { address: account.address, _privateKey: account.privateKey };
+            } else {
+                this.app.logger.info("using provided mnemonic");
+                this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, 100);
+            }
             this.app.logger.info(`Node account: ${this.agentAccounts.address}`);
             // Node HTTP
             this.app.logger.info("Connecting to Node: HTTP");
@@ -93,7 +101,6 @@ class Client {
             this.app.logger.debug(`_loadSuperfluidContracts()`);
             let resolverAddress;
             if(this.app.config.TEST_RESOVER !== undefined) {
-                console.debug("Using TestResolver");
                 resolverAddress = this.app.config.TEST_RESOVER;
             } else {
                 resolverAddress = SDKConfig(await this.getNetworkId()).resolverAddress;
@@ -121,6 +128,12 @@ class Client {
             this.CFAv1WS = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
             this.IDAv1 = new this.web3HTTP.eth.Contract(IIDA.abi, idaAddress);
             this.IDAv1WS = new this.web3.eth.Contract(IIDA.abi, idaAddress);
+            //this.batch = new this.web3.eth.Contract(BatchContract, "");
+            //Agent is a member of a clown
+            if(this.app.config.CLO_ADDR !== undefined) {
+                this.clo = new this.web3.eth.Contract(CLO, this.app.config.CLO_ADDR);
+                this.app.logger.info(`CLO address: ${this.app.config.CLO_ADDR}`);
+            }
         } catch (err) {
             this.app.logger.error(err);
             throw Error(`load superfluid contract : ${err}`)
@@ -180,13 +193,13 @@ class Client {
         ).call();
         let isListed = 0;
         if(superTokenAddress === superTokenWS._address) {
-            this.app.logger.info(`add listed SuperToken (${tokenSymbol} -  ${tokenName}): ${superTokenAddress}`);
+            this.app.logger.info(`add listed SuperToken (${tokenSymbol} - ${tokenName}): ${superTokenAddress}`);
             this.superTokens[superTokenAddress] = superTokenWS;
             this.superTokensHTTP[superTokenAddress] = superTokenHTTP;
             this.superTokensCount++;
             isListed = 1;
         } else if(this.app.config.LISTEN_MODE == 1) {
-            this.app.logger.info(`add non listed SuperToken (${tokenSymbol} -  ${tokenName}): ${newSuperToken}`);
+            this.app.logger.info(`add non listed SuperToken (${tokenSymbol} - ${tokenName}): ${newSuperToken}`);
             console.log(this.app.config.LISTEN_MODE);
             this.superTokens[superTokenWS._address] = superTokenWS;
             this.superTokensHTTP[superTokenHTTP._address] = superTokenHTTP;
@@ -217,20 +230,12 @@ class Client {
         return this.agentAccounts;
     }
 
-    async getAccountBalance() {
-        return await this.web3HTTP.eth.getBalance(this.getAccountAddress());
-    }
-
     getSuperTokenInstances() {
         return this.superTokens;
     }
 
     getSuperfluidInstance(address) {
         return new this.web3HTTP.eth.Contract(ISuperfluid, address);
-    }
-
-    async getCurrentNonce() {
-        return await this.web3HTTP.eth.getTransactionCount(this.getAccountAddress());
     }
 
     async getCurrentBlockNumber() {
@@ -250,7 +255,7 @@ class Client {
                 data : tx.abi,
             };
             return await this.web3HTTP.eth.estimateGas(unsignedTx);
-        } catch(error) {
+        } catch(err) {
             this.app.logger.error("Error estimating tx");
             return 0;
         }

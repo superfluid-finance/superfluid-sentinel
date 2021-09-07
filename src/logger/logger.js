@@ -1,6 +1,5 @@
 const { createLogger, format, transports } = require("winston");
 const { combine, timestamp, label, printf } = format;
-const ArrayTransport = require("winston-array-transport");
 
 class Logger {
 
@@ -18,33 +17,52 @@ class Logger {
                     handleExceptions: true,
                     json: false,
                     colorize: true,
-                }),
-                new ArrayTransport({ array: this.logs, json: true, level: "error" })
+                })
             ]
         });
     }
 
     log(message) {
-        this.logger.log("info", message);
+        try {
+            this.logger.log("info", message);
+        } catch(err) {
+            console.error(err);
+        }
     }
 
     info(message) {
-        this.logger.info(message);
+        try {
+            this.logger.info(message);
+        } catch(err) {
+            console.error(err);
+        }
     }
 
     debug(message) {
-        this.logger.debug(message);
+        try {
+            this.logger.debug(message);
+        } catch(err) {
+            console.error(err);
+        }
     }
 
     error(message) {
-        this.logger.error(message);
-        if(this.app.config.shutdownOnError) {
-            this.app.shutdown();
+        try {
+            this.logger.error(message);
+            if(this.app.config.shutdownOnError) {
+                this.app.shutdown();
+            }
+        } catch(err) {
+            console.error(err);
         }
     }
 
     warn(message) {
-        this.logger.warn(message);
+        try {
+            this.logger.warn(message);
+        } catch(err) {
+            console.error(err);
+        }
     }
 }
 

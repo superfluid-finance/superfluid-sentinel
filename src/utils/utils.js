@@ -18,7 +18,7 @@ function generateAccounts(mnemonic, accountIndex) {
     const hdwallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic));
     const hdpath = "m/44'/60'/0'/0/";
     const wallet =  hdwallet.derivePath(hdpath + accountIndex).getWallet();
-    return { address: wallet.getAddressString(), _privateKey: wallet.privateKey, _publicKey: wallet.publicKey};
+    return { address: wallet.getAddressString(), _privateKey: wallet.privateKey };
 }
 
 function promiseTimeout(promise, ms) {

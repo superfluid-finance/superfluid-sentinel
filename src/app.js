@@ -63,10 +63,10 @@ class App {
     //close agent processes and exit
     async shutdown(force = false) {
         this._isShutdown = true;
-        console.debug(`agent shutting down...`)
+        this.logger.info(`app.shutdown() - agent shutting down`);
         this.time.resetTime();
         if(force) {
-            console.error(`force shutdown`);
+            this.logger.error(`app.shutdown() - force shutdown`);
             process.exit(0);
         }
 
@@ -78,13 +78,13 @@ class App {
             this.time.resetTime();
             return;
         } catch(err) {
-            console.error(`agent shutdown ${err}`);
+            this.logger.error(`app.shutdown() - ${err}`);
             process.exit(1);
         }
     }
 
     //set agent time.
-    //Note: the agent will not update this timestamp.
+    //Note: the agent will not update this timestamp
     //Use a external service to update when needed. ex. ganache
     setTime(time) {
         this.time.setTime(time);
@@ -122,9 +122,9 @@ class App {
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
             //run liquidation job every x seconds
-            this.run(this.liquidator, 10000);
-        } catch(error) {
-            console.error(error);
+            this.run(this.liquidator, 30000);
+        } catch(err) {
+            this.logger.error(`app.start() - ${err}`);
             process.exit(1);
         }
     }

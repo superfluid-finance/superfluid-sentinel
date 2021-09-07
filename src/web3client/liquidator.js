@@ -4,7 +4,7 @@ class Liquidator {
 
     constructor(app) {
         this.app = app;
-        this.timeout = this.app.config.TIMEOUT_FN;
+        this.timeout = this.app.config.TX_TIMEOUT;
         this.runningMux = 0;
         this.splitBatch = 10;
         this.clo = this.app.config.CLO_ADDR;

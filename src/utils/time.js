@@ -16,7 +16,9 @@ class Time {
 
     getTimeWithDelay(delaySeconds) {
         if(this.baseTime === undefined) {
-            return new Date().getTime() - (delaySeconds * 1000);
+            const date = new Date();
+            date.setSeconds(0, 0);
+            return date.getTime() - (delaySeconds * 1000);
         }
 
         return new Date(this.baseTime).getTime() - (delaySeconds * 1000);

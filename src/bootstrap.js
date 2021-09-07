@@ -52,9 +52,9 @@ class Bootstrap {
                                 });
                             }
                             break;
-                        } catch(error) {
+                        } catch(err) {
                             keepTrying++;
-                            console.error(error);
+                            console.error(err);
                             if(keepTrying > task.self.numRetries) {
                                 process.exit(1);
                             }

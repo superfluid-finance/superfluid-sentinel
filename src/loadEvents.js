@@ -92,7 +92,7 @@ class LoadEvents {
             }, this.concurency);
 
             while(pullCounter <= currentBlockNumber) {
-                let end = (pullCounter + parseInt(this.app.config.PULL_STEP));
+                let end = (pullCounter + parseInt(this.app.config.BLOCK_RANGE));
                 queue.push({
                     self: this,
                     fromBlock: pullCounter,

@@ -11,7 +11,7 @@ class Config {
             process.env.DB = this.DB;
             this.PROTOCOL_RELEASE_VERSION = config.prv;
             this.TX_TIMEOUT = config.timeoutFn;
-            this.PULL_STEP = config.pullStep;
+            this.BLOCK_RANGE = config.blockRange;
             this.CONCURRENCY = config.concurrency;
             this.COLD_BOOT = config.coldBoot;
             this.LISTEN_MODE = config.listenMode;
@@ -30,7 +30,7 @@ class Config {
             this.DB = process.env.DB || "database.sqlite";
             this.PROTOCOL_RELEASE_VERSION = process.env.PROTOCOL_RELEASE_VERSION;
             this.TX_TIMEOUT = process.env.TX_TIMEOUT || 10000;
-            this.PULL_STEP = process.env.PULL_STEP || 2000;
+            this.BLOCK_RANGE = process.env.BLOCK_RANGE || 2000;
             this.GAS_PRICE = process.env.GAS_PRICE;
             this.GAS_LIMIT = process.env.GAS_LIMIT;
             this.CONCURRENCY = process.env.CONCURRENCY !== undefined ? process.env.CONCURRENCY : 1;

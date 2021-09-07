@@ -1,6 +1,5 @@
 const { QueryTypes, Op } = require("sequelize");
 const EstimationModel = require("../database/models/accountEstimationModel");
-const AgreementModel =  require("../database/models/agreementModel");
 
 class Repository {
 
@@ -96,7 +95,7 @@ class Repository {
     const sqlquery = `SELECT agr.superToken, agr.sender, agr.receiver, est.zestimation FROM agreements agr
     INNER JOIN estimations est on agr.sender = est.address and agr.superToken = est.superToken and est.zestimation <> 0
     where agr.flowRate <> 0 and est.zestimation <= :dt
-    order by agr.superToken, agr.sender`;
+    order by agr.superToken, agr.sender, agr.flowRate DESC`;
 
     return this.app.db.query(sqlquery, {
       replacements: { dt: checkDate },

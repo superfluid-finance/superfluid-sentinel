@@ -516,6 +516,21 @@ class Protocol {
         }
     }
 
+    generateMultiDeleteFlowABI(superToken, senders, receivers) {
+        try {
+            return this.app.client.batch.methods.deleteFlows(
+                this.app.client.sf.address,
+                this.app.client.CFAv1._address,
+                superToken,
+                senders,
+                receivers
+            ).encodeABI();
+        } catch(err) {
+            this.app.logger.error(err);
+            throw Error(`generateMultiDeleteFlowABI : ${err}`);
+        }
+    }
+
     _getLiquidationData(totalNetFlowRate, totalBalance) {
 
         let result = {

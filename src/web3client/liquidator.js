@@ -150,7 +150,7 @@ class Liquidator {
                 return this.sendWithRetry(wallet, txObject, ms);
             }
 
-            if(err.message === "Error: Returned error: already known") {
+            if(err.message === "Returned error: already known") {
                 this.app.logger.debug(`submited tx already known`);
                 return {error: err.message, tx: undefined};
             }

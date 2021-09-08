@@ -117,7 +117,7 @@ class App {
                 await this.bootstrap.start();
             }
             //run one time the liquidation job as soon as possible
-            await this.liquidator.start();
+            //await this.liquidator.start();
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);

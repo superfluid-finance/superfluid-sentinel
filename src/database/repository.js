@@ -91,12 +91,22 @@ class Repository {
   });
   }
 
-  async getLiquidations(checkDate) {
+  async getLiquidations(checkDate, onlyTokens) {
+    let inSnipped = "";
+    if (onlyTokens !== undefined) {
+      inSnipped = "and agr.superToken in (:tokens)";
+    }
     const sqlquery = `SELECT agr.superToken, agr.sender, agr.receiver, est.zestimation FROM agreements agr
-    INNER JOIN estimations est on agr.sender = est.address and agr.superToken = est.superToken and est.zestimation <> 0
-    where agr.flowRate <> 0 and est.zestimation <= :dt
-    order by agr.superToken, agr.sender, agr.flowRate DESC`;
+    INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.zestimation <> 0
+    WHERE agr.flowRate <> 0 and est.zestimation <= :dt ${inSnipped}
+    ORDER BY agr.superToken, agr.sender, agr.flowRate DESC`;
 
+    if(inSnipped !== "") {
+      return this.app.db.query(sqlquery, {
+        replacements: { dt: checkDate, tokens: onlyTokens},
+        type: QueryTypes.SELECT
+      });
+    }
     return this.app.db.query(sqlquery, {
       replacements: { dt: checkDate },
       type: QueryTypes.SELECT

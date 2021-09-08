@@ -9,7 +9,7 @@ class Liquidator {
         this.splitBatch = 10;
         this.clo = this.app.config.CLO_ADDR;
         this.txDelay = this.app.config.LIQUIDATION_DELAY;
-        if(this.clown !== undefined) {
+        if(this.clo !== undefined) {
             this.app.logger.info("liquidator - adding non clown delay (15min)");
             this.txDelay += 900;
         }
@@ -17,16 +17,22 @@ class Liquidator {
 
     async start() {
         try {
-            this.app.logger.info("running liquidation job")
+            this.app.logger.info("running liquidation job");
             if(this.runningMux > 0) {
                 this.runningMux--;
                 this.app.logger.warn(`skip liquidation.start() - ${this.runningMux}`);
                 return;
             }
             this.runningMux = 10;
+            if(this.app.config.TOKENS !== undefined) {
+                this.app.logger.info(`SuperTokens to liquidate`);
+                for(const addr of this.app.config.TOKENS) {
+                    this.app.logger.info(this.app.client.superTokenNames[addr]);
+                }
+            }
             const checkDate = this.app.time.getTimeWithDelay(this.app.config.LIQUIDATION_DELAY);
             const haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
-            const work = await this.app.db.queries.getLiquidations(checkDate);
+            const work = await this.app.db.queries.getLiquidations(checkDate, this.app.config.TOKENS);
             if(haveBatchWork.length > 0) {
                 //await this.multiTermination(haveBatchWork, work);
                 await this.singleTerminations(work);

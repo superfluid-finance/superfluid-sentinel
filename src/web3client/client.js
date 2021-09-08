@@ -22,6 +22,7 @@ class Client {
         this.IDAv1;
         this.IDAv1WS;
         this.sf;
+        this.superTokenNames = new Map();
         this.superTokens = new Map();
         this.superTokensHTTP = new Map();
         this.superTokensCount = 0;
@@ -193,14 +194,17 @@ class Client {
         ).call();
         let isListed = 0;
         if(superTokenAddress === superTokenWS._address) {
-            this.app.logger.info(`add listed SuperToken (${tokenSymbol} - ${tokenName}): ${superTokenAddress}`);
+            const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${superTokenAddress}`;
+            this.app.logger.info(tokenInfo);
+            this.superTokenNames[newSuperToken] = tokenInfo;
             this.superTokens[superTokenAddress] = superTokenWS;
             this.superTokensHTTP[superTokenAddress] = superTokenHTTP;
             this.superTokensCount++;
             isListed = 1;
         } else if(this.app.config.LISTEN_MODE == 1) {
-            this.app.logger.info(`add non listed SuperToken (${tokenSymbol} - ${tokenName}): ${newSuperToken}`);
-            console.log(this.app.config.LISTEN_MODE);
+            const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${superTokenAddress}`;
+            this.app.logger.info(tokenInfo);
+            this.superTokenNames[newSuperToken] = tokenInfo;
             this.superTokens[superTokenWS._address] = superTokenWS;
             this.superTokensHTTP[superTokenHTTP._address] = superTokenHTTP;
             this.superTokensCount++;
@@ -256,7 +260,7 @@ class Client {
             };
             return await this.web3HTTP.eth.estimateGas(unsignedTx);
         } catch(err) {
-            this.app.logger.error("Error estimating tx");
+            this.app.logger.error("estimating tx");
             return 0;
         }
 

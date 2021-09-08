@@ -57,5 +57,15 @@
     "hooks": {
       "pre-commit": "npm run lint"
     }
+  },
+  "networks" : {
+    "137": {
+      "name" : "Polygon",
+      "epoch" : 11000000
+    },
+    "100": {
+      "name": "xDAI",
+      "epoch": 11000000
+    }
   }
 }

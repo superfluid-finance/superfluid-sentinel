@@ -6,3 +6,5 @@ database.sqlite
 .env*
 
 .DS_Store
+
+datadir/

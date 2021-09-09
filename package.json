@@ -61,7 +61,8 @@
   "networks" : {
     "137": {
       "name" : "Polygon",
-      "epoch" : 11000000
+      "epoch" : 11000000,
+      "batch" : "0xAB4075f621100563f4551C0Ca50944809b03E948"
     },
     "100": {
       "name": "xDAI",

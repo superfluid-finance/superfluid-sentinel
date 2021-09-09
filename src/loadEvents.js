@@ -92,7 +92,7 @@ class LoadEvents {
             }, this.concurency);
 
             while(pullCounter <= currentBlockNumber) {
-                let end = (pullCounter + parseInt(this.app.config.BLOCK_RANGE));
+                let end = (pullCounter + parseInt(this.app.config.MAX_QUERY_BLOCK_RANGE));
                 queue.push({
                     self: this,
                     fromBlock: pullCounter,
@@ -117,7 +117,7 @@ class LoadEvents {
                 await systemInfo.save();
             }
             await this.app.client.loadSuperTokens(tokens.map(({superToken}) => superToken));
-            this.app.logger.info("finish Past event to find SuperTokens");
+            this.app.logger.info("finish past event to find SuperTokens");
         } catch(err) {
             this.app.logger.error(err);
             process.exit(1);

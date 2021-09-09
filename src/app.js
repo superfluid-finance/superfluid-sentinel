@@ -6,7 +6,6 @@ const LoadEvents = require("./loadEvents");
 const Liquidator = require("./web3client/liquidator");
 const Gas = require("./transaction/gas");
 const Time = require("./utils/time");
-
 const EventModel = require("./models/EventModel");
 const Bootstrap = require("./bootstrap.js");
 const DB = require("./database/db");
@@ -107,6 +106,7 @@ class App {
 
             //create all web3 infrastruture needed
             await this.client.init();
+            this.config.loadNetworkInfo(await this.client.getNetworkId());
             //Collect events to detect superTokens and accounts
             await this.loadEvents.start();
             //query balances to make liquidations estimations
@@ -116,13 +116,12 @@ class App {
                 await this.loadEvents.start();
                 await this.bootstrap.start();
             }
-            //run one time the liquidation job as soon as possible
-            //await this.liquidator.start();
+
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
             //run liquidation job every x seconds
-            this.run(this.liquidator, 30000);
+            this.run(this.liquidator, 60000 * 2);
         } catch(err) {
             this.logger.error(`app.start() - ${err}`);
             process.exit(1);

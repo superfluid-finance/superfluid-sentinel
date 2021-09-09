@@ -8,9 +8,10 @@ class Liquidator {
         this.runningMux = 0;
         this.splitBatch = 10;
         this.clo = this.app.config.CLO_ADDR;
-        this.txDelay = this.app.config.LIQUIDATION_DELAY;
+        this.txDelay = this.app.config.ADDITIONAL_LIQUIDATION_DELAY;
+        this.gasMulti = this.app.config.RETRY_GAS_MULTIPLIER;
         if(this.clo !== undefined) {
-            this.app.logger.info("liquidator - adding non clown delay (15min)");
+            this.app.logger.info("liquidator - adding non clo delay (15min)");
             this.txDelay += 900;
         }
     }
@@ -30,7 +31,7 @@ class Liquidator {
                     this.app.logger.info(this.app.client.superTokenNames[addr]);
                 }
             }
-            const checkDate = this.app.time.getTimeWithDelay(this.app.config.LIQUIDATION_DELAY);
+            const checkDate = this.app.time.getTimeWithDelay(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
             const haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
             const work = await this.app.db.queries.getLiquidations(checkDate, this.app.config.TOKENS);
             if(haveBatchWork.length > 0) {
@@ -61,7 +62,7 @@ class Liquidator {
                     const tx = this.app.protocol.generateDeleteFlowABI(job.superToken, job.sender, job.receiver);
                     const txObject = {
                         retry : 1,
-                        step : 1.15,
+                        step : this.gasMulti,
                         target: this.app.client.sf._address,
                         flowSender: job.sender,
                         flowReceiver: job.receiver,
@@ -121,7 +122,7 @@ class Liquidator {
         }
 
         try {
-            this.app.logger.info(`waiting until timeout for ${this.timeout / 1000}`);
+            this.app.logger.info(`waiting until timeout for ${this.timeout / 1000} seconds` );
             console.log(txObject);
             signed.tx.timeout = ms;
             const tx =  await utils.promiseTimeout(
@@ -152,6 +153,11 @@ class Liquidator {
 
             if(err.message === "Returned error: already known") {
                 this.app.logger.debug(`submited tx already known`);
+                return {error: err.message, tx: undefined};
+            }
+
+            if(err.message === "Returned error: insufficient funds for gas * price + value") {
+                this.app.logger.error(`insufficient funds agent account`);
                 return {error: err.message, tx: undefined};
             }
 

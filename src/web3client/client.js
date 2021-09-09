@@ -86,11 +86,9 @@ class Client {
             // Node HTTP
             this.app.logger.info("Connecting to Node: HTTP");
             this.web3HTTP.eth.transactionConfirmationBlocks = 3;
-            this.app.logger.info("Node connected (HTTP)");
             // Node Websocket
             this.app.logger.info("Connecting to Node: WS");
             this.web3.eth.transactionConfirmationBlocks = 3;
-            this.app.logger.info("Node connected (WS)");
         } catch(err) {
             this.app.logger.error(err);
             throw err;

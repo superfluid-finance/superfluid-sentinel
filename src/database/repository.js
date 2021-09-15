@@ -126,6 +126,12 @@ class Repository {
       type: QueryTypes.SELECT
     });
   }
+
+  async healthCheck() {
+    return this.app.db.query("SELECT 1", {
+      type: QueryTypes.SELECT
+    });
+  }
 }
 
 module.exports = Repository;

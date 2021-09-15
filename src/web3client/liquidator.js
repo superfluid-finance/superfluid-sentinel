@@ -18,7 +18,7 @@ class Liquidator {
 
     async start() {
         try {
-            this.app.logger.debug("running liquidation job");
+            this.app.logger.info("running liquidation job");
             if(this.runningMux > 0) {
                 this.runningMux--;
                 this.app.logger.warn(`skip liquidation.start() - ${this.runningMux}`);

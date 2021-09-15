@@ -11,7 +11,7 @@ const Bootstrap = require("./bootstrap.js");
 const DB = require("./database/db");
 const Repository = require("./database/repository");
 const utils = require("./utils/utils.js");
-const server = require("./httpserver/server");
+const HTTPServer = require("./httpserver/server");
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function trigger(fn, time = 15000) {
@@ -42,6 +42,7 @@ class App {
         this.utils = utils;
         this.db = DB;
         this.db.queries = new Repository(this);
+        this.server = new HTTPServer(this);
         this._isShutdown
     }
 
@@ -121,8 +122,9 @@ class App {
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
+            setTimeout(() => this.server.start(), 1000);
             //run liquidation job every x milliseconds
-            this.run(this.liquidator, 30000);
+            this.run(this.liquidator, 10000);
         } catch(err) {
             this.logger.error(`app.start() - ${err}`);
             process.exit(1);

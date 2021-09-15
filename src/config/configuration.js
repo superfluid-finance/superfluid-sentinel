@@ -20,7 +20,7 @@ class Config {
             this.MAX_GAS_PRICE = config.max_gas_price;
             this.RETRY_GAS_MULTIPLIER = config.retry_gas_multiplier || 1.15;
             this.CLO_ADDR = config.clo_addr;
-            
+
             this.CONCURRENCY = config.concurrency;
             this.COLD_BOOT = config.cold_boot;
             this.LISTEN_MODE = config.listen_mode;
@@ -48,6 +48,8 @@ class Config {
             this.CONCURRENCY = 1;
             this.LISTEN_MODE = 1;
             this.NUM_RETRIES = 10;
+            this.COLD_BOOT = 0;
+            this.MNEMONIC_INDEX = 100;
             this.shutdownOnError = false;
         }
     }

@@ -110,7 +110,6 @@ class Bootstrap {
                         }
                     });
                     if(flows.length == 0) {
-                        //console.debug(`${est.address} - no active streams at ${est.superToken}`);
                         await est.destroy();
                     }
                 }

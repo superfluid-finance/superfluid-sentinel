@@ -9,7 +9,7 @@ class Liquidator {
         this.splitBatch = 10;
         this.clo = this.app.config.CLO_ADDR;
         this.txDelay = this.app.config.ADDITIONAL_LIQUIDATION_DELAY;
-        this.gasMulti = this.app.config.RETRY_GAS_MULTIPLIER;
+        this.gasMultiplier = this.app.config.RETRY_GAS_MULTIPLIER;
         if(this.clo !== undefined) {
             this.app.logger.info("liquidator - adding non clo delay (15min)");
             this.txDelay += 900;
@@ -31,7 +31,7 @@ class Liquidator {
                     this.app.logger.info(this.app.client.superTokenNames[addr]);
                 }
             }
-            const checkDate = this.app.time.getTimeWithDelay(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
+            const checkDate = this.app.time.getTimeWithDelay(this.txDelay);
             const haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
             const work = await this.app.db.queries.getLiquidations(checkDate, this.app.config.TOKENS);
             if(haveBatchWork.length > 0) {
@@ -62,7 +62,7 @@ class Liquidator {
                     const tx = this.app.protocol.generateDeleteFlowABI(job.superToken, job.sender, job.receiver);
                     const txObject = {
                         retry : 1,
-                        step : this.gasMulti,
+                        step : this.gasMultiplier,
                         target: this.app.client.sf._address,
                         flowSender: job.sender,
                         flowReceiver: job.receiver,
@@ -123,7 +123,7 @@ class Liquidator {
 
         try {
             this.app.logger.info(`waiting until timeout for ${this.timeout / 1000} seconds` );
-            console.log(txObject);
+            txObject.txHash = signed.tx.transactionHash;
             signed.tx.timeout = ms;
             const tx =  await utils.promiseTimeout(
                 this.app.client.sendSignedTransaction(signed),
@@ -182,8 +182,8 @@ class Liquidator {
             let gasPrice = txObject.gasPrice;
             if(txObject.retry > 1) {
                 console.log("old gasprice: ", txObject.gasPrice);
-                if(this.app.config.MAX_GAS_FEE !== undefined && parseInt(txObject.gasPrice) >= this.app.config.MAX_GAS_FEE) {
-                    this.app.logger.debug(`Hit gas price limit of ${this.app.config.MAX_GAS_FEE}`);
+                if(this.app.config.MAX_GAS_PRICE !== undefined && parseInt(txObject.gasPrice) >= this.app.config.MAX_GAS_PRICE) {
+                    this.app.logger.debug(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
                     gasPrice = parseInt(txObject.gasPrice) + 1;
                 } else {
                     gasPrice = Math.ceil(parseInt(txObject.gasPrice) * txObject.step);

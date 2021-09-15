@@ -326,6 +326,8 @@ class Protocol {
                                     break;
                                 }
                                 case "AgreementLiquidatedBy": {
+                                    event.agentWasLiquidator =
+                                        event.liquidatorAccount === this.app.client.agentAccounts.address
                                     console.log(event);
                                 }
                             }

@@ -37,6 +37,7 @@
     "commander": "^2.15.1",
     "dotenv": "^8.2.0",
     "ethereumjs-wallet": "^1.0.1",
+    "express": "^4.17.1",
     "pm2": "^5.1.0",
     "sequelize": "^6.6.2",
     "sqlite3": "^5.0.2",
@@ -58,15 +59,15 @@
       "pre-commit": "npm run lint"
     }
   },
-  "networks" : {
-    "137": {
-      "name" : "Polygon",
-      "epoch" : 11000000,
-      "batch" : "0xAB4075f621100563f4551C0Ca50944809b03E948"
-    },
+  "networks": {
     "100": {
       "name": "xDAI",
       "epoch": 11000000
+    },
+    "137": {
+      "name": "Polygon",
+      "epoch": 11000000,
+      "batch": "0xAB4075f621100563f4551C0Ca50944809b03E948"
     }
   }
 }

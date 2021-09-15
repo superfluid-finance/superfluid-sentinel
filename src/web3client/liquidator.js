@@ -10,7 +10,7 @@ class Liquidator {
         this.clo = this.app.config.CLO_ADDR;
         this.txDelay = this.app.config.ADDITIONAL_LIQUIDATION_DELAY;
         this.gasMultiplier = this.app.config.RETRY_GAS_MULTIPLIER;
-        if(this.clo !== undefined) {
+        if(this.clo === undefined) {
             this.app.logger.info("liquidator - adding non clo delay (15min)");
             this.txDelay += 900;
         }
@@ -18,7 +18,7 @@ class Liquidator {
 
     async start() {
         try {
-            this.app.logger.info("running liquidation job");
+            this.app.logger.debug("running liquidation job");
             if(this.runningMux > 0) {
                 this.runningMux--;
                 this.app.logger.warn(`skip liquidation.start() - ${this.runningMux}`);

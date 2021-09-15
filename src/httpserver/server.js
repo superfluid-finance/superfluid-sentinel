@@ -14,8 +14,9 @@ class HTTPServer {
     start() {
         this.server.get('/', async (req, res) => {
             const healthcheck = {
-                timestamp: Date.now(),
+                statusCode: 200,
                 message: 'OK',
+                timestamp: Date.now(),
                 detailReport: await this.healthReport.fullReport()
             };
             try {

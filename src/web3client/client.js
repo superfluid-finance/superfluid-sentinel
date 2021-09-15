@@ -228,6 +228,10 @@ class Client {
         return this.agentAccounts.address;
     }
 
+    async getAccountBalance() {
+        return this.web3.eth.getBalance(this.agentAccounts.address);
+    }
+
     getAccount() {
         return this.agentAccounts;
     }

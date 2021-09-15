@@ -35,7 +35,8 @@ class EventModel {
                 totalSenderFlowRate: (isNaN(parseInt(event.returnValues.totalSenderFlowRate)) ?
                     undefined : parseInt(event.returnValues.totalSenderFlowRate)),
                 totalReceiverFlowRate: (isNaN(parseInt(event.returnValues.totalReceiverFlowRate)) ?
-                    undefined : parseInt(event.returnValues.totalReceiverFlowRate))
+                    undefined : parseInt(event.returnValues.totalReceiverFlowRate)),
+                removed: event.removed
             };
 
             Object.keys(obj).forEach(key => (obj[key] === undefined) && delete obj[key]);

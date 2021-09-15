@@ -4,6 +4,7 @@ const EstimationModel = require("../database/models/accountEstimationModel");
 const AgreementModel =  require("../database/models/agreementModel");
 const IDAModel = require("../database/models/IDAModel");
 const { Op } = require("sequelize");
+const { wad4human } = require("@decentral.ee/web3-helpers");
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function trigger(fn, ms) {
@@ -286,12 +287,15 @@ class Protocol {
     async subscribeEvents(token) {
         try {
             const superToken = this.client.superTokens[token];
-            this.app.logger.log("starting listen superToken: " + token);
+            this.app.logger.debug(`starting listening for superToken: ${token} events`);
             this.subs.set(token,
                 superToken.events.allEvents(
                     async(err, evt) => {
                         if (err === undefined || err == null) {
                             let event = this.app.models.event.transformWeb3Event(evt);
+                if (event.removed) {
+                    this.app.logger.warn(`Event removed: ${event.eventName}, tx ${event.transactionHash}`);
+                }
                             switch(event.eventName) {
                                 case "AgreementStateUpdated" : {
                                     agreementUpdateQueue.push({
@@ -326,7 +330,11 @@ class Protocol {
                                     break;
                                 }
                                 case "AgreementLiquidatedBy": {
-                                    console.log(event);
+                                    //console.log(event);
+                                    this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address]}, liquidated acc ${event.penaltyAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`); 
+                                    if (event.bailoutAmount !== '0') {
+                                        this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.bailoutAmount)}`);
+                                    }
                                 }
                             }
                         } else {
@@ -363,7 +371,7 @@ class Protocol {
     async subscribeAgreementEvents() {
         try {
             const CFA = this.client.CFAv1WS;
-            this.app.logger.info("starting listen CFAv1: " + CFA._address);
+            this.app.logger.debug("starting listening for CFAv1 events: " + CFA._address);
             this.subsAgreements.set(CFA._address, CFA.events.FlowUpdated(async(err, evt) => {
                 if(err === undefined || err == null) {
                     let event = this.app.models.event.transformWeb3Event(evt);
@@ -410,7 +418,7 @@ class Protocol {
     async subscribeIDAAgreementEvents() {
         try {
             const IDA = this.client.IDAv1WS;
-            this.app.logger.log("starting listen IDAv1: " + IDA._address);
+            this.app.logger.debug("starting listening for IDAv1 events: " + IDA._address);
             this.subsAgreements.set(IDA._address, IDA.events.allEvents(
                 async(err, evt) => {
                     if(err === undefined || err == null) {
@@ -453,7 +461,7 @@ class Protocol {
                                 }
                             }
                         } else {
-                            console.debug(`token:${event.token} is not subscribed`);
+                            this.app.logger.debug(`token:${event.token} is not subscribed`);
                         }
                     } else {
                         this.app.logger.error(err);

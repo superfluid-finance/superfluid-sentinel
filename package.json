@@ -28,6 +28,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@decentral.ee/web3-helpers": "^0.5.3",
     "@superfluid-finance/ethereum-contracts": "dev",
     "@superfluid-finance/js-sdk": "dev",
     "@truffle/contract": "^4.3.24",

@@ -80,9 +80,9 @@ class Client {
                 this.agentAccounts = { address: account.address, _privateKey: account.privateKey };
             } else {
                 this.app.logger.info("using provided mnemonic");
-                this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, 100);
+                this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, this.app.config.MNEMONIC_INDEX);
             }
-            this.app.logger.info(`Node account: ${this.agentAccounts.address}`);
+            this.app.logger.info(`node account: ${this.agentAccounts.address}`);
             // Node HTTP
             this.app.logger.info("Connecting to Node: HTTP");
             this.web3HTTP.eth.transactionConfirmationBlocks = 3;

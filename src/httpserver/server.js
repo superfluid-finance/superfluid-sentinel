@@ -1,9 +1,8 @@
 const express = require("express");
 const Report = require("./report");
 
-
-
 class HTTPServer {
+
     constructor(app) {
         this.app = app;
         this.server = express();

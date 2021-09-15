@@ -51,6 +51,7 @@ class Config {
             this.COLD_BOOT = 0;
             this.MNEMONIC_INDEX = 100;
             this.shutdownOnError = false;
+            this.httpServer = true;
         }
     }
 

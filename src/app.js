@@ -122,7 +122,9 @@ class App {
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
-            setTimeout(() => this.server.start(), 1000);
+            if(this.config.httpServer) {
+                setTimeout(() => this.server.start(), 1000);
+            }
             //run liquidation job every x milliseconds
             this.run(this.liquidator, 10000);
         } catch(err) {

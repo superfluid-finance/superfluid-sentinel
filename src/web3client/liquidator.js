@@ -1,4 +1,22 @@
-const utils = require("../utils/utils");
+const { filter } = require("async");
+
+function promiseTimeout(promise, ms) {
+
+    let timeout = new Promise((resolve, reject) => {
+        let id = setTimeout(() => {
+            clearTimeout(id);
+            reject(new Error("timeout rejection"))
+        }, ms)
+    });
+
+    // Returns a race between timeout and promise
+    return Promise.race([
+        promise,
+        timeout
+    ]);
+}
+
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
 class Liquidator {
 
@@ -18,10 +36,10 @@ class Liquidator {
 
     async start() {
         try {
-            this.app.logger.debug("running liquidation job");
+            this.app.logger.info("running liquidation job");
             if(this.runningMux > 0) {
                 this.runningMux--;
-                this.app.logger.warn(`skip liquidation.start() - ${this.runningMux}`);
+                this.app.logger.warn(`skip liquidation.start() - Mutex: ${this.runningMux}/10`);
                 return;
             }
             this.runningMux = 10;
@@ -33,12 +51,18 @@ class Liquidator {
             }
             const checkDate = this.app.time.getTimeWithDelay(this.txDelay);
             const haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
-            const work = await this.app.db.queries.getLiquidations(checkDate, this.app.config.TOKENS);
+            const work = await this.app.db.queries.getLiquidations(checkDate, this.app.config.TOKENS, 10);
+            console.log(work)
             if(haveBatchWork.length > 0) {
-                //await this.multiTermination(haveBatchWork, work);
-                await this.singleTerminations(work);
+                await this.multiTermination(haveBatchWork, checkDate);
+                //await this.singleTerminations(work);
             } else {
-                await this.singleTerminations(work);
+                await this.singleTerminations(
+                    await this.app.db.queries.getLiquidations(
+                        checkDate,
+                        this.app.config.TOKENS
+                    )
+                );
             }
         } catch(err) {
             this.app.logger.error(`liquidator.start() - ${err}`);
@@ -47,19 +71,24 @@ class Liquidator {
         }
     }
 
+    async isPossibleToClose(superToken, sender, receiver) {
+        //Note: Is flow does not exist on the network, we are going to remove from DB
+        const flowExist = (await this.app.protocol.checkFlow(superToken, sender, receiver)) !== undefined;
+        return flowExist && (await this.app.protocol.isAccountCriticalNow(superToken, sender));
+    }
     async singleTerminations(work) {
 
         const wallet = this.app.client.getAccount();
         const chainId = await this.app.client.getNetworkId();
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
-        const BaseGasPrice = await this.app.client.estimateGasPrice();
 
         for(const job of work) {
-            await this.app.protocol.checkFlow(job.superToken, job.sender, job.receiver);
-            if(await this.app.protocol.isAccountCriticalNow(job.superToken, job.sender))
+            //Returned error: header not found (??)
+            if(await this.isPossibleToClose(job.superToken, job.sender, job.receiver))
             {
                 try {
                     const tx = this.app.protocol.generateDeleteFlowABI(job.superToken, job.sender, job.receiver);
+                    const BaseGasPrice = Math.ceil(parseInt(await this.app.client.estimateGasPrice()) * 1.2);
                     const txObject = {
                         retry : 1,
                         step : this.gasMultiplier,
@@ -86,23 +115,94 @@ class Liquidator {
             } else {
                 this.app.logger.debug(`address ${job.sender} is solvent at ${job.superToken}`);
                 this.app.protocol.newEstimation(job.superToken, job.sender);
+                await delay(500);
             }
         }
     }
 
-    async multiTermination(batchWork, work) {
-        throw Error("Not implemented");
+    async multiTermination(batchWork, checkDate) {
+        for(const batch of batchWork) {
+
+            let senders = new Array();
+            let receivers = new Array();
+
+            const streams = await this.app.db.queries.getLiquidations(
+                    checkDate,
+                    batch.superToken
+            );
+
+            for(const flow of streams) {
+                if(await this.isPossibleToClose(flow.superToken, flow.sender, flow.receiver)) {
+                    senders.push(flow.sender);
+                    receivers.push(flow.receiver);
+                }
+
+                if(senders.length === this.splitBatch) {
+                    console.log(senders);
+                    console.log("Send batch");
+                    await this.sendBatch(batch.superToken, senders, receivers);
+                    senders = new Array();
+                    receivers = new Array();
+                }
+            }
+
+            if(sender.length !== 0) {
+                console.log(senders);
+                console.log("Send batch - remain");
+                await this.sendBatch(batch.superToken, senders, receivers);
+                senders = new Array();
+                receivers = new Array();
+            }
+            //console.log(streams);
+        }
+    }
+
+    async sendBatch(superToken, senders, receivers) {
+        const wallet = this.app.client.getAccount();
+        const chainId = await this.app.client.getNetworkId();
+        let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
+        try {
+            const tx = this.app.protocol.generateMultiDeleteFlowABI(superToken, senders, receivers);
+            const BaseGasPrice = Math.ceil(parseInt(await this.app.client.estimateGasPrice()) * 1.2);
+            const txObject = {
+                retry : 1,
+                step : this.gasMultiplier,
+                target: this.app.client.sf._address,
+                superToken: superToken,
+                tx: tx,
+                gasPrice: BaseGasPrice,
+                nonce: networkAccountNonce,
+                chainId: chainId
+            }
+            this.app.logger.debug(`sending tx from account ${wallet.address}`);
+            const result = await this.sendWithRetry(wallet, txObject, this.timeout);
+            if(result !== undefined && result.error !== undefined) {
+                this.app.logger.error(result.error);
+            } else {
+                this.app.logger.info(JSON.stringify(result));
+            }
+        } catch(err) {
+            this.app.logger.error(err);
+            process.exit(1);
+        }
     }
 
     async sendWithRetry(wallet, txObject, ms) {
+        await delay(1000);
         //gas limit estimation
         const gas = await this.estimateGasLimit(wallet, txObject);
         if(gas.error !== undefined) {
             this.app.logger.error(gas.error);
-            if(gas.error.message === "Returned error: execution reverted: CFA - flow does not exist") {
+
+            if(gas.error.message === "Returned error: execution reverted: CFA: flow does not exist") {
                 await this.app.protocol.checkFlow(txObject.superToken, txObject.flowSender, txObject.flowReceiver);
-                return {error: gas.error, tx: undefined};
             }
+
+            if(gas.error.message === "Returned error: execution reverted") {
+                console.log("HERE HERE")
+            }
+
+            return {error: gas.error, tx: undefined};
         }
         txObject.gasLimit = gas.gasLimit;
         const signed = await this.signTx(wallet, txObject);
@@ -122,10 +222,10 @@ class Liquidator {
         }
 
         try {
-            this.app.logger.info(`waiting until timeout for ${this.timeout / 1000} seconds` );
+            this.app.logger.info(`waiting until timeout for ${ms / 1000} seconds` );
             txObject.txHash = signed.tx.transactionHash;
             signed.tx.timeout = ms;
-            const tx =  await utils.promiseTimeout(
+            const tx =  await promiseTimeout    (
                 this.app.client.sendSignedTransaction(signed),
                 ms
             );
@@ -145,7 +245,7 @@ class Liquidator {
                 return this.sendWithRetry(wallet, txObject, ms);
             }
 
-            if(err.message === "Error: Returned error: nonce too low") {
+            if(err.message === "Returned error: nonce too low") {
                 this.app.logger.debug(`nonce too low, retry`);
                 txObject.nonce++;
                 return this.sendWithRetry(wallet, txObject, ms);
@@ -161,16 +261,24 @@ class Liquidator {
                 return {error: err.message, tx: undefined};
             }
 
+            //Error: Transaction has been reverted by the EVM
             console.log("catch error - ", err);
         }
     }
     async estimateGasLimit(wallet, txObject) {
         try {
-            const result = await this.app.client.web3.eth.estimateGas({
+            let result = await this.app.client.web3.eth.estimateGas({
                 from: wallet.address,
                 to: txObject.target,
                 data: txObject.tx
                 });
+                result += Math.ceil(parseInt(result) * 1.2);
+                //result += result * 0.2;
+                /*
+                if(result < 28312) {
+                    result = 28312;
+                }
+                */
             return { error: undefined, gasLimit : result };
         } catch(err) {
             return { error: err, gasLimit : undefined };
@@ -179,39 +287,43 @@ class Liquidator {
 
     async signTx(wallet, txObject) {
         try {
-            let gasPrice = txObject.gasPrice;
-            if(txObject.retry > 1) {
-                console.log("old gasprice: ", txObject.gasPrice);
-                if(this.app.config.MAX_GAS_PRICE !== undefined && parseInt(txObject.gasPrice) >= this.app.config.MAX_GAS_PRICE) {
-                    this.app.logger.debug(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
-                    gasPrice = parseInt(txObject.gasPrice) + 1;
-                } else {
-                    gasPrice = Math.ceil(parseInt(txObject.gasPrice) * txObject.step);
-                }
-                this.app.logger.debug(`update gas price from ${txObject.gasPrice} to ${gasPrice}`);
-                txObject.gasPrice = gasPrice;
-            }
-
+            txObject.gasPrice = this._updateGasPrice(txObject.gasPrice, txObject.retry);
             const unsignedTx = {
                 chainId : txObject.chainId,
                 to : txObject.target,
                 from : wallet.address,
                 data : txObject.tx,
                 nonce : txObject.nonce,
-                gasPrice: gasPrice,
+                gasPrice: txObject.gasPrice,
                 gasLimit : txObject.gasLimit
             };
-
-            this.app.logger.info("signing tx");
             const signed = await this.app.client.signTransaction(
                 unsignedTx,
                 wallet._privateKey.toString("hex")
             );
             signed.txObject = txObject;
+            this.app.logger.info(`transaction ${signed.tx.transactionHash} signed with ${gasPrice} gasPrice`);
             return { tx: signed, error: undefined };
         } catch(err) {
             return { tx: undefined, error: err};
         }
+    }
+
+    _updateGasPrice(originalGasPrice, retryNumber) {
+        let gasPrice = originalGasPrice;
+        if(retryNumber > 1) {
+            if(this.app.config.MAX_GAS_PRICE !== undefined
+                && parseInt(originalGasPrice) >= this.app.config.MAX_GAS_PRICE
+            )
+            {
+                this.app.logger.debug(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
+                gasPrice = parseInt(txObject.gasPrice) + 1;
+            } else {
+                gasPrice = Math.ceil(parseInt(txObject.gasPrice) * txObject.step);
+            }
+            this.app.logger.debug(`update gas price from ${originalGasPrice} to ${gasPrice}`);
+        }
+        return gasPrice;
     }
 }
 

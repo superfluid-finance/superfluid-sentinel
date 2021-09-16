@@ -109,6 +109,9 @@ class App {
             //create all web3 infrastruture needed
             await this.client.init();
             this.config.loadNetworkInfo(await this.client.getNetworkId());
+            if(this.config.BATCH_CONTRACT !== undefined) {
+                await this.client.loadBatchContract();
+            }
             //Collect events to detect superTokens and accounts
             await this.loadEvents.start();
             //query balances to make liquidations estimations
@@ -126,7 +129,8 @@ class App {
                 setTimeout(() => this.server.start(), 1000);
             }
             //run liquidation job every x milliseconds
-            this.run(this.liquidator, 10000);
+            //this.run(this.liquidator, 120000);
+            this.run(this.liquidator, 30000);
         } catch(err) {
             this.logger.error(`app.start() - ${err}`);
             process.exit(1);

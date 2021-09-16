@@ -7,7 +7,7 @@ const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contra
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
 const SuperTokenModel = require("./../database/models/superTokenModel");
 const CLO = require("../inc/Clown.json");
-//const BatchContract = require("../inc/BatchLiquidator.json");
+    const BatchContract = require("../inc/BatchLiquidator.json");
 /*
  *   Web3 and superfluid client:
  * - Create web3 connections
@@ -95,6 +95,17 @@ class Client {
         }
     }
 
+    async loadBatchContract() {
+        try {
+            if(this.app.config.BATCH_CONTRACT !== undefined) {
+                this.batch = new this.web3.eth.Contract(BatchContract, this.app.config.BATCH_CONTRACT);
+            }
+        } catch(err) {
+            this.app.logger.error(err);
+            throw Error(`client.loadBatchContract() : ${err}`)
+        }
+    }
+
     async _loadSuperfluidContracts() {
         try {
             this.app.logger.debug(`_loadSuperfluidContracts()`);
@@ -127,7 +138,6 @@ class Client {
             this.CFAv1WS = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
             this.IDAv1 = new this.web3HTTP.eth.Contract(IIDA.abi, idaAddress);
             this.IDAv1WS = new this.web3.eth.Contract(IIDA.abi, idaAddress);
-            //this.batch = new this.web3.eth.Contract(BatchContract, "");
             //Agent is a member of a clown
             if(this.app.config.CLO_ADDR !== undefined) {
                 this.clo = new this.web3.eth.Contract(CLO, this.app.config.CLO_ADDR);

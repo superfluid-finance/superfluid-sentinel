@@ -14,7 +14,6 @@ class Report {
     }
 
     async fullReport() {
-        //DB
         return {
             process: {
                 uptime: process.uptime(),
@@ -28,7 +27,7 @@ class Report {
             },
             agent_account: {
                 address: this.app.client.getAccountAddress(),
-                balance: await this.app.client.getAccountBalance()
+                balance: await this.app.client.getAccountBalance(),
             }
         };
     }

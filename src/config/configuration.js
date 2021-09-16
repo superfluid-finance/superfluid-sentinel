@@ -57,6 +57,7 @@ class Config {
 
     loadNetworkInfo(chainId) {
         this.EPOCH_BLOCK = networkConfigs[chainId].epoch || 0;
+        this.BATCH_CONTRACT = networkConfigs[chainId].batch;
     }
 }
 

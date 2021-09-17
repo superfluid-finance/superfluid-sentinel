@@ -51,9 +51,8 @@ class Liquidator {
             }
             const checkDate = this.app.time.getTimeWithDelay(this.txDelay);
             const haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
-            const work = await this.app.db.queries.getLiquidations(checkDate, this.app.config.TOKENS, 10);
-            console.log(work)
             if(haveBatchWork.length > 0) {
+                this.app.logger.info("Running batch")
                 await this.multiTermination(haveBatchWork, checkDate);
                 //await this.singleTerminations(work);
             } else {
@@ -76,6 +75,7 @@ class Liquidator {
         const flowExist = (await this.app.protocol.checkFlow(superToken, sender, receiver)) !== undefined;
         return flowExist && (await this.app.protocol.isAccountCriticalNow(superToken, sender));
     }
+
     async singleTerminations(work) {
 
         const wallet = this.app.client.getAccount();
@@ -146,7 +146,7 @@ class Liquidator {
                 }
             }
 
-            if(sender.length !== 0) {
+            if(senders.length !== 0) {
                 console.log(senders);
                 console.log("Send batch - remain");
                 await this.sendBatch(batch.superToken, senders, receivers);
@@ -163,11 +163,12 @@ class Liquidator {
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
         try {
             const tx = this.app.protocol.generateMultiDeleteFlowABI(superToken, senders, receivers);
+            console.log(tx);
             const BaseGasPrice = Math.ceil(parseInt(await this.app.client.estimateGasPrice()) * 1.2);
             const txObject = {
                 retry : 1,
                 step : this.gasMultiplier,
-                target: this.app.client.sf._address,
+                target: this.app.config.BATCH_CONTRACT,
                 superToken: superToken,
                 tx: tx,
                 gasPrice: BaseGasPrice,
@@ -199,7 +200,7 @@ class Liquidator {
             }
 
             if(gas.error.message === "Returned error: execution reverted") {
-                console.log("HERE HERE")
+                console.log("TODO")
             }
 
             return {error: gas.error, tx: undefined};
@@ -284,10 +285,9 @@ class Liquidator {
             return { error: err, gasLimit : undefined };
         }
     }
-
     async signTx(wallet, txObject) {
         try {
-            txObject.gasPrice = this._updateGasPrice(txObject.gasPrice, txObject.retry);
+            txObject.gasPrice = this._updateGasPrice(txObject.gasPrice, txObject.retry, txObject.step);
             const unsignedTx = {
                 chainId : txObject.chainId,
                 to : txObject.target,
@@ -302,14 +302,13 @@ class Liquidator {
                 wallet._privateKey.toString("hex")
             );
             signed.txObject = txObject;
-            this.app.logger.info(`transaction ${signed.tx.transactionHash} signed with ${gasPrice} gasPrice`);
             return { tx: signed, error: undefined };
         } catch(err) {
             return { tx: undefined, error: err};
         }
     }
 
-    _updateGasPrice(originalGasPrice, retryNumber) {
+    _updateGasPrice(originalGasPrice, retryNumber, step) {
         let gasPrice = originalGasPrice;
         if(retryNumber > 1) {
             if(this.app.config.MAX_GAS_PRICE !== undefined
@@ -319,7 +318,7 @@ class Liquidator {
                 this.app.logger.debug(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
                 gasPrice = parseInt(txObject.gasPrice) + 1;
             } else {
-                gasPrice = Math.ceil(parseInt(txObject.gasPrice) * txObject.step);
+                gasPrice = Math.ceil(parseInt(gasPrice) * step);
             }
             this.app.logger.debug(`update gas price from ${originalGasPrice} to ${gasPrice}`);
         }

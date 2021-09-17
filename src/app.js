@@ -129,8 +129,7 @@ class App {
                 setTimeout(() => this.server.start(), 1000);
             }
             //run liquidation job every x milliseconds
-            //this.run(this.liquidator, 120000);
-            this.run(this.liquidator, 30000);
+            this.run(this.liquidator, 60000);
         } catch(err) {
             this.logger.error(`app.start() - ${err}`);
             process.exit(1);

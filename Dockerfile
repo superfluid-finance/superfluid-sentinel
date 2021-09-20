@@ -1,23 +1,22 @@
-FROM node:12.16.3-alpine
+# syntax = docker/dockerfile:1.3
+
+# Always add commit hash for reproducability
+FROM node:16.9.1-alpine@sha256:aca897c4ab3de699aa6c5dbf81424de3dfd15f226b7de86b1d30559ccd5d2644
+
+# Enable prod optimizations
+ENV NODE_ENV=production
 
 WORKDIR /usr/src/app
 
-ARG GITHUB_TOKEN
+COPY ["package.json", "package-lock.json*", "./"]
+RUN npm ci --only=production
 
-COPY . .
+COPY --chown=node:node . /usr/src/app
 
-# add build tools
-RUN apk add --no-cache alpine-sdk python
+# Add a simple init system so that Node would respect process signals
+RUN apk add --no-cache tini
+ENTRYPOINT ["/sbin/tini", "--"]
 
-# install npm dependencies
-RUN GITHUB_TOKEN=$GITHUB_TOKEN npm ci
-# avoid GITHUB_TOKEN dependency when running
-RUN rm -f .npmrc
-
-# run lint
-#RUN npm run lint
-
-# cleanup build tools
-RUN apk del alpine-sdk python
-
-CMD npm run start
+# Don't run as root
+USER node
+CMD ["node", "main.js" ]

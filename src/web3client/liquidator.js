@@ -26,6 +26,7 @@ class Liquidator {
         this.clo = this.app.config.CLO_ADDR;
         this.txDelay = this.app.config.ADDITIONAL_LIQUIDATION_DELAY;
         this.gasMultiplier = this.app.config.RETRY_GAS_MULTIPLIER;
+        this.useBatch = this.app.config.BATCH_CONTRACT !== undefined;
         if(this.clo === undefined) {
             this.app.logger.info("liquidator - adding non clo delay (15min)");
             this.txDelay += 900;
@@ -49,7 +50,7 @@ class Liquidator {
             }
             const checkDate = this.app.time.getTimeWithDelay(this.txDelay);
             const haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
-            if(haveBatchWork.length > 0) {
+            if(haveBatchWork.length > 0 && this.useBatch) {
                 await this.multiTermination(haveBatchWork, checkDate);
             } else {
                 await this.singleTerminations(

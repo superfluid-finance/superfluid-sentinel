@@ -44,12 +44,12 @@ class Config {
             this.MAX_GAS_PRICE = process.env.MAX_GAS_PRICE;
             this.RETRY_GAS_MULTIPLIER = process.env.RETRY_GAS_MULTIPLIER || 1.15;
             this.CLO_ADDR = process.env.CLO_ADDR;
+            this.MNEMONIC_INDEX = process.env.MNEMONIC_INDEX || 100;
 
             this.CONCURRENCY = 1;
             this.LISTEN_MODE = 1;
             this.NUM_RETRIES = 10;
             this.COLD_BOOT = 0;
-            this.MNEMONIC_INDEX = 100;
             this.shutdownOnError = false;
             this.httpServer = true;
         }

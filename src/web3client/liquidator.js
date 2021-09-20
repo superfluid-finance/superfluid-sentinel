@@ -1,5 +1,3 @@
-const { filter } = require("async");
-
 function promiseTimeout(promise, ms) {
 
     let timeout = new Promise((resolve, reject) => {
@@ -24,7 +22,7 @@ class Liquidator {
         this.app = app;
         this.timeout = this.app.config.TX_TIMEOUT;
         this.runningMux = 0;
-        this.splitBatch = 10;
+        this.splitBatch = 20;
         this.clo = this.app.config.CLO_ADDR;
         this.txDelay = this.app.config.ADDITIONAL_LIQUIDATION_DELAY;
         this.gasMultiplier = this.app.config.RETRY_GAS_MULTIPLIER;
@@ -36,13 +34,13 @@ class Liquidator {
 
     async start() {
         try {
-            this.app.logger.info("running liquidation job");
+            this.app.logger.debug("running liquidation job");
             if(this.runningMux > 0) {
                 this.runningMux--;
                 this.app.logger.warn(`skip liquidation.start() - Mutex: ${this.runningMux}/10`);
                 return;
             }
-            this.runningMux = 10;
+            this.runningMux = 15;
             if(this.app.config.TOKENS !== undefined) {
                 this.app.logger.info(`SuperTokens to liquidate`);
                 for(const addr of this.app.config.TOKENS) {
@@ -52,9 +50,7 @@ class Liquidator {
             const checkDate = this.app.time.getTimeWithDelay(this.txDelay);
             const haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
             if(haveBatchWork.length > 0) {
-                this.app.logger.info("Running batch")
                 await this.multiTermination(haveBatchWork, checkDate);
-                //await this.singleTerminations(work);
             } else {
                 await this.singleTerminations(
                     await this.app.db.queries.getLiquidations(
@@ -106,7 +102,7 @@ class Liquidator {
                     if(result !== undefined && result.error !== undefined) {
                         this.app.logger.error(result.error);
                     } else {
-                        this.app.logger.info(JSON.stringify(result));
+                        this.app.logger.debug(JSON.stringify(result));
                     }
                 } catch(err) {
                     this.app.logger.error(err);
@@ -138,7 +134,6 @@ class Liquidator {
                 }
 
                 if(senders.length === this.splitBatch) {
-                    console.log(senders);
                     console.log("Send batch");
                     await this.sendBatch(batch.superToken, senders, receivers);
                     senders = new Array();
@@ -147,9 +142,16 @@ class Liquidator {
             }
 
             if(senders.length !== 0) {
-                console.log(senders);
                 console.log("Send batch - remain");
-                await this.sendBatch(batch.superToken, senders, receivers);
+                if(senders.length === 1) {
+                    await this.singleTerminations([{
+                        superToken: batch.superToken,
+                        sender: senders[0],
+                        receiver: receivers[0]
+                    }]);
+                } else {
+                    await this.sendBatch(batch.superToken, senders, receivers);
+                }
                 senders = new Array();
                 receivers = new Array();
             }
@@ -163,7 +165,6 @@ class Liquidator {
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
         try {
             const tx = this.app.protocol.generateMultiDeleteFlowABI(superToken, senders, receivers);
-            console.log(tx);
             const BaseGasPrice = Math.ceil(parseInt(await this.app.client.estimateGasPrice()) * 1.2);
             const txObject = {
                 retry : 1,
@@ -180,7 +181,7 @@ class Liquidator {
             if(result !== undefined && result.error !== undefined) {
                 this.app.logger.error(result.error);
             } else {
-                this.app.logger.info(JSON.stringify(result));
+                this.app.logger.debug(JSON.stringify(result));
             }
         } catch(err) {
             this.app.logger.error(err);
@@ -274,12 +275,6 @@ class Liquidator {
                 data: txObject.tx
                 });
                 result += Math.ceil(parseInt(result) * 1.2);
-                //result += result * 0.2;
-                /*
-                if(result < 28312) {
-                    result = 28312;
-                }
-                */
             return { error: undefined, gasLimit : result };
         } catch(err) {
             return { error: err, gasLimit : undefined };

@@ -13,7 +13,7 @@ class Logger {
             format: combine(label({ label: this.level }), timestamp(), logFormat),
             transports: [
                 new transports.Console({
-                    level: "info",
+                    level: this.app.config.RUN_TEST_ENV ? "debug" : "info",
                     handleExceptions: true,
                     json: false,
                     colorize: true,

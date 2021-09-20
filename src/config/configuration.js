@@ -5,9 +5,11 @@ class Config {
 
     constructor(config) {
         if(typeof config === "object") {
+            this.RUN_TEST_ENV = true;
             this.HTTP_RPC_NODE = config.http_rpc_node;
             this.WS_RPC_NODE = config.ws_rpc_node;
             this.MNEMONIC = config.mnemonic;
+            this.MNEMONIC_INDEX = config.mnemonic_index;
             this.PRIVATE_KEY = config.private_key;
             this.MAX_QUERY_BLOCK_RANGE = config.max_query_block_range || 2000;
             if(config.tokens !== undefined && config.tokens !== "") {
@@ -21,14 +23,19 @@ class Config {
             this.RETRY_GAS_MULTIPLIER = config.retry_gas_multiplier || 1.15;
             this.CLO_ADDR = config.clo_addr;
 
+            this.EPOCH_BLOCK = config.epoch_block;
+            this.BATCH_CONTRACT =config.batch_contract;
+
             this.CONCURRENCY = config.concurrency;
             this.COLD_BOOT = config.cold_boot;
             this.LISTEN_MODE = config.listen_mode;
             this.NUM_RETRIES = config.number_retries;
             this.TEST_RESOLVER = config.test_resolver;
             this.shutdownOnError = config.shutdown_on_error;
+            this.LIQUIDATION_RUN_EVERY = config.liquidation_run_every;
 
         } else {
+
             this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
             this.WS_RPC_NODE = process.env.WS_RPC_NODE;
             this.MNEMONIC = process.env.MNEMONIC;
@@ -52,6 +59,7 @@ class Config {
             this.COLD_BOOT = 0;
             this.shutdownOnError = false;
             this.httpServer = true;
+            this.LIQUIDATION_RUN_EVERY = 45000;
         }
     }
 

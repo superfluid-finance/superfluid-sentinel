@@ -15,11 +15,16 @@ class Time {
     }
 
     getTimeWithDelay(delaySeconds) {
+        console.log(this.baseTime);
         if(this.baseTime === undefined) {
-            return new Date().getTime() - (delaySeconds * 1000);
+            const date = new Date();
+            //date.setSeconds(59, 999);
+            date.setSeconds(0,0);
+            return date.getTime() - (delaySeconds * 1000);
         }
 
-        return new Date(this.baseTime).getTime() - (delaySeconds * 1000);
+        //return new Date(this.baseTime).getTime() - (delaySeconds * 1000);
+        return new Date(this.baseTime).getTime();// - (delaySeconds * 1000);
     }
 
     setTime(time) {

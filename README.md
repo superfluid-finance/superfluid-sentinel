@@ -70,6 +70,30 @@ _Listed SuperTokens_: SuperTokens register in Superfluid resolver contract.
 _Non Listed SuperTokens_: SuperTokens not register in Superfluid resolver contract.
 
 
+## Docker
+This part of the guide assumes you have a recent version of Docker and docker-compose installed.
+
+### Build Docker image
+```
+COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose build
+```
+
+### Run Docker container
+Ensure your ```.env``` file is configured correctly, then run:
+```
+docker-compose up
+```
+
+### Upload Docker image to ECR
+This assumes you have created a repository named ```<REPOSITORY>``` in your AWS account.
+```
+aws ecr get-login-password --region <REGION> | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com
+docker images
+docker tag <IMAGE_ID> <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/<REPOSITORY>:<TAG>
+docker push <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/<REPOSITORY>:<TAG>
+```
+
+
 # Code structure
 
 [TODO]

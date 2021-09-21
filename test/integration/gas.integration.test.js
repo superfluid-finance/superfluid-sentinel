@@ -9,8 +9,8 @@ const IToken = require("@superfluid-finance/ethereum-contracts/build/contracts/T
 const expect = require('chai').expect
 const Web3 = require('web3');
 const traveler = require("ganache-time-traveler");
-const ganache = require("../scripts/setGanache");
-const App = require("../src/app");
+const ganache = require("../../scripts/setGanache");
+const App = require("../../src/app");
 
 const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
 

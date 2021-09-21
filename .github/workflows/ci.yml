@@ -47,7 +47,7 @@ jobs:
 
       - name: run ida integration test
         run: |
-          npx mocha -t 1000000 test/integration/da.integration.test.js
+          npx mocha -t 1000000 test/integration/ida.integration.test.js
 
       - name: run cfa integration test
         run: |

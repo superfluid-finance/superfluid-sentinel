@@ -39,16 +39,20 @@ jobs:
 
       - name: run node integration test
         run: |
-          npx mocha -t 1000000 test/node.integration.test.js
+          npx mocha -t 1000000 test/intergration/node.integration.test.js
 
       - name: run gas integration test
         run: |
-          npx mocha -t 1000000 test/gas.integration.test.js
+          npx mocha -t 1000000 test/intergration/gas.integration.test.js
 
       - name: run ida integration test
         run: |
-          npx mocha -t 1000000 test/ida.integration.test.js
+          npx mocha -t 1000000 test/intergration/da.integration.test.js
 
       - name: run cfa integration test
         run: |
-          npx mocha -t 1000000 test/cfa.integration.test.js
+          npx mocha -t 1000000 test/intergration/cfa.integration.test.js
+
+      - name: run batch liquidations integration test
+        run: |
+          npx mocha -t 1000000 test/intergration/batch.integration.test.js

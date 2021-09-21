@@ -52,9 +52,9 @@ class Bootstrap {
                                 });
                             }
                             break;
-                        } catch(error) {
+                        } catch(err) {
                             keepTrying++;
-                            console.error(error);
+                            console.error(err);
                             if(keepTrying > task.self.numRetries) {
                                 process.exit(1);
                             }
@@ -110,7 +110,6 @@ class Bootstrap {
                         }
                     });
                     if(flows.length == 0) {
-                        //console.debug(`${est.address} - no active streams at ${est.superToken}`);
                         await est.destroy();
                     }
                 }

@@ -3,6 +3,8 @@ const BN = require("bn.js");
 const EstimationModel = require("../database/models/accountEstimationModel");
 const AgreementModel =  require("../database/models/agreementModel");
 const IDAModel = require("../database/models/IDAModel");
+const { Op } = require("sequelize");
+const { wad4human } = require("@decentral.ee/web3-helpers");
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function trigger(fn, ms) {
@@ -15,9 +17,10 @@ const estimationQueue = async.queue(async function(task) {
     while(true) {
         try {
             if(task.self.app.client.isSuperTokenRegister(task.token)) {
+                if(task.account === "0x0000000000000000000000000000000000000000") {
+                    return;
+                }
                 const estimationData = await task.self.liquidationData(task.token, task.account);
-                console.debug(`account: ${task.account } supertoken: ${task.token} - ${estimationData.estimation}`);
-
                 await EstimationModel.upsert({
                     address: task.account,
                     superToken: task.token,
@@ -31,7 +34,7 @@ const estimationQueue = async.queue(async function(task) {
                     now: (estimationData.estimation == -1 ? true: false),
                 });
             } else {
-                console.debug(`reject account: ${task.account } supertoken: ${task.token} not listed`);
+                console.debug(`reject account: ${task.account } supertoken: ${task.token} not subscribed`);
             }
             break;
         } catch(err) {
@@ -226,6 +229,14 @@ class Protocol {
         }
     }
 
+    async isAccountCriticalNow(superToken, account) {
+        try {
+            return this.app.client.superTokens[superToken].methods.isAccountCriticalNow(account).call();
+        } catch(err) {
+            throw Error(`protocol.isAccountCriticalNow: ${err}`);
+        }
+    }
+
     async liquidationData(token, account) {
         try {
             const now = Math.floor(new Date().getTime() / 1000);
@@ -240,7 +251,7 @@ class Protocol {
             );
         } catch(err) {
             console.error(err);
-            throw Error(`liquidationData: ${err}`);
+            throw Error(`Protocol.liquidationData() - ${err}`);
         }
     }
 
@@ -265,25 +276,26 @@ class Protocol {
             for(let key of Object.keys(superTokenInstances)) {
                 this.subscribeEvents(key);
             }
-            console.debug("starting draining queues");
             this.run(estimationQueue, 10000);
             this.run(agreementUpdateQueue, 10000);
         } catch(err) {
             console.error(err);
-            throw Error(`subscribeAllTokensEvents: ${err}`);
+            throw Error(`protocol.subscribeAllTokensEvents() ${err}`);
         }
     }
 
     async subscribeEvents(token) {
         try {
             const superToken = this.client.superTokens[token];
-            this.app.logger.log("starting listen superToken: " + token);
+            this.app.logger.debug(`starting listening for superToken: ${token} events`);
             this.subs.set(token,
                 superToken.events.allEvents(
                     async(err, evt) => {
                         if (err === undefined || err == null) {
                             let event = this.app.models.event.transformWeb3Event(evt);
-                            console.debug(`${event.eventName} detected`);
+                if (event.removed) {
+                    this.app.logger.warn(`Event removed: ${event.eventName}, tx ${event.transactionHash}`);
+                }
                             switch(event.eventName) {
                                 case "AgreementStateUpdated" : {
                                     agreementUpdateQueue.push({
@@ -317,6 +329,13 @@ class Protocol {
                                     ]);
                                     break;
                                 }
+                                case "AgreementLiquidatedBy": {
+                                    //console.log(event);
+                                    this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address]}, liquidated acc ${event.penaltyAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`); 
+                                    if (event.bailoutAmount !== '0') {
+                                        this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.bailoutAmount)}`);
+                                    }
+                                }
                             }
                         } else {
                             console.error(`Event Subscription: ${err}`);
@@ -335,7 +354,7 @@ class Protocol {
         this.subs.forEach(function(value, key) {
             console.debug(`unsubscribing to supertoken ${key}`);
             value.unsubscribe();
-          });
+        });
         await estimationQueue.drain();
         estimationQueue.kill();
     }
@@ -351,45 +370,45 @@ class Protocol {
 
     async subscribeAgreementEvents() {
         try {
-        const CFA = this.client.CFAv1WS;
-        this.app.logger.info("starting listen CFAv1: " + CFA._address);
-        this.subsAgreements.set(CFA._address, CFA.events.FlowUpdated(async(err, evt) => {
-            if(err === undefined || err == null) {
-                let event = this.app.models.event.transformWeb3Event(evt);
-                if(!this.client.isSuperTokenRegister(event.token)) {
-                    console.debug("found new token: ", event.token);
-                    await this.client.loadSuperToken(event.token);
-                    setTimeout(() => this.subscribeEvents(event.token), 1000);
-                    estimationQueue.push([
-                        {
-                            self: this,
-                            account: event.sender,
-                            superToken: event.token
-                        },
-                        {
-                            self: this,
-                            account: event.receiver,
-                            superToken: event.token
-                        }
-                    ]);
-                    agreementUpdateQueue.push([
-                        {
-                            self: this,
-                            account: event.sender,
-                            blockNumber: event.blockNumber
-                        },
-                        {
-                            self: this,
-                            account: event.receiver,
-                            blockNumber: event.blockNumber
-                        }
-                    ]);
+            const CFA = this.client.CFAv1WS;
+            this.app.logger.debug("starting listening for CFAv1 events: " + CFA._address);
+            this.subsAgreements.set(CFA._address, CFA.events.FlowUpdated(async(err, evt) => {
+                if(err === undefined || err == null) {
+                    let event = this.app.models.event.transformWeb3Event(evt);
+                    if(!this.client.isSuperTokenRegister(event.token)) {
+                        console.debug("found new token: ", event.token);
+                        await this.client.loadSuperToken(event.token);
+                        setTimeout(() => this.subscribeEvents(event.token), 1000);
+                        estimationQueue.push([
+                            {
+                                self: this,
+                                account: event.sender,
+                                superToken: event.token
+                            },
+                            {
+                                self: this,
+                                account: event.receiver,
+                                superToken: event.token
+                            }
+                        ]);
+                        agreementUpdateQueue.push([
+                            {
+                                self: this,
+                                account: event.sender,
+                                blockNumber: event.blockNumber
+                            },
+                            {
+                                self: this,
+                                account: event.receiver,
+                                blockNumber: event.blockNumber
+                            }
+                        ]);
+                    }
+                } else {
+                    this.app.logger.error(err);
+                    process.exit(1);
                 }
-            } else {
-                this.app.logger.error(err);
-                process.exit(1);
-            }
-        }));
+            }));
         } catch(err) {
             this.app.logger.error(err);
             throw Error(`agreement subscription ${err}`);
@@ -398,19 +417,17 @@ class Protocol {
 
     async subscribeIDAAgreementEvents() {
         try {
-        const IDA = this.client.IDAv1WS;
-        this.app.logger.log("starting listen IDAv1: " + IDA._address);
-        this.subsAgreements.set(IDA._address, IDA.events.allEvents(
-            async(err, evt) => {
-                if(err === undefined || err == null) {
-                    let event = this.app.models.event.transformWeb3Event(evt);
-                    if(this.client.isSuperTokenRegister(event.token)) {
-                        console.debug(`IDA: ${event.eventName} detected`);
-                        switch(event.eventName) {
-                            case "IndexUpdated" : {
-                                //Recalculate balances
-                                console.debug(event);
-                                const subscribers = await this.app.db.queries.getIDASubscribers(event.token, event.publisher);
+            const IDA = this.client.IDAv1WS;
+            this.app.logger.debug("starting listening for IDAv1 events: " + IDA._address);
+            this.subsAgreements.set(IDA._address, IDA.events.allEvents(
+                async(err, evt) => {
+                    if(err === undefined || err == null) {
+                        let event = this.app.models.event.transformWeb3Event(evt);
+                        if(this.client.isSuperTokenRegister(event.token)) {
+                            switch(event.eventName) {
+                                case "IndexUpdated" : {
+                                    //Recalculate balances
+                                    const subscribers = await this.app.db.queries.getIDASubscribers(event.token, event.publisher);
                                     estimationQueue.push([
                                         {
                                             self: this,
@@ -418,45 +435,66 @@ class Protocol {
                                             token: event.token
                                         }
                                     ]);
-                                for(const sub of subscribers) {
-                                    console.debug(sub);
-                                    estimationQueue.push([
-                                        {
-                                            self: this,
-                                            account: sub.subscriber,
-                                            token: event.token
-                                        }
-                                    ]);
+                                    for(const sub of subscribers) {
+                                        estimationQueue.push([
+                                            {
+                                                self: this,
+                                                account: sub.subscriber,
+                                                token: event.token
+                                            }
+                                        ]);
+                                    }
+                                    break;
                                 }
-                                break;
-                            }
-                            default: {
-                                if(event.eventName !== undefined) {
-                                    await IDAModel.upsert({
-                                        eventName: event.eventName,
-                                        address: event.address,
-                                        blockNumber: event.blockNumber,
-                                        superToken: event.token,
-                                        publisher: event.publisher,
-                                        subscriber: event.subscriber,
-                                        indexId: event.indexId,
-                                    });
+                                default: {
+                                    if(event.eventName !== undefined) {
+                                        await IDAModel.upsert({
+                                            eventName: event.eventName,
+                                            address: event.address,
+                                            blockNumber: event.blockNumber,
+                                            superToken: event.token,
+                                            publisher: event.publisher,
+                                            subscriber: event.subscriber,
+                                            indexId: event.indexId,
+                                        });
+                                    }
                                 }
                             }
+                        } else {
+                            this.app.logger.debug(`token:${event.token} is not subscribed`);
                         }
                     } else {
-                        console.debug(`token:${event.token} is not register`);
+                        this.app.logger.error(err);
+                        process.exit(1);
                     }
-                } else {
-                    this.app.logger.error(err);
-                    process.exit(1);
-                }
-        }));
+                }));
         } catch(err) {
             this.app.logger.error(err);
             throw Error(`ida agreement subscription ${err}`);
         }
     }
+
+    async checkFlow(superToken, sender, receiver) {
+        try {
+            const result = await this.app.client.CFAv1.methods.getFlow(superToken, sender, receiver).call();
+            if(result.flowRate !== "0") {
+                return result;
+            } else {
+                await AgreementModel.destroy({
+                    where: {
+                        [Op.and]: [
+                            { superToken: superToken },
+                            { sender: sender },
+                            { receiver: receiver}
+                        ]
+                    }
+                });
+            }
+        } catch(err) {
+            throw Error(`checkFlow : ${err}`)
+        }
+    }
+
     generateId(sender, receiver) {
         try {
             return this.client.web3.utils.soliditySha3(sender, receiver);
@@ -466,7 +504,41 @@ class Protocol {
         }
     }
 
-    _getLiquidationData(totalNetFlowRate, totalBalance, totalDeposit) {
+    generateDeleteFlowABI(superToken, sender, receiver) {
+        try {
+            return this.app.client.sf.methods.callAgreement(
+                this.app.client.CFAv1._address,
+                this.app.client.CFAv1.methods.deleteFlow(
+                    superToken,
+                    sender,
+                    receiver,
+                    "0x").encodeABI(),
+                "0x"
+            ).encodeABI();
+
+
+        } catch(err) {
+            this.app.logger.error(err);
+            throw Error(`generateDeleteFlowABI : ${err}`);
+        }
+    }
+
+    generateMultiDeleteFlowABI(superToken, senders, receivers) {
+        try {
+            return this.app.client.batch.methods.deleteFlows(
+                this.app.client.sf._address,
+                this.app.client.CFAv1._address,
+                superToken,
+                senders,
+                receivers
+            ).encodeABI();
+        } catch(err) {
+            this.app.logger.error(err);
+            throw Error(`generateMultiDeleteFlowABI : ${err}`);
+        }
+    }
+
+    _getLiquidationData(totalNetFlowRate, totalBalance) {
 
         let result = {
             totalNetFlowRate: totalNetFlowRate.toString(),

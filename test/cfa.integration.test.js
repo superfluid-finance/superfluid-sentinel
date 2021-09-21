@@ -96,22 +96,23 @@ async function timeTravelOnce(time, setAppTime = false) {
 
 const bootNode = async (delayParam = 0) => {
     app = new App({
-        wsNode: "ws://127.0.0.1:8545",
-        httpNode: "http://127.0.0.1:8545",
+        ws_rpc_node: "ws://127.0.0.1:8545",
+        http_rpc_node: "http://127.0.0.1:8545",
         mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
-        epochBlock: 0,
-        DB: "./mydatabase.sqlite",
-        prv: "test",
-        timeoutFn: 300000,
-        pullStep: 500000,
-        gasPrice:5000000000,
+        mnemonic_index: 100,
+        epoch_block: 0,
+        DB: "TestDatabase.sqlite",
+        protocol_release_version: "test",
+        tx_timeout: 300000,
+        max_query_block_range: 500000,
+        max_gas_price:4000000000,
         concurrency: 1,
-        coldBoot: 1,
-        listenMode: 1,
-        numberRetries: 3,
-        testResolver: resolverAddress,
-        liquidationDelay: delayParam,
-        maxFee: 4000000000
+        cold_boot: 1,
+        listen_mode: 1,
+        number_retries: 3,
+        test_resolver: resolverAddress,
+        additional_liquidation_delay: delayParam,
+        liquidation_run_every: 5000
     });
     app.start();
     while(!app.isInitialized()) {
@@ -255,36 +256,6 @@ describe("Integration scripts tests", () => {
             exitWithError(err);
         }
     });
-/*
-    it.skip("Create one out going stream and receive a bigger incoming stream", async () => {
-        try {
-            const sendingFlowData = cfa.methods.createFlow(
-                superToken._address,
-                accounts[2],
-                "100000000000",
-                "0x"
-            ).encodeABI();
-            await host.methods.callAgreement(cfa._address, sendingFlowData, "0x").send({from: accounts[0], gas: 1000000});
-            await bootNode();
-            const receivingFlowData = cfa.methods.createFlow(
-                superToken._address,
-                accounts[0],
-                "1000000000000000000",
-                "0x"
-            ).encodeABI();
-            await host.methods.callAgreement(cfa._address, receivingFlowData, "0x").send({from: accounts[5], gas: 1000000});
-            await timeTravelOnce(10000, true);
-            await printEstimations();
-            const estimation = await app.db.queries.getAddressEstimation(accounts[0]);
-            //the stream is soo small that we mark as not a real estimation
-            //expect(secondEstimation[0].zestimation).to.equal(32503593600000);
-        } catch(err) {
-            exitWithError(err);
-        }
-    });
-
-
-    */
 
     it("Create two outgoing streams, and new total outflow rate should apply to the agent estimation logic", async () => {
         try {
@@ -308,9 +279,6 @@ describe("Integration scripts tests", () => {
             //await timeTravelOnce(3600, true);
             let result = await waitForEvent("AgreementLiquidatedBy", 0);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
-            //await timeTravelOnce(7000, true);
-            //result = await waitForEvent("AgreementLiquidatedBy", result[0].blockNumber + 1);
-            //expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
         } catch(err) {
             exitWithError(err);
         }

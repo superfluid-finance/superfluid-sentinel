@@ -1,44 +1,71 @@
-require("dotenv").config();
+require("./loadCmdArgs");
+const networkConfigs = require("../../package.json").networks;
+
 class Config {
 
     constructor(config) {
         if(typeof config === "object") {
-            this.WS_NODE = config.wsNode;
-            this.HTTP_NODE = config.httpNode;
+            this.RUN_TEST_ENV = true;
+            this.HTTP_RPC_NODE = config.http_rpc_node;
+            this.WS_RPC_NODE = config.ws_rpc_node;
             this.MNEMONIC = config.mnemonic;
-            this.EPOCH_BLOCK = config.epochBlock;
-            this.DB = config.DB;
-            process.env.DB = this.DB;
-            this.PROTOCOL_RELEASE_VERSION = config.prv;
-            this.TIMEOUT_FN = config.timeoutFn;
-            this.PULL_STEP = config.pullStep;
+            this.MNEMONIC_INDEX = config.mnemonic_index;
+            this.PRIVATE_KEY = config.private_key;
+            this.MAX_QUERY_BLOCK_RANGE = config.max_query_block_range || 2000;
+            if(config.tokens !== undefined && config.tokens !== "") {
+                this.TOKENS = config.tokens.split(",");
+            }
+            this.DB = (config.path_db !== undefined && config.path_db !== "") ? config.path_db : "./datadir/db.sqlite";
+            this.ADDITIONAL_LIQUIDATION_DELAY = config.additional_liquidation_delay || 0;
+            this.TX_TIMEOUT = config.tx_timeout || 60000;
+            this.PROTOCOL_RELEASE_VERSION = config.protocol_release_version;
+            this.MAX_GAS_PRICE = config.max_gas_price;
+            this.RETRY_GAS_MULTIPLIER = config.retry_gas_multiplier || 1.15;
+            this.CLO_ADDR = config.clo_addr;
+
+            this.EPOCH_BLOCK = config.epoch_block;
+            this.BATCH_CONTRACT =config.batch_contract;
+
             this.CONCURRENCY = config.concurrency;
-            this.COLD_BOOT = config.coldBoot;
-            this.LISTEN_MODE = config.listenMode;
-            this.NUM_RETRIES = config.numberRetries;
-            this.TEST_RESOLVER = config.testResolver
-            this.shutdownOnError = false;
-            this.LIQUIDATION_DELAY = config.liquidationDelay || 0;
-            this.MAX_GAS_FEE = config.maxFee;
+            this.COLD_BOOT = config.cold_boot;
+            this.LISTEN_MODE = config.listen_mode;
+            this.NUM_RETRIES = config.number_retries;
+            this.TEST_RESOLVER = config.test_resolver;
+            this.shutdownOnError = config.shutdown_on_error;
+            this.LIQUIDATION_RUN_EVERY = config.liquidation_run_every;
+
         } else {
-            this.WS_NODE = process.env.WS_NODE;
-            this.HTTP_NODE = process.env.HTTP_NODE;
+
+            this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
+            this.WS_RPC_NODE = process.env.WS_RPC_NODE;
             this.MNEMONIC = process.env.MNEMONIC;
-            this.EPOCH_BLOCK = process.env.EPOCH_BLOCK || 0;
-            this.DB = process.env.DB || "database.sqlite";
+            this.PRIVATE_KEY = process.env.PRIVATE_KEY;
+            this.MAX_QUERY_BLOCK_RANGE = process.env.MAX_QUERY_BLOCK_RANGE || 2000;
+            if(process.env.TOKENS !== undefined && process.env.TOKENS !== "") {
+                this.TOKENS = process.env.TOKENS.split(",");
+            }
+            this.DB = (process.env.PATH_DB !== undefined && process.env.PATH_DB !== "") ? process.env.PATH_DB : "./datadir/db.sqlite";
+            this.ADDITIONAL_LIQUIDATION_DELAY = process.env.ADDITIONAL_LIQUIDATION_DELAY || 0;
+            this.TX_TIMEOUT = process.env.TX_TIMEOUT || 60000;
             this.PROTOCOL_RELEASE_VERSION = process.env.PROTOCOL_RELEASE_VERSION;
-            this.TIMEOUT_FN = process.env.TIMEOUT_FN || 60000;
-            this.PULL_STEP = process.env.PULL_STEP || 10000;
-            this.GAS_PRICE = process.env.GAS_PRICE;
-            this.GAS_LIMIT = process.env.GAS_LIMIT;
-            this.CONCURRENCY = process.env.CONCURRENCY !== undefined ? process.env.CONCURRENCY : 1;
-            this.COLD_BOOT = process.env.COLD_BOOT == 1 ? true : false;
-            this.LISTEN_MODE = process.env.LISTEN_MODE;
-            this.LIQUIDATION_DELAY = process.env.LIQUIDATION_DELAY || 0;
-            this.MAX_GAS_FEE = process.env.MAX_GAS_FEE;
-            this.NUM_RETRIES = 7;
+            this.MAX_GAS_PRICE = process.env.MAX_GAS_PRICE;
+            this.RETRY_GAS_MULTIPLIER = process.env.RETRY_GAS_MULTIPLIER || 1.15;
+            this.CLO_ADDR = process.env.CLO_ADDR;
+            this.MNEMONIC_INDEX = process.env.MNEMONIC_INDEX || 100;
+
+            this.CONCURRENCY = 1;
+            this.LISTEN_MODE = 1;
+            this.NUM_RETRIES = 10;
+            this.COLD_BOOT = 0;
             this.shutdownOnError = false;
+            this.httpServer = true;
+            this.LIQUIDATION_RUN_EVERY = 45000;
         }
+    }
+
+    loadNetworkInfo(chainId) {
+        this.EPOCH_BLOCK = networkConfigs[chainId].epoch || 0;
+        this.BATCH_CONTRACT = networkConfigs[chainId].batch;
     }
 }
 

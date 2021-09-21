@@ -62,8 +62,8 @@ class Config {
             this.NUM_RETRIES = process.env.NUM_RETRIES || 10;
             this.COLD_BOOT = process.env.COLD_BOOT || 0;
             this.SHUTDOWN_ON_ERROR = process.env.SHUTDOWN_ON_ERROR || false;
-            this.RUN_HTTP_SERVER = process.env.RUN_HTTP_SERVER || true;
-            this.HTTP_SERVER_PORT = process.env.HTTP_SERVER_PORT || 3000;
+            this.METRICS = process.env.METRICS || true;
+            this.METRICS_PORT = process.env.METRICS_PORT || 3000;
             this.LIQUIDATION_RUN_EVERY = process.env.LIQUIDATION_RUN_EVERY || 30000;
             this.LIQUIDATION_MUTEX_COUNTER = process.env.LIQUIDATION_MUTEX_COUNTER || 15;
             this.MAX_BATCH_TX = process.env.MAX_BATCH_TX || 20;

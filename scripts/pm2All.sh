@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-cat .env-prod-matic > .env && pm2 start main.js --name 'polygon'
+cat .env-prod-polygon > .env && pm2 start main.js --name 'polygon'
 sleep 3
 cat .env-prod-xdai > .env && pm2 start main.js --name 'xdai'
 sleep 3

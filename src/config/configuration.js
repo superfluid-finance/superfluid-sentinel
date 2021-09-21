@@ -33,6 +33,7 @@ class Config {
             this.TEST_RESOLVER = config.test_resolver;
             this.shutdownOnError = config.shutdown_on_error;
             this.LIQUIDATION_RUN_EVERY = config.liquidation_run_every;
+            this.BATCH_CONTRACT = config.batch_contract;
 
         } else {
 
@@ -54,7 +55,7 @@ class Config {
             this.MNEMONIC_INDEX = process.env.MNEMONIC_INDEX || 100;
 
             this.CONCURRENCY = 1;
-            this.LISTEN_MODE = 1;
+            this.LISTEN_MODE = 0;
             this.NUM_RETRIES = 10;
             this.COLD_BOOT = 0;
             this.shutdownOnError = false;

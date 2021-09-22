@@ -13,7 +13,7 @@ class Logger {
             format: combine(label({ label: this.level }), timestamp(), logFormat),
             transports: [
                 new transports.Console({
-                    level: this.app.config.RUN_TEST_ENV ? "debug" : "info",
+                    level: this.app.config.LOGGER_LEVEL,
                     handleExceptions: true,
                     json: false,
                     colorize: true,
@@ -49,8 +49,8 @@ class Logger {
     error(message) {
         try {
             this.logger.error(message);
-            if(this.app.config.shutdownOnError) {
-                this.app.shutdown();
+            if(this.app.config.SHUTDOWN_ON_ERROR) {
+                this.app.shutdown(true);
             }
         } catch(err) {
             console.error(err);

@@ -14,15 +14,13 @@ function promiseTimeout(promise, ms) {
     ]);
 }
 
-const delay = ms => new Promise(res => setTimeout(res, ms));
-
 class Liquidator {
 
     constructor(app) {
         this.app = app;
         this.timeout = this.app.config.TX_TIMEOUT;
         this.runningMux = 0;
-        this.splitBatch = 20;
+        this.splitBatch = this.app.config.MAX_BATCH_TX;
         this.clo = this.app.config.CLO_ADDR;
         this.txDelay = this.app.config.ADDITIONAL_LIQUIDATION_DELAY;
         this.gasMultiplier = this.app.config.RETRY_GAS_MULTIPLIER;
@@ -35,13 +33,14 @@ class Liquidator {
 
     async start() {
         try {
-            this.app.logger.debug("running liquidation job");
+            this.app.logger.debug(`running liquidation job: ${this.runningMux}`);
             if(this.runningMux > 0) {
                 this.runningMux--;
-                this.app.logger.warn(`skip liquidation.start() - Mutex: ${this.runningMux}/10`);
+                const unlockMux = this.app.config.LIQUIDATION_MUTEX_COUNTER - this.runningMux;
+                this.app.logger.warn(`skip liquidation.start() - Mutex: ${unlockMux}/${this.app.config.LIQUIDATION_MUTEX_COUNTER}`);
                 return;
             }
-            this.runningMux = 15;
+            this.runningMux = this.app.config.LIQUIDATION_MUTEX_COUNTER;
             if(this.app.config.TOKENS !== undefined) {
                 this.app.logger.info(`SuperTokens to liquidate`);
                 for(const addr of this.app.config.TOKENS) {
@@ -69,8 +68,8 @@ class Liquidator {
 
     async isPossibleToClose(superToken, sender, receiver) {
         //Note: Is flow does not exist on the network, we are going to remove from DB
-        const flowExist = (await this.app.protocol.checkFlow(superToken, sender, receiver)) !== undefined;
-        return flowExist && (await this.app.protocol.isAccountCriticalNow(superToken, sender));
+        return (await this.app.protocol.checkFlow(superToken, sender, receiver)) !== undefined &&
+            (await this.app.protocol.isAccountCriticalNow(superToken, sender));
     }
 
     async singleTerminations(work) {
@@ -112,7 +111,7 @@ class Liquidator {
             } else {
                 this.app.logger.debug(`address ${job.sender} is solvent at ${job.superToken}`);
                 this.app.protocol.newEstimation(job.superToken, job.sender);
-                await delay(500);
+                await this.app.timer.delay(500);
             }
         }
     }
@@ -135,7 +134,6 @@ class Liquidator {
                 }
 
                 if(senders.length === this.splitBatch) {
-                    console.log("Send batch");
                     await this.sendBatch(batch.superToken, senders, receivers);
                     senders = new Array();
                     receivers = new Array();
@@ -143,7 +141,6 @@ class Liquidator {
             }
 
             if(senders.length !== 0) {
-                console.log("Send batch - remain");
                 if(senders.length === 1) {
                     await this.singleTerminations([{
                         superToken: batch.superToken,
@@ -156,7 +153,6 @@ class Liquidator {
                 senders = new Array();
                 receivers = new Array();
             }
-            //console.log(streams);
         }
     }
 
@@ -191,22 +187,22 @@ class Liquidator {
     }
 
     async sendWithRetry(wallet, txObject, ms) {
-        await delay(1000);
-        //gas limit estimation
+        await this.app.timer.delay(1000);
+        //When estimate gas we get a preview of what can happen when send the transaction. Depending on the error we should execute specific logic
         const gas = await this.estimateGasLimit(wallet, txObject);
         if(gas.error !== undefined) {
             this.app.logger.error(gas.error);
-
             if(gas.error.message === "Returned error: execution reverted: CFA: flow does not exist") {
                 await this.app.protocol.checkFlow(txObject.superToken, txObject.flowSender, txObject.flowReceiver);
             }
 
             if(gas.error.message === "Returned error: execution reverted") {
-                console.log("TODO")
+                //TODO: Solve this EVM return error
             }
 
             return {error: gas.error, tx: undefined};
         }
+
         txObject.gasLimit = gas.gasLimit;
         const signed = await this.signTx(wallet, txObject);
         if(signed.error !== undefined) {
@@ -228,7 +224,8 @@ class Liquidator {
             this.app.logger.info(`waiting until timeout for ${ms / 1000} seconds` );
             txObject.txHash = signed.tx.transactionHash;
             signed.tx.timeout = ms;
-            const tx =  await promiseTimeout    (
+            //Broadcast transaction
+            const tx =  await promiseTimeout(
                 this.app.client.sendSignedTransaction(signed),
                 ms
             );
@@ -260,12 +257,12 @@ class Liquidator {
             }
 
             if(err.message === "Returned error: insufficient funds for gas * price + value") {
-                this.app.logger.error(`insufficient funds agent account`);
+                this.app.logger.debug(`insufficient funds agent account`);
                 return {error: err.message, tx: undefined};
             }
 
-            //Error: Transaction has been reverted by the EVM
-            console.log("catch error - ", err);
+            //catch all remaining errors
+            this.app.logger.error(`liquidator.sendWithRetry() - no logic to catch error : ${err}`);
         }
     }
     async estimateGasLimit(wallet, txObject) {

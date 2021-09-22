@@ -28,7 +28,7 @@ class Liquidator {
         this.gasMultiplier = this.app.config.RETRY_GAS_MULTIPLIER;
         this.useBatch = this.app.config.BATCH_CONTRACT !== undefined;
         if(this.clo === undefined) {
-            this.app.logger.info("liquidator - adding non clo delay (15min)");
+            this.app.logger.info("Not configured as CLO -> adding 15 min delay");
             this.txDelay += 900;
         }
     }

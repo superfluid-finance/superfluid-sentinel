@@ -82,6 +82,33 @@ class Config {
         this.EPOCH_BLOCK = networkConfigs[chainId].epoch || 0;
         this.BATCH_CONTRACT = networkConfigs[chainId].batch;
     }
+
+    getConfigurationInfo() {
+        return {
+            HTTP_RPC_NODE: this.HTTP_RPC_NODE,
+            WS_RPC_NODE: this.WS_RPC_NODE,
+            MAX_QUERY_BLOCK_RANGE: this.MAX_QUERY_BLOCK_RANGE,
+            TOKENS: this.TOKENS,
+            DB_PATH: this.DB,
+            ADDITIONAL_LIQUIDATION_DELAY: this.ADDITIONAL_LIQUIDATION_DELAY,
+            TX_TIMEOUT: this.TX_TIMEOUT,
+            PROTOCOL_RELEASE_VERSION: this.PROTOCOL_RELEASE_VERSION,
+            MAX_GAS_PRICE: this.MAX_GAS_PRICE,
+            RETRY_GAS_MULTIPLIER: this.RETRY_GAS_MULTIPLIER,
+            CLO_ADDR : this.CLO_ADDR,
+            CONCURRENCY:this.CONCURRENCY,
+            LISTEN_MODE:this.LISTEN_MODE,
+            NUM_RETRIES:this.NUM_RETRIES,
+            COLD_BOOT:this.COLD_BOOT,
+            SHUTDOWN_ON_ERROR:this.SHUTDOWN_ON_ERROR,
+            RUN_HTTP_SERVER:this.RUN_HTTP_SERVER,
+            HTTP_SERVER_PORT:this.HTTP_SERVER_PORT,
+            LIQUIDATION_RUN_EVERY:this.LIQUIDATION_RUN_EVERY,
+            LIQUIDATION_MUTEX_COUNTER:this.LIQUIDATION_MUTEX_COUNTER,
+            MAX_BATCH_TX:this.MAX_BATCH_TX,
+            LOGGER_LEVEL: this.LOGGER_LEVEL
+        }
+    }
 }
 
 module.exports = Config;

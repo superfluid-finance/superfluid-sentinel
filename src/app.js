@@ -113,7 +113,8 @@ class App {
             } else {
                 await this.db.sync();
             }
-
+            //log configuration data
+            this.logger.debug(JSON.stringify(this.config.getConfigurationInfo()));
             //create all web3 infrastruture needed
             await this.client.init();
             if(!this.config.RUN_TEST_ENV)

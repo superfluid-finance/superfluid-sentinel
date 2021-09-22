@@ -35,6 +35,10 @@ jobs:
         run: |
           npm ci
 
+      - name: run node unit tests
+        run: |
+          npx mocha test/unit-tests/*.js
+
       - name: run node integration test
         run: |
           npx mocha -t 1000000 test/integration/node.integration.test.js

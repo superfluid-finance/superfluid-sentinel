@@ -28,7 +28,8 @@
     "test-ida": "node_modules/.bin/mocha -t 1000000 test/integration/ida.integration.test.js",
     "test-cfa": "node_modules/.bin/mocha -t 1000000 test/integration/cfa.integration.test.js",
     "test-batch": "node_modules/.bin/mocha -t 1000000 test/integration/batch.integration.test.js",
-    "test": "npm run test-node && npm run test-gas && npm run test-ida && npm run test-cfa && npm run test-batch"
+    "test-unit": "node_modules/.bin/mocha test/unit-tests/*.js",
+    "test": "npm run test-unit && npm run test-node && npm run test-gas && npm run test-ida && npm run test-cfa && npm run test-batch"
   },
   "keywords": [],
   "author": "",

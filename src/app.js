@@ -6,12 +6,12 @@ const LoadEvents = require("./loadEvents");
 const Liquidator = require("./web3client/liquidator");
 const Gas = require("./transaction/gas");
 const Time = require("./utils/time");
-
 const EventModel = require("./models/EventModel");
 const Bootstrap = require("./bootstrap.js");
 const DB = require("./database/db");
 const Repository = require("./database/repository");
 const utils = require("./utils/utils.js");
+const HTTPServer = require("./httpserver/server");
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function trigger(fn, time = 15000) {
@@ -42,6 +42,7 @@ class App {
         this.utils = utils;
         this.db = DB;
         this.db.queries = new Repository(this);
+        this.server = new HTTPServer(this);
         this._isShutdown
     }
 
@@ -63,10 +64,10 @@ class App {
     //close agent processes and exit
     async shutdown(force = false) {
         this._isShutdown = true;
-        console.debug(`agent shutting down...`)
+        this.logger.info(`app.shutdown() - agent shutting down`);
         this.time.resetTime();
         if(force) {
-            console.error(`force shutdown`);
+            this.logger.error(`app.shutdown() - force shutdown`);
             process.exit(0);
         }
 
@@ -78,13 +79,13 @@ class App {
             this.time.resetTime();
             return;
         } catch(err) {
-            console.error(`agent shutdown ${err}`);
+            this.logger.error(`app.shutdown() - ${err}`);
             process.exit(1);
         }
     }
 
     //set agent time.
-    //Note: the agent will not update this timestamp.
+    //Note: the agent will not update this timestamp
     //Use a external service to update when needed. ex. ganache
     setTime(time) {
         this.time.setTime(time);
@@ -107,6 +108,11 @@ class App {
 
             //create all web3 infrastruture needed
             await this.client.init();
+            if(!this.config.RUN_TEST_ENV)
+                this.config.loadNetworkInfo(await this.client.getNetworkId());
+            if(this.config.BATCH_CONTRACT !== undefined) {
+                await this.client.loadBatchContract();
+            }
             //Collect events to detect superTokens and accounts
             await this.loadEvents.start();
             //query balances to make liquidations estimations
@@ -116,15 +122,17 @@ class App {
                 await this.loadEvents.start();
                 await this.bootstrap.start();
             }
-            //run one time the liquidation job as soon as possible
-            await this.liquidator.start();
+
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
-            //run liquidation job every x seconds
-            this.run(this.liquidator, 10000);
-        } catch(error) {
-            console.error(error);
+            if(this.config.httpServer) {
+                setTimeout(() => this.server.start(), 1000);
+            }
+            //run liquidation job every x milliseconds
+            this.run(this.liquidator, this.config.LIQUIDATION_RUN_EVERY);
+        } catch(err) {
+            this.logger.error(`app.start() - ${err}`);
             process.exit(1);
         }
     }

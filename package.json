@@ -10,15 +10,15 @@
     "ropsten": "cat .env-prod-ropsten > .env && node main",
     "kovan": "cat .env-prod-kovan > .env && node main",
     "xdai": "cat .env-prod-xdai > .env && node main.js",
-    "polygon": "cat .env-prod-matic > .env && node main.js",
+    "polygon": "cat .env-prod-polygon > .env && node main.js",
     "arbitrum": "cat .env-prod-arbitrum > .env && node main",
-    "pm2:mumbai": "cat .env-prod-mumbai > .env && pm2 start main.js --name 'Mumbai (Polygon)' --restart-delay=3000 && pm2 monit ",
-    "pm2:goerli": "cat .env-prod-goerli > .env && pm2 start main.js --name 'Goerli' --restart-delay=3000 && pm2 monit ",
-    "pm2:rinkeby": "cat .env-prod-rinkeby > .env && pm2 start main.js --name 'Rinkeby' --restart-delay=3000 && pm2 monit ",
-    "pm2:ropsten": "cat .env-prod-ropsten > .env && pm2 start main.js --name 'Ropsten' --restart-delay=3000 && pm2 monit ",
-    "pm2:kovan": "cat .env-prod-kovan > .env && pm2 start main.js --name 'Kovan' --restart-delay=3000 && pm2 monit ",
-    "pm2:xdai": "cat .env-prod-xdai > .env && pm2 start main.js --name 'xDAI' --restart-delay=3000 && pm2 monit ",
-    "pm2:polygon": "cat .env-prod-matic > .env && pm2 start main.js --name 'Polygon' --restart-delay=3000 && pm2 monit",
+    "pm2:mumbai": "cat .env-prod-mumbai > .env && pm2 start main.js --name 'mumbai' --restart-delay=3000 && pm2 monit ",
+    "pm2:goerli": "cat .env-prod-goerli > .env && pm2 start main.js --name 'goerli' --restart-delay=3000 && pm2 monit ",
+    "pm2:rinkeby": "cat .env-prod-rinkeby > .env && pm2 start main.js --name 'rinkeby' --restart-delay=3000 && pm2 monit ",
+    "pm2:ropsten": "cat .env-prod-ropsten > .env && pm2 start main.js --name 'ropsten' --restart-delay=3000 && pm2 monit ",
+    "pm2:kovan": "cat .env-prod-kovan > .env && pm2 start main.js --name 'kovan' --restart-delay=3000 && pm2 monit ",
+    "pm2:xdai": "cat .env-prod-xdai > .env && pm2 start main.js --name 'xdai' --restart-delay=3000 && pm2 monit ",
+    "pm2:polygon": "cat .env-prod-polygon > .env && pm2 start main.js --name 'polygon' --restart-delay=3000 && pm2 monit",
     "pm2:prod": "./scripts/pm2Prod.sh",
     "pm2:testnets": "./scripts/pm2Testnets.sh",
     "pm2:all": "./scripts/pm2All.sh",
@@ -28,19 +28,21 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@decentral.ee/web3-helpers": "^0.5.3",
     "@superfluid-finance/ethereum-contracts": "dev",
     "@superfluid-finance/js-sdk": "dev",
     "@truffle/contract": "^4.3.24",
     "arb-ethers-web3-bridge": "^0.7.3",
     "async": "^3.2.0",
     "bip39": "^3.0.3",
+    "commander": "^2.15.1",
     "dotenv": "^8.2.0",
     "ethereumjs-wallet": "^1.0.1",
-    "ora": "^5.4.0",
+    "express": "^4.17.1",
     "pm2": "^5.1.0",
     "sequelize": "^6.6.2",
     "sqlite3": "^5.0.2",
-    "web3": "^1.3.5",
+    "web3": "1.3.5",
     "winston": "^3.3.3",
     "winston-array-transport": "^1.1.4"
   },
@@ -56,6 +58,43 @@
   "husky": {
     "hooks": {
       "pre-commit": "npm run lint"
+    }
+  },
+  "networks": {
+    "100": {
+      "name": "xDAI",
+      "epoch": 14845091,
+      "batch": "0x7Ac49B1539C2580972D9B43b41a4ec93A4290cdF"
+    },
+    "137": {
+      "name": "Polygon",
+      "epoch": 11000000,
+      "batch": "0xAB4075f621100563f4551C0Ca50944809b03E948"
+    },
+    "3": {
+      "name": "Ropsten",
+      "epoch": 9400000,
+      "batch": "0x6b878902A8648815e1E896515e25D985715bE485"
+    },
+    "": {
+      "name": "Rinkeby",
+      "epoch": 7400000,
+      "batch": "0x6b878902A8648815e1E896515e25D985715bE485"
+    },
+    "5": {
+      "name": "Goerli",
+      "epoch": 3500000,
+      "batch": "0x48B6934B354666Daa1d9A4ccEE114873312acF55"
+    },
+    "42": {
+      "name": "Kovan",
+      "epoch": 23709362,
+      "batch": "0x6b878902A8648815e1E896515e25D985715bE485"
+    },
+    "80001": {
+      "name": "Mumbai (Polygon)",
+      "epoch": 7295264,
+      "batch": "0xf8A70a8589c579D3C169812b050C2B4475784EA9"
     }
   }
 }

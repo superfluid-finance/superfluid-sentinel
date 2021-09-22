@@ -1,18 +1,18 @@
 const App = require("./src/app");
 const app = new App({
-    wsNode: "ws://127.0.0.1:8545",
-    httpNode: "http://127.0.0.1:8545",
+    ws_rpc_node: "ws://127.0.0.1:8545",
+    http_rpc_node: "http://127.0.0.1:8545",
     mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
-    epochBlock: 0,
+    epoch_block: 0,
     DB: "TestDatabase.sqlite",
-    prv: "test",
-    timeoutFn: 300000,
-    pullStep: 500000,
-    gasPrice:5000000000,
+    protocol_release_version: "test",
+    tx_timeout: 300000,
+    max_query_block_range: 500000,
+    max_gas_price:5000000000,
     concurrency: 1,
-    coldBoot: 1,
-    listenMode: 1,
-    numberRetries: 3,
+    cold_boot: 1,
+    listen_mode: 1,
+    number_retries: 3,
     testResolver: process.env.TEST_RESOLVER_ADDRESS
 });
 module.exports = app.start();

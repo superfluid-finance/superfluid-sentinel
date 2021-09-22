@@ -90,6 +90,53 @@ class Repository {
       }
   });
   }
+
+  async getLiquidations(checkDate, onlyTokens, limitRows) {
+    let inSnipped = "";
+    let inSnippedLimit = "";
+    if (onlyTokens !== undefined) {
+      inSnipped = "and agr.superToken in (:tokens)";
+    }
+    if(limitRows !== undefined && limitRows > 0 && limitRows < 101) {
+      inSnippedLimit = `LIMIT ${limitRows}`;
+    }
+
+    const sqlquery = `SELECT agr.superToken, agr.sender, agr.receiver, est.zestimation, est.zestimationHuman FROM agreements agr
+    INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.zestimation <> 0
+    WHERE agr.flowRate <> 0 and est.zestimation <= :dt ${inSnipped}
+    ORDER BY agr.superToken, agr.sender, agr.flowRate DESC ${inSnippedLimit}`;
+
+    if(inSnipped !== "") {
+      return this.app.db.query(sqlquery, {
+        replacements: { dt: checkDate, tokens: onlyTokens},
+        type: QueryTypes.SELECT
+      });
+    }
+    return this.app.db.query(sqlquery, {
+      replacements: { dt: checkDate },
+      type: QueryTypes.SELECT
+    });
+  }
+
+  async getNumberOfBatchCalls(checkDate) {
+    const sqlquery = `SELECT agr.superToken, count(*) as numberTxs  FROM agreements agr
+    INNER JOIN estimations est on agr.sender = est.address and agr.superToken = est.superToken and est.zestimation <> 0
+    where agr.flowRate <> 0 and est.zestimation <= :dt
+    group by agr.superToken
+    having count(*) > 1
+    order by count(*) desc`;
+
+    return this.app.db.query(sqlquery, {
+      replacements: { dt: checkDate },
+      type: QueryTypes.SELECT
+    });
+  }
+
+  async healthCheck() {
+    return this.app.db.query("SELECT 1", {
+      type: QueryTypes.SELECT
+    });
+  }
 }
 
 module.exports = Repository;

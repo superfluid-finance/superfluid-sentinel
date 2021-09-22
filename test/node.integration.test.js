@@ -96,22 +96,23 @@ async function timeTravelOnce(time, setAppTime = false) {
 
 const bootNode = async (delayParam = 0) => {
     app = new App({
-        wsNode: "ws://127.0.0.1:8545",
-        httpNode: "http://127.0.0.1:8545",
+        ws_rpc_node: "ws://127.0.0.1:8545",
+        http_rpc_node: "http://127.0.0.1:8545",
         mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
-        epochBlock: 0,
-        DB: "./mydatabase.sqlite",
-        prv: "test",
-        timeoutFn: 300000,
-        pullStep: 500000,
-        gasPrice:5000000000,
+        mnemonic_index: 100,
+        epoch_block: 0,
+        DB: "TestDatabase.sqlite",
+        protocol_release_version: "test",
+        tx_timeout: 300000,
+        max_query_block_range: 500000,
+        max_gas_price:4000000000,
         concurrency: 1,
-        coldBoot: 1,
-        listenMode: 1,
-        numberRetries: 3,
-        testResolver: resolverAddress,
-        liquidationDelay: delayParam,
-        maxFee: 4000000000
+        cold_boot: 1,
+        listen_mode: 1,
+        number_retries: 3,
+        test_resolver: resolverAddress,
+        additional_liquidation_delay: delayParam,
+        liquidation_run_every: 1000
     });
     app.start();
     while(!app.isInitialized()) {

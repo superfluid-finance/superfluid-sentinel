@@ -4,6 +4,7 @@
   "description": "Superfluid community solvency agent",
   "main": "main.js",
   "scripts": {
+    "start": "node main.js",
     "mumbai": "cat .env-prod-mumbai > .env && nodemon node main",
     "goerli": "cat .env-prod-goerli > .env && node main",
     "rinkeby": "cat .env-prod-rinkeby > .env && node main",
@@ -22,7 +23,11 @@
     "pm2:prod": "./scripts/pm2Prod.sh",
     "pm2:testnets": "./scripts/pm2Testnets.sh",
     "pm2:all": "./scripts/pm2All.sh",
-    "test": "mocha"
+    "test-node": "node_modules/.bin/mocha -t 1000000 test/node.integration.test.js",
+    "test-gas": "node_modules/.bin/mocha -t 1000000 test/gas.integration.test.js",
+    "test-ida": "node_modules/.bin/mocha -t 1000000 test/ida.integration.test.js",
+    "test-cfa": "node_modules/.bin/mocha -t 1000000 test/cfa.integration.test.js",
+    "test": "npm run test-node && npm run test-gas && npm run test-ida && npm run test-cfa"
   },
   "keywords": [],
   "author": "",

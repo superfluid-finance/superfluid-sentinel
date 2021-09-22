@@ -8,6 +8,8 @@ class Config {
             // used by tests
             // TODO: make less redundant
             this.RUN_TEST_ENV = true;
+            this.LOGGER_LEVEL = "debug";
+
             this.HTTP_RPC_NODE = config.http_rpc_node;
             this.WS_RPC_NODE = config.ws_rpc_node;
             this.MNEMONIC = config.mnemonic;
@@ -33,13 +35,14 @@ class Config {
             this.LISTEN_MODE = config.listen_mode;
             this.NUM_RETRIES = config.number_retries;
             this.TEST_RESOLVER = config.test_resolver;
-            this.shutdownOnError = config.shutdown_on_error;
+            this.SHUTDOWN_ON_ERROR = config.shutdown_on_error;
             this.LIQUIDATION_RUN_EVERY = config.liquidation_run_every;
         } else {
 
             this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
             this.WS_RPC_NODE = process.env.WS_RPC_NODE;
             this.MNEMONIC = process.env.MNEMONIC;
+            this.MNEMONIC_INDEX = process.env.MNEMONIC_INDEX || 0;
             this.PRIVATE_KEY = process.env.PRIVATE_KEY;
             this.MAX_QUERY_BLOCK_RANGE = process.env.MAX_QUERY_BLOCK_RANGE || 2000;
             if(process.env.TOKENS !== undefined && process.env.TOKENS !== "") {
@@ -52,15 +55,19 @@ class Config {
             this.MAX_GAS_PRICE = process.env.MAX_GAS_PRICE || 500000000000;
             this.RETRY_GAS_MULTIPLIER = process.env.RETRY_GAS_MULTIPLIER || 1.15;
             this.CLO_ADDR = process.env.CLO_ADDR;
-            this.MNEMONIC_INDEX = process.env.MNEMONIC_INDEX || 0;
 
-            this.CONCURRENCY = 1;
-            this.LISTEN_MODE = 0;
-            this.NUM_RETRIES = 10;
-            this.COLD_BOOT = 0;
-            this.shutdownOnError = false;
-            this.httpServer = true;
-            this.LIQUIDATION_RUN_EVERY = 45000;
+            //extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
+            this.CONCURRENCY = process.env.CONCURRENCY || 1;
+            this.LISTEN_MODE = process.env.LISTEN_MODE || 0;
+            this.NUM_RETRIES = process.env.NUM_RETRIES || 10;
+            this.COLD_BOOT = process.env.COLD_BOOT || 0;
+            this.SHUTDOWN_ON_ERROR = process.env.SHUTDOWN_ON_ERROR || false;
+            this.RUN_HTTP_SERVER = process.env.RUN_HTTP_SERVER || true;
+            this.HTTP_SERVER_PORT = process.env.HTTP_SERVER_PORT || 3000;
+            this.LIQUIDATION_RUN_EVERY = process.env.LIQUIDATION_RUN_EVERY || 30000;
+            this.LIQUIDATION_MUTEX_COUNTER = process.env.LIQUIDATION_MUTEX_COUNTER || 15;
+            this.MAX_BATCH_TX = process.env.MAX_BATCH_TX || 20;
+            this.LOGGER_LEVEL = process.env.LOGGER_LEVEL || "info"
         }
 
         if (this.HTTP_RPC_NODE === undefined) {

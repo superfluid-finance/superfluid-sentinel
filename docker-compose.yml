@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  solvency:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - NODE_ENV=production
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 300M
+        reservations:
+          memory: 50M

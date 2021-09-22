@@ -1,28 +1,28 @@
 require("dotenv").config();
 const program = require("commander");
 const package = require("../../package.json");
-program.version(package.version);
+program.version(package.version, '-v, --version');
 program
     .description("Superfluid Community Agent")
-    .option("-h, --http-eth-node [value]", "HTTP ETH Node URL")
-    .option("-w, --ws-eth-node [value]", "WebSocket ETH Node URL")
-    .option("-p, --private-key [value]","Node Private Key")
-    .option("-m, --mnemonic [value]","Node Wallet Mnemonic")
-    .option("-mb, --max-query-block-range [value]", "max query block range")
-    .option("-t, --tokens [value]", "Addresses of SuperToken agent should perform liquidation")
-    .option("-d, --path-db [value]", "Directory and DB to save/load agent information")
-    .option("-d, --additional-liquidation-delay [value]", "addition liquidaton delay in seconds")
-    .option("-to, --tx-timeout [value]", "Network to run")
-    .option("-p, --protocol-release-version [value]", "Protocol Release Version")
-    .option("-g, --max-gas-price [value]", "Max gas price for a liquidation")
-    .option("-r, --retry-gas-multiplier [value]", "Retry Gas Multiplier")
-    .option("-a, --clo-address [value]", "CLO Address")
+    .option("-H, --http-rpc-node [value]", "HTTP RPC Node URL")
+    .option("-W, --ws-rpc-node [value]", "WebSocket RPC Node URL")
+    .option("-k, --private-key [value]","Private Key")
+    .option("-m, --mnemonic [value]","Mnemonic")
+    .option("--max-query-block-range [value]", "Max query block range (default: 2000)")
+    .option("-t, --tokens [value]", "Addresses of SuperTokens the agent should watch (default: all SuperTokens)")
+    .option("-p, --db-path [value]", "Path of the DB file (default: db.sqlite)")
+    .option("-d, --additional-liquidation-delay [value]", "Time to wait (seconds) after an agreement becoming critical before doing a liquidation (default: 0)")
+    .option("--tx-timeout [value]", "Time to wait (seconds) before re-broadcasting a pending transaction with higher gas price (default: 60)")
+    .option("--protocol-release-version [value]", "Superfluid Protocol Release Version (default: v1)")
+    .option("--max-gas-price [value]", "Max gas price (wei) for liquidation transactions (default: 500000000000)")
+    .option("-r, --retry-gas-multiplier [value]", "Gas price multiplier applied to pending transactions at every timeout until reaching the max gas price (default: 1.15")
+    .option("-c, --clo-address [value]", "CLO Address (default: not set)")
     .action(function (args) {
-        if(args.httpEthNode !== undefined) {
-            process.env.HTTP_RPC_NODE = args.httpEthNode;
+        if(args.httpRpcNode !== undefined) {
+            process.env.HTTP_RPC_NODE = args.httpRpcNode;
         }
-        if(args.wsEthNode !== undefined) {
-            process.env.WS_RPC_NODE = args.wsEthNode;
+        if(args.wsRpcNode !== undefined) {
+            process.env.WS_RPC_NODE = args.wsRpcNode;
         }
         if(args.mnemonic !== undefined) {
             process.env.MNEMONIC = args.mnemonic;
@@ -36,8 +36,8 @@ program
         if(args.tokens !== undefined) {
             process.env.TOKENS = args.tokens;
         }
-        if(args.pathDb !== undefined) {
-            process.env.PATH_DB = args.pathDb;
+        if(args.dbPath !== undefined) {
+            process.env.DB_PATH = args.dbPath;
         }
         if(args.additionalLiquidationDelay !== undefined) {
             process.env.ADDITIONAL_LIQUIDATION_DELAY = args.additionalLiquidationDelay;

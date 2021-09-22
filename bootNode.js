@@ -1,3 +1,4 @@
+// used by tests
 const App = require("./src/app");
 const app = new App({
     ws_rpc_node: "ws://127.0.0.1:8545",
@@ -6,7 +7,7 @@ const app = new App({
     epoch_block: 0,
     DB: "TestDatabase.sqlite",
     protocol_release_version: "test",
-    tx_timeout: 300000,
+    tx_timeout: 300,
     max_query_block_range: 500000,
     max_gas_price:5000000000,
     concurrency: 1,

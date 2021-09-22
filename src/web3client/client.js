@@ -8,6 +8,7 @@ const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contra
 const SuperTokenModel = require("./../database/models/superTokenModel");
 const CLO = require("../inc/Clown.json");
     const BatchContract = require("../inc/BatchLiquidator.json");
+const {wad4human} = require("@decentral.ee/web3-helpers");
 /*
  *   Web3 and superfluid client:
  * - Create web3 connections
@@ -78,11 +79,18 @@ class Client {
                 this.app.logger.info("using provided private key");
                 const account = this.web3.eth.accounts.privateKeyToAccount(this.app.config.PRIVATE_KEY);
                 this.agentAccounts = { address: account.address, _privateKey: account.privateKey };
-            } else {
+            } else if(this.app.config.MNEMONIC !== undefined) {
                 this.app.logger.info("using provided mnemonic");
                 this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, this.app.config.MNEMONIC_INDEX);
+            } else {
+                throw Error('No account configured. Either PRIVATE_KEY or MNEMONIC needs to be set.');
             }
-            this.app.logger.info(`node account: ${this.agentAccounts.address}`);
+            this.app.logger.info(`account: ${this.agentAccounts.address}`);
+            const accBalance = await this.app.client.getAccountBalance();
+            this.app.logger.info(`balance: ${wad4human(accBalance)}`);
+            if(accBalance === "0") {
+                this.app.logger.warn("!!!ACCOUNT NOT FUNDED!!!  Will fail to execute liquidations!");
+            }
             // Node HTTP
             this.app.logger.info("Connecting to Node: HTTP");
             this.web3HTTP.eth.transactionConfirmationBlocks = 3;

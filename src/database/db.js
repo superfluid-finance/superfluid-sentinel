@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 
-const DB = (process.env.PATH_DB !== undefined && process.env.PATH_DB !== "") ? process.env.PATH_DB : "./datadir/db.sqlite";
+const DB = (process.env.DB_PATH !== undefined && process.env.DB_PATH !== "") ? process.env.DB_PATH : "./db.sqlite";
 
 const sequelize = new Sequelize({
     dialect: 'sqlite',

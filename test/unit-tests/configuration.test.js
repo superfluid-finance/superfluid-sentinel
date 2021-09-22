@@ -35,7 +35,7 @@ const populateEnvVariables= () => {
     process.env.LIQUIDATION_RUN_EVERY=55;
     process.env.LIQUIDATION_MUTEX_COUNTER=10;
     process.env.MAX_BATCH_TX=5;
-    process.env.LOGGER_LEVEL="debug";
+    process.env.LOG_LEVEL="debug";
     return {
         HTTP_RPC_NODE:process.env.HTTP_RPC_NODE,
         WS_RPC_NODE:process.env.WS_RPC_NODE,
@@ -61,7 +61,7 @@ const populateEnvVariables= () => {
         LIQUIDATION_RUN_EVERY:process.env.LIQUIDATION_RUN_EVERY,
         LIQUIDATION_MUTEX_COUNTER:process.env.LIQUIDATION_MUTEX_COUNTER,
         MAX_BATCH_TX:process.env.MAX_BATCH_TX,
-        LOGGER_LEVEL:process.env.LOGGER_LEVEL
+        LOG_LEVEL:process.env.LOG_LEVEL
     }
 }
 
@@ -90,7 +90,7 @@ const removeEnvVariables = () => {
     delete process.env.LIQUIDATION_RUN_EVERY;
     delete process.env.LIQUIDATION_MUTEX_COUNTER;
     delete process.env.MAX_BATCH_TX;
-    delete process.env.LOGGER_LEVEL;
+    delete process.env.LOG_LEVEL;
 }
 
 describe("Test Agent user configurations", () => {
@@ -123,7 +123,7 @@ describe("Test Agent user configurations", () => {
             expect(envObj.LIQUIDATION_RUN_EVERY).to.equal(config.LIQUIDATION_RUN_EVERY);
             expect(envObj.LIQUIDATION_MUTEX_COUNTER).to.equal(config.LIQUIDATION_MUTEX_COUNTER);
             expect(envObj.MAX_BATCH_TX).to.equal(config.MAX_BATCH_TX);
-            expect(envObj.LOGGER_LEVEL).to.equal(config.LOGGER_LEVEL);
+            expect(envObj.LOG_LEVEL).to.equal(config.LOG_LEVEL);
             removeEnvVariables();
         } catch(err) {
             exitWithError(err);

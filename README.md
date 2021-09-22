@@ -1,90 +1,80 @@
-# Superfluid Community Solvency Agent
+# Superfluid Community Agent
 
-- This agent uses both HTTP and WS connection to EVM node.
-- Use sqlite as database layer.
-- As this version the parameters are passing as env. variables.
+The agent monitors the state of Superfluid agreements on the configured network and liquidates [critical agreements](https://docs.superfluid.finance/superfluid/docs/constant-flow-agreement#liquidation-and-solvency).
 
+## Quickstart
 
-### Installation and boot
+Currently supported setups:
+* Native
+* Docker
 
+### Prerequisites
 
-1. Clone the repo
-   ```sh
-   git clone https://github.com/ngmachado/community-solvency.git
-   ```
-2. Install NPM packages
-   ```sh
-   npm install
-   ```
+An account funded with native coins.
 
-3. Install pm2 (optional)
-   ```sh
-    npm install -g pm2
-   ```
+### Native Setup
 
-4. Set configuration file `.env`
-   ```sh
-   cat env_template > .env
-   ```
-5. Edit `.env` file
-    ```sh
-        HTTP_NODE = HTTP NODE URL
-        WS_NODE = WS NODE URL
-        EPOCH_BLOCK= START BLOCK OF SYSTEM
-        MNEMONIC= YOUR MNEMONIC
-        PROTOCOL_RELEASE_VERSION=v1
-        TIMEOUT_FN = 300000
-        PULL_STEP = 3000000
-        GAS_PRICE = 5000000000
-        CONCURRENCY=1
-        DB= PATH TO DB
-        COLD_BOOT=1
-        LISTEN_MODE=1
-    ```
-5. Run  `main.js`
-    ```sh
-    node main
-    ```
+Requires Node.js v12+ and npm already installed. 
 
-## More boot options
+First, check out this repository and cd into it:
+```
+git clone https://github.com/superfluid-finance/superfluid-community-agent.git
+cd superfluid-community-agent
+```
 
-Set two agents to Polygon and xDAI
-    ```sh
-    npm run pm2:prod
-    ```
+Then install dependencies with:
+```
+npm ci
+```
+Then prepare a file `.env` with your configuration.  
+You can start with the provided example:
+```
+cp .env-example .env
+```
+The following configuration items are required and don't have default values:
+* HTTP_RPC_NODE (cmdline argument: -H)
+* WS_RPC_NODE (cmdline argument: -W)
 
-_Check `package.json` to see more options_
+Check the example file for additional configuration items and their documentatoin.
 
+The configuration can be provided via cmdline args, via env variables and via `.env` file (with this order of precedence).
 
+For persistent operation in the background, you can use the provided systemd unit template.
+```
+cp superfluid-agent.service.template superfluid-agent.service
+```
+Then edit `superfluid-agent.service` to match your setup. You need to set the working directory to the root directory of the agent, the usernam to execute with and the path to npm on your system.  
+Then you can install and start the service:
+```
+ln -s superfluid-agent.service /etc/systemd/system/superfluid-agent.service
+systemctl daemon-reload
+systemctl start superfluid-agent.service
+```
+Now check if it's running:
+```
+journalctl -f -u superfluid-agent
+```
+If all is well, you may want to set the service to autostart:
+```
+systemctl enable superfluid-agent.service
+```
 
-## Concepts
+### Docker Setup
 
-_Cold Boot_: Fresh database at boot. (Old information will be deleted)
-
-_Critical Account_: Flows that can be terminated.
-
-_Insolvent Account_: Sender account is negative.
-
-_Listed SuperTokens_: SuperTokens register in Superfluid resolver contract.
-
-_Non Listed SuperTokens_: SuperTokens not register in Superfluid resolver contract.
-
-
-## Docker
 This part of the guide assumes you have a recent version of Docker and docker-compose installed.
 
-### Build Docker image
+#### Build Docker image
 ```
 COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose build
 ```
 
-### Run Docker container
+#### Run Docker container
 Ensure your ```.env``` file is configured correctly, then run:
 ```
 docker-compose up
 ```
 
-### Upload Docker image to ECR
+#### Upload Docker image to ECR (optional)
 This assumes you have created a repository named ```<REPOSITORY>``` in your AWS account.
 ```
 aws ecr get-login-password --region <REGION> | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com
@@ -93,47 +83,45 @@ docker tag <IMAGE_ID> <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/<REPOSITOR
 docker push <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/<REPOSITORY>:<TAG>
 ```
 
+## Control flow
 
-# Code structure
+At startup, the agent syncs its state (persisted in the local sqlite DB) by issuing range queries to the RPC node for relevant log events emitted by Superfluid contracts.    
+Based on that state data it then executes the following steps in an endless loop:
+
+1.  Load `FlowUpdated` events
+
+2.  Get all SuperToken addresses
+
+3.  Get all accounts (senders and receiver)
+
+4.  Estimate liquidation point (predicted time of the agreement becoming critical) for each account
+
+5.  Periodically get all estimations that are ready to be send, check account solvency status, build and send transaction
+
+Resulting transactions are then independently monitored and the gas price bid up until executed (or reaching the configured gas price cap).
+
+## Design choices
+
+### Minimal external dependencies
+
+This agent should be self sufficient without depending on external services other than an RPC node (which ideally is local too).  
+Currently both an http and a websocket RPC endpoint are needed. In a future version, an http endpoint may be enough.
+
+### Fault tolerant
+
+Failing RPC queries will be retried several times before giving up and exiting in error state.
+
+### Stateful
+
+The agent needs to keep track of past events in order to allow it to quickly resume operation after a downtime.  
+This is achieved by persisting the current state to a local sqlite database.  
+Deletion of that file or changing of the path to the DB will cause the agent to start syncing from scratch on next start.
+
+### Gas efficient
+
+When the agent submits a transaction, it starts a timeout clock. When the timeout triggers, we resubmit the transaction (same nonce) with a higher gas price.  
+The starting gas price is currently determined using the `eth_gasPrice` RPC method (updated per transaction). May change in the future.
+
+## Code structure
 
 [TODO]
-
-# Flow of Agent
-Depending on the database information, the agent will try to collect all the needed information from the network.
-
-1.  Load FlowUpdated Events
-
-2.  Get all SuperTokens Addresses
-
-3.  Get all Accounts (senders and receiver)
-
-4.  Estimate liquidation point for each account.
-
-5.  Periodically get all estimations that are ready to be send, check account solvency status, build and send transaction.
-
-
-# Design options
-
-## General
-
-This agent should be self sufficient without depending on external services. The only external services is the EVM node.
-
-The node need to expose HTTP(S) and WS(S) connection, the agent will use both.
-
-## Failure
-
-Each node call to collect information will retry the same operation by default seven times before exit the process with error.
-
-## Reboot
-
-After the initial boot phase the agent subscribe to SuperTokens events and operate based on that information. As one double check, if the process exit the reboot will take in consideration the last sucessful boot blockNumber and restart from that point (double checking all the events).
-
-## Liquidation transaction
-
-For each agreement is necessary to perform a liquidation, in this version we are managing only one agent account.
-When the agent submit one transaction it start a timeout clock, when the timeout trigger we resubmit the same transaction (same nonce) with a higher gasPrice.
-
-## Gas Price Estimation
-
-We are now testing the web3 gasEstimation function to give us a base layer that we can work.
----

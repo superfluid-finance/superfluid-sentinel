@@ -5,6 +5,8 @@ class Config {
 
     constructor(config) {
         if(typeof config === "object") {
+            // used by tests
+            // TODO: make less redundant
             this.RUN_TEST_ENV = true;
             this.HTTP_RPC_NODE = config.http_rpc_node;
             this.WS_RPC_NODE = config.ws_rpc_node;
@@ -15,11 +17,11 @@ class Config {
             if(config.tokens !== undefined && config.tokens !== "") {
                 this.TOKENS = config.tokens.split(",");
             }
-            this.DB = (config.path_db !== undefined && config.path_db !== "") ? config.path_db : "./datadir/db.sqlite";
+            this.DB = (config.db_path !== undefined && config.db_path !== "") ? config.db_path : "./db.sqlite";
             this.ADDITIONAL_LIQUIDATION_DELAY = config.additional_liquidation_delay || 0;
-            this.TX_TIMEOUT = config.tx_timeout || 60000;
-            this.PROTOCOL_RELEASE_VERSION = config.protocol_release_version;
-            this.MAX_GAS_PRICE = config.max_gas_price;
+            this.TX_TIMEOUT = config.tx_timeout*1000 || 60000;
+            this.PROTOCOL_RELEASE_VERSION = config.protocol_release_version || "v1";
+            this.MAX_GAS_PRICE = config.max_gas_price || 500000000000;
             this.RETRY_GAS_MULTIPLIER = config.retry_gas_multiplier || 1.15;
             this.CLO_ADDR = config.clo_addr;
 
@@ -33,7 +35,6 @@ class Config {
             this.TEST_RESOLVER = config.test_resolver;
             this.shutdownOnError = config.shutdown_on_error;
             this.LIQUIDATION_RUN_EVERY = config.liquidation_run_every;
-
         } else {
 
             this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
@@ -44,14 +45,14 @@ class Config {
             if(process.env.TOKENS !== undefined && process.env.TOKENS !== "") {
                 this.TOKENS = process.env.TOKENS.split(",");
             }
-            this.DB = (process.env.PATH_DB !== undefined && process.env.PATH_DB !== "") ? process.env.PATH_DB : "./datadir/db.sqlite";
+            this.DB = (process.env.DB_PATH !== undefined && process.env.DB_PATH !== "") ? process.env.DB_PATH : "./db.sqlite";
             this.ADDITIONAL_LIQUIDATION_DELAY = process.env.ADDITIONAL_LIQUIDATION_DELAY || 0;
-            this.TX_TIMEOUT = process.env.TX_TIMEOUT || 60000;
-            this.PROTOCOL_RELEASE_VERSION = process.env.PROTOCOL_RELEASE_VERSION;
-            this.MAX_GAS_PRICE = process.env.MAX_GAS_PRICE;
+            this.TX_TIMEOUT = process.env.TX_TIMEOUT*1000 || 60000;;
+            this.PROTOCOL_RELEASE_VERSION = process.env.PROTOCOL_RELEASE_VERSION || "v1";
+            this.MAX_GAS_PRICE = process.env.MAX_GAS_PRICE || 500000000000;
             this.RETRY_GAS_MULTIPLIER = process.env.RETRY_GAS_MULTIPLIER || 1.15;
             this.CLO_ADDR = process.env.CLO_ADDR;
-            this.MNEMONIC_INDEX = process.env.MNEMONIC_INDEX || 100;
+            this.MNEMONIC_INDEX = process.env.MNEMONIC_INDEX || 0;
 
             this.CONCURRENCY = 1;
             this.LISTEN_MODE = 1;
@@ -60,6 +61,13 @@ class Config {
             this.shutdownOnError = false;
             this.httpServer = true;
             this.LIQUIDATION_RUN_EVERY = 45000;
+        }
+
+        if (this.HTTP_RPC_NODE === undefined) {
+            throw Error('required configuration item missing: HTTP_RPC_NODE');
+        }
+        if (this.WS_RPC_NODE === undefined) {
+            throw Error('required configuration item missing: WS_RPC_NODE');
         }
     }
 

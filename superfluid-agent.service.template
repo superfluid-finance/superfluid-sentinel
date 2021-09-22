@@ -1,0 +1,19 @@
+[Unit]
+Description=Superfluid Agent
+After=network.target
+
+[Service]
+User=<username>
+WorkingDirectory=<agent root directory>
+
+ExecStart=<path to npm> start
+
+# If you're using nvm, you can use this instead:
+#Environment="NODE_VERSION=14"
+#ExecStart=$HOME/.nvm/nvm-exec npm run xdai
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+

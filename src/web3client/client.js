@@ -196,7 +196,7 @@ class Client {
     }
 
     async loadSuperToken(newSuperToken) {
-        if (this.superTokens.has(newSuperToken)) {
+        if (this.superTokens[newSuperToken] !== undefined) {
             return;
         }
         const superTokenWS = new this.web3.eth.Contract(ISuperToken.abi, newSuperToken);

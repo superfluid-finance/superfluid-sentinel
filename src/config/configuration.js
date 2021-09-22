@@ -8,7 +8,7 @@ class Config {
             // used by tests
             // TODO: make less redundant
             this.RUN_TEST_ENV = true;
-            this.LOGGER_LEVEL = "debug";
+            this.LOG_LEVEL = "debug";
 
             this.HTTP_RPC_NODE = config.http_rpc_node;
             this.WS_RPC_NODE = config.ws_rpc_node;
@@ -62,12 +62,12 @@ class Config {
             this.NUM_RETRIES = process.env.NUM_RETRIES || 10;
             this.COLD_BOOT = process.env.COLD_BOOT || 0;
             this.SHUTDOWN_ON_ERROR = process.env.SHUTDOWN_ON_ERROR || false;
-            this.RUN_HTTP_SERVER = process.env.RUN_HTTP_SERVER || true;
-            this.HTTP_SERVER_PORT = process.env.HTTP_SERVER_PORT || 3000;
+            this.METRICS = process.env.METRICS || true;
+            this.METRICS_PORT = process.env.METRICS_PORT || 3000;
             this.LIQUIDATION_RUN_EVERY = process.env.LIQUIDATION_RUN_EVERY || 30000;
             this.LIQUIDATION_MUTEX_COUNTER = process.env.LIQUIDATION_MUTEX_COUNTER || 15;
             this.MAX_BATCH_TX = process.env.MAX_BATCH_TX || 20;
-            this.LOGGER_LEVEL = process.env.LOGGER_LEVEL || "info"
+            this.LOG_LEVEL = process.env.LOG_LEVEL || "info"
         }
 
         if (this.HTTP_RPC_NODE === undefined) {
@@ -101,12 +101,12 @@ class Config {
             NUM_RETRIES:this.NUM_RETRIES,
             COLD_BOOT:this.COLD_BOOT,
             SHUTDOWN_ON_ERROR:this.SHUTDOWN_ON_ERROR,
-            RUN_HTTP_SERVER:this.RUN_HTTP_SERVER,
-            HTTP_SERVER_PORT:this.HTTP_SERVER_PORT,
+            METRICS:this.METRICS,
+            METRICS_PORT:this.METRICS_PORT,
             LIQUIDATION_RUN_EVERY:this.LIQUIDATION_RUN_EVERY,
             LIQUIDATION_MUTEX_COUNTER:this.LIQUIDATION_MUTEX_COUNTER,
             MAX_BATCH_TX:this.MAX_BATCH_TX,
-            LOGGER_LEVEL: this.LOGGER_LEVEL
+            LOG_LEVEL: this.LOG_LEVEL
         }
     }
 }

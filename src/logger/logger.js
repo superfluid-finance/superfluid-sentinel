@@ -13,7 +13,7 @@ class Logger {
             format: combine(label({ label: this.level }), timestamp(), logFormat),
             transports: [
                 new transports.Console({
-                    level: this.app.config.LOGGER_LEVEL,
+                    level: this.app.config.LOG_LEVEL,
                     handleExceptions: true,
                     json: false,
                     colorize: true,

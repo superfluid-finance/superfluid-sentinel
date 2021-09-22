@@ -135,7 +135,7 @@ class App {
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
-            if(this.config.RUN_HTTP_SERVER) {
+            if(this.config.METRICS) {
                 setTimeout(() => this.server.start(), 1000);
             }
             //run liquidation job every x milliseconds

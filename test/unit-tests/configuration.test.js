@@ -30,12 +30,12 @@ const populateEnvVariables= () => {
     process.env.NUM_RETRIES=5;
     process.env.COLD_BOOT=0;
     process.env.SHUTDOWN_ON_ERROR=true;
-    process.env.RUN_HTTP_SERVER=true;
-    process.env.HTTP_SERVER_PORT=3555;
+    process.env.METRICS=true;
+    process.env.METRICS_PORT=3555;
     process.env.LIQUIDATION_RUN_EVERY=55;
     process.env.LIQUIDATION_MUTEX_COUNTER=10;
     process.env.MAX_BATCH_TX=5;
-    process.env.LOGGER_LEVEL="debug";
+    process.env.LOG_LEVEL="debug";
     return {
         HTTP_RPC_NODE:process.env.HTTP_RPC_NODE,
         WS_RPC_NODE:process.env.WS_RPC_NODE,
@@ -56,12 +56,12 @@ const populateEnvVariables= () => {
         NUM_RETRIES:process.env.NUM_RETRIES,
         COLD_BOOT:process.env.COLD_BOOT,
         SHUTDOWN_ON_ERROR:process.env.SHUTDOWN_ON_ERROR,
-        RUN_HTTP_SERVER:process.env.RUN_HTTP_SERVER,
-        HTTP_SERVER_PORT:process.env.HTTP_SERVER_PORT,
+        METRICS:process.env.METRICS,
+        METRICS_PORT:process.env.METRICS_PORT,
         LIQUIDATION_RUN_EVERY:process.env.LIQUIDATION_RUN_EVERY,
         LIQUIDATION_MUTEX_COUNTER:process.env.LIQUIDATION_MUTEX_COUNTER,
         MAX_BATCH_TX:process.env.MAX_BATCH_TX,
-        LOGGER_LEVEL:process.env.LOGGER_LEVEL
+        LOG_LEVEL:process.env.LOG_LEVEL
     }
 }
 
@@ -85,12 +85,12 @@ const removeEnvVariables = () => {
     delete process.env.NUM_RETRIES;
     delete process.env.COLD_BOOT;
     delete process.env.SHUTDOWN_ON_ERROR;
-    delete process.env.RUN_HTTP_SERVER;
-    delete process.env.HTTP_SERVER_PORT;
+    delete process.env.METRICS;
+    delete process.env.METRICS_PORT;
     delete process.env.LIQUIDATION_RUN_EVERY;
     delete process.env.LIQUIDATION_MUTEX_COUNTER;
     delete process.env.MAX_BATCH_TX;
-    delete process.env.LOGGER_LEVEL;
+    delete process.env.LOG_LEVEL;
 }
 
 describe("Test Agent user configurations", () => {
@@ -118,12 +118,12 @@ describe("Test Agent user configurations", () => {
             expect(envObj.NUM_RETRIES).to.equal(config.NUM_RETRIES);
             expect(envObj.COLD_BOOT).to.equal(config.COLD_BOOT);
             expect(envObj.SHUTDOWN_ON_ERROR).to.equal(config.SHUTDOWN_ON_ERROR);
-            expect(envObj.RUN_HTTP_SERVER).to.equal(config.RUN_HTTP_SERVER);
-            expect(envObj.HTTP_SERVER_PORT).to.equal(config.HTTP_SERVER_PORT);
+            expect(envObj.METRICS).to.equal(config.METRICS);
+            expect(envObj.METRICS_PORT).to.equal(config.METRICS_PORT);
             expect(envObj.LIQUIDATION_RUN_EVERY).to.equal(config.LIQUIDATION_RUN_EVERY);
             expect(envObj.LIQUIDATION_MUTEX_COUNTER).to.equal(config.LIQUIDATION_MUTEX_COUNTER);
             expect(envObj.MAX_BATCH_TX).to.equal(config.MAX_BATCH_TX);
-            expect(envObj.LOGGER_LEVEL).to.equal(config.LOGGER_LEVEL);
+            expect(envObj.LOG_LEVEL).to.equal(config.LOG_LEVEL);
             removeEnvVariables();
         } catch(err) {
             exitWithError(err);

@@ -7,7 +7,7 @@ class HTTPServer {
         this.app = app;
         this.server = express();
         this.runningInstance;
-        this.port = this.app.config.HTTP_SERVER_PORT;
+        this.port = this.app.config.METRICS_PORT;
         this.healthReport = new Report(app);
     }
 

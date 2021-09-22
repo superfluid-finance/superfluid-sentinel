@@ -36,7 +36,6 @@ class Client {
 
     async initialize() {
         try {
-            let x = 0;
             const web3 = new Web3.providers.WebsocketProvider(this.app.config.WS_RPC_NODE, {
                 timeout: 10000,
                 clientConfig: {
@@ -50,7 +49,6 @@ class Client {
                     onTimeout: false
                 }
             }).on("reconnect", function() {
-                a += this.reconnectAttempts;
                 //this.app.logger(`client.initialize() - reconnect #${this.reconnectAttempts}`);
                 console.log("\nWeb3Client: reconnect #" + this.reconnectAttempts);
             })

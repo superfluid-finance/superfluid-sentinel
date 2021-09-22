@@ -7,7 +7,7 @@ class HTTPServer {
         this.app = app;
         this.server = express();
         this.runningInstance;
-        this.port = 3000;
+        this.port = this.app.config.HTTP_SERVER_PORT;
         this.healthReport = new Report(app);
     }
 
@@ -29,12 +29,11 @@ class HTTPServer {
 
 
         this.server.get('/nextliquidations', async (req, res) => {
-            const result = await this.app.db.queries.getLiquidations(
-                this.app.time.getTimeWithDelay(-3600),
-                this.app.config.TOKENS);
-
             try {
-                res.send(result);
+                res.send(await this.app.db.queries.getLiquidations(
+                    this.app.time.getTimeWithDelay(-3600),
+                    this.app.config.TOKENS)
+                );
             } catch (e) {
                 liquidations.message = e;
                 res.status(503).send();

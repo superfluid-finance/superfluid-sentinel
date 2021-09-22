@@ -256,7 +256,7 @@ class Liquidator {
             }
 
             if(err.message === "Returned error: insufficient funds for gas * price + value") {
-                this.app.logger.debug(`insufficient funds agent account`);
+                this.app.logger.warn(`insufficient funds agent account`);
                 return {error: err.message, tx: undefined};
             }
 

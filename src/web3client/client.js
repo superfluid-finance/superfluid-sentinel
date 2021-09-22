@@ -239,7 +239,10 @@ class Client {
     }
 
     async getNetworkId() {
-        return await this.web3HTTP.eth.net.getId();
+        if(this.networkId === undefined) {
+            this.networkId = await this.web3HTTP.eth.net.getId();
+        }
+        return this.networkId;
     }
 
     getAccountAddress() {
@@ -310,7 +313,6 @@ class Client {
             pk
         );
     }
-
     async _sendSignTxTimeout(tx, ms, retries) {
         const delay = ms => new Promise(res => setTimeout(res, ms));
         while(retries > 0) {

@@ -9,8 +9,8 @@ const IToken = require("@superfluid-finance/ethereum-contracts/build/contracts/T
 const expect = require('chai').expect
 const Web3 = require('web3');
 const traveler = require("ganache-time-traveler");
-const ganache = require("../scripts/setGanache");
-const App = require("../src/app");
+const ganache = require("../../scripts/setGanache");
+const App = require("../../src/app");
 
 const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
 
@@ -112,7 +112,7 @@ const bootNode = async (delayParam = 0) => {
         number_retries: 3,
         test_resolver: resolverAddress,
         additional_liquidation_delay: delayParam,
-        liquidation_run_every: 1000
+        liquidation_run_every: 5000
     });
     app.start();
     while(!app.isInitialized()) {
@@ -163,11 +163,12 @@ const expectBailout = (event, node, account) => {
     expect(event.returnValues.bailoutAmount).not.equal("0");
     expect(event.returnValues.penaltyAccount).to.equal(account);
 }
-describe("Agent configurations tests", () => {
+describe("Integration scripts tests", () => {
 
     before(async function() {
         await setup();
         snapId = await takeSnapshot();
+        //await bootNode();
     });
 
     beforeEach(async () => {
@@ -184,24 +185,8 @@ describe("Agent configurations tests", () => {
         closeNode(true);
     });
 
-    it("Should use delay paramater when sending liquidation", async () => {
-        const data = cfa.methods.createFlow(
-            superToken._address,
-            accounts[2],
-            "100000000000",
-            "0x"
-        ).encodeABI();
-        await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
-        await bootNode(3600);
-        const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
-        await timeTravelOnce(3580, true);
-        const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
-        expect(result[0].returnValues.liquidatorAccount).to.equal(AGENT_ACCOUNT);
-    });
-
-    it("Start node, subscribe to new Token and perform estimation", async () => {
+    it("Create one stream", async () => {
         try {
-            await bootNode();
             const data = cfa.methods.createFlow(
                 superToken._address,
                 accounts[2],
@@ -209,15 +194,7 @@ describe("Agent configurations tests", () => {
                 "0x"
             ).encodeABI();
             await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
-            while(true) {
-                const estimation = await app.db.queries.getAddressEstimation(accounts[0]);
-                if(estimation.length > 0) {
-                    console.log(estimation);
-                    break;
-                }
-                await delay(1000);
-            }
-            await delay(1000);
+            await bootNode();
             const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
@@ -226,21 +203,111 @@ describe("Agent configurations tests", () => {
         }
     });
 
-    it("When token is listed afterwards, and there is already existing negative accounts, liquidations should still be performed", async () => {
+    it("Create small stream then updated to bigger stream", async () => {
         try {
             const data = cfa.methods.createFlow(
                 superToken._address,
                 accounts[2],
-                "10000000000000000",
+                "1000",
                 "0x"
             ).encodeABI();
             await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
-            const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
-            const timestamp = timeTravelOnce(3600);
             await bootNode();
-            app.setTime(timestamp * 1000);
+            await timeTravelOnce(60);
+            const dataUpdate = cfa.methods.updateFlow(
+                superToken._address,
+                accounts[2],
+                "1000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, dataUpdate, "0x").send({from: accounts[0], gas: 1000000});
+            await timeTravelOnce(60);
+            const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
-            expectBailout(result[0], AGENT_ACCOUNT, accounts[0]);
+            expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
+
+    it("Create one out going stream and receive a smaller incoming stream", async () => {
+        try {
+            const sendingFlowData = cfa.methods.createFlow(
+                superToken._address,
+                accounts[2],
+                "1000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, sendingFlowData, "0x").send({from: accounts[0], gas: 1000000});
+            await bootNode();
+            await timeTravelOnce(60);
+            const receivingFlowData = cfa.methods.createFlow(
+                superToken._address,
+                accounts[0],
+                "10000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, receivingFlowData, "0x").send({from: accounts[2], gas: 1000000});
+            await timeTravelOnce(60);
+            const tx = await superToken.methods.transferAll(accounts[5]).send({from: accounts[0], gas: 1000000});
+            const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
+            expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
+
+    it("Create two outgoing streams, and new total outflow rate should apply to the agent estimation logic", async () => {
+        try {
+            const flowData = cfa.methods.createFlow(
+                superToken._address,
+                accounts[2],
+                "1000000000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, flowData, "0x").send({from: accounts[0], gas: 1000000});
+            await bootNode();
+            await timeTravelOnce(3600, true);
+            const flowData2 = cfa.methods.createFlow(
+                superToken._address,
+                accounts[3],
+                "1000000000000000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, flowData2, "0x").send({from: accounts[0], gas: 1000000});
+            const tx = await superToken.methods.transferAll(accounts[9]).send({from: accounts[0], gas: 1000000});
+            //await timeTravelOnce(3600, true);
+            let result = await waitForEvent("AgreementLiquidatedBy", 0);
+            expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
+
+    it("Create a stream with big flow rate, then update the stream with smaller flow rate", async () => {
+        try {
+            const flowData = cfa.methods.createFlow(
+                superToken._address,
+                accounts[2],
+                "100000",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, flowData, "0x").send({from: accounts[5], gas: 1000000});
+            await bootNode();
+            await timeTravelOnce(60);
+            const firstEstimation = await app.db.queries.getAddressEstimation(accounts[0]);
+            const updateData = cfa.methods.updateFlow(
+                superToken._address,
+                accounts[2],
+                "1",
+                "0x"
+            ).encodeABI();
+            await host.methods.callAgreement(cfa._address, updateData, "0x").send({from: accounts[5], gas: 1000000});
+            await timeTravelOnce(60);
+            const secondEstimation = await app.db.queries.getAddressEstimation(accounts[5]);
+            expect(firstEstimation[0].zestimation).to.not.equal(32503593600000);
+            //the stream is soo small that we mark as not a real estimation
+            expect(secondEstimation[0].zestimation).to.equal(32503593600000);
         } catch(err) {
             exitWithError(err);
         }

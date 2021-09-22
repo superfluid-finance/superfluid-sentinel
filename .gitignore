@@ -8,3 +8,5 @@ database.sqlite
 .DS_Store
 
 datadir/
+
+*.sqlite

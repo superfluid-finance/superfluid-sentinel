@@ -23,11 +23,13 @@
     "pm2:prod": "./scripts/pm2Prod.sh",
     "pm2:testnets": "./scripts/pm2Testnets.sh",
     "pm2:all": "./scripts/pm2All.sh",
-    "test-node": "node_modules/.bin/mocha -t 1000000 test/node.integration.test.js",
-    "test-gas": "node_modules/.bin/mocha -t 1000000 test/gas.integration.test.js",
-    "test-ida": "node_modules/.bin/mocha -t 1000000 test/ida.integration.test.js",
-    "test-cfa": "node_modules/.bin/mocha -t 1000000 test/cfa.integration.test.js",
-    "test": "npm run test-node && npm run test-gas && npm run test-ida && npm run test-cfa"
+    "test-node": "node_modules/.bin/mocha -t 1000000 test/integration/node.integration.test.js",
+    "test-gas": "node_modules/.bin/mocha -t 1000000 test/integration/gas.integration.test.js",
+    "test-ida": "node_modules/.bin/mocha -t 1000000 test/integration/ida.integration.test.js",
+    "test-cfa": "node_modules/.bin/mocha -t 1000000 test/integration/cfa.integration.test.js",
+    "test-batch": "node_modules/.bin/mocha -t 1000000 test/integration/batch.integration.test.js",
+    "test-unit": "node_modules/.bin/mocha test/unit-tests/*.js",
+    "test": "npm run test-unit && npm run test-node && npm run test-gas && npm run test-ida && npm run test-cfa && npm run test-batch"
   },
   "keywords": [],
   "author": "",
@@ -65,22 +67,12 @@
     }
   },
   "networks": {
-    "100": {
-      "name": "xDAI",
-      "epoch": 14845091,
-      "batch": "0x7Ac49B1539C2580972D9B43b41a4ec93A4290cdF"
-    },
-    "137": {
-      "name": "Polygon",
-      "epoch": 11000000,
-      "batch": "0xAB4075f621100563f4551C0Ca50944809b03E948"
-    },
     "3": {
       "name": "Ropsten",
       "epoch": 9400000,
       "batch": "0x6b878902A8648815e1E896515e25D985715bE485"
     },
-    "": {
+    "4": {
       "name": "Rinkeby",
       "epoch": 7400000,
       "batch": "0x6b878902A8648815e1E896515e25D985715bE485"
@@ -94,6 +86,16 @@
       "name": "Kovan",
       "epoch": 23709362,
       "batch": "0x6b878902A8648815e1E896515e25D985715bE485"
+    },
+    "100": {
+      "name": "xDAI",
+      "epoch": 14845091,
+      "batch": "0x7Ac49B1539C2580972D9B43b41a4ec93A4290cdF"
+    },
+    "137": {
+      "name": "Polygon",
+      "epoch": 11000000,
+      "batch": "0xAB4075f621100563f4551C0Ca50944809b03E948"
     },
     "80001": {
       "name": "Mumbai (Polygon)",

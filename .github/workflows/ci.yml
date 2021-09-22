@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - '*'
-  pull_request:
-    types: [opened, reopened, ready_for_review, synchronize]
 
 jobs:
   build:
@@ -15,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [12.x, 14.x]
+        node-version: [14.x]
 
     steps:
       - uses: actions/checkout@v2
@@ -37,18 +35,26 @@ jobs:
         run: |
           npm ci
 
+      - name: run node unit tests
+        run: |
+          npx mocha test/unit-tests/*.js
+
       - name: run node integration test
         run: |
-          npx mocha -t 1000000 test/node.integration.test.js
+          npx mocha -t 1000000 test/integration/node.integration.test.js
 
       - name: run gas integration test
         run: |
-          npx mocha -t 1000000 test/gas.integration.test.js
+          npx mocha -t 1000000 test/integration/gas.integration.test.js
 
       - name: run ida integration test
         run: |
-          npx mocha -t 1000000 test/ida.integration.test.js
+          npx mocha -t 1000000 test/integration/ida.integration.test.js
 
       - name: run cfa integration test
         run: |
-          npx mocha -t 1000000 test/cfa.integration.test.js
+          npx mocha -t 1000000 test/integration/cfa.integration.test.js
+
+      - name: run batch liquidations integration test
+        run: |
+          npx mocha -t 1000000 test/integration/batch.integration.test.js

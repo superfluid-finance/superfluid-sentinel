@@ -5,21 +5,38 @@ const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IIn
 const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
 const IToken = require("@superfluid-finance/ethereum-contracts/build/contracts/TestToken.json");
+const BatchLiquidator = require("@superfluid-finance/ethereum-contracts/build/contracts/BatchLiquidator.json");
 
 const expect = require('chai').expect
 const Web3 = require('web3');
 const traveler = require("ganache-time-traveler");
-const ganache = require("../scripts/setGanache");
-const App = require("../src/app");
+const ganache = require("../../scripts/setGanache");
+const App = require("../../src/app");
 
 const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
 
-let app, accounts, snapId, web3, ida, cfa, host, superToken, token, resolver, resolverAddress;
+let app, accounts, snapId, web3, ida, cfa, host, superToken, token, resolver, resolverAddress, batchContract;
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 const exitWithError = (error) => {
     console.error(error);
     process.exit(1);
+}
+
+const deployBatchContract = async () => {
+    if(batchContract === undefined) {
+        const contract = new web3.eth.Contract(BatchLiquidator.abi);
+        const res = await contract.deploy({
+                data: BatchLiquidator.bytecode
+            }).send({
+                from: accounts[0],
+                gas: 1500000,
+                gasPrice: '1000'
+            });
+        //batchContract = new web3.eth.Contract(BatchLiquidator.abi, res._address);
+        batchContract = res;
+        console.log(`BatchLiquidator address: ${res._address}`);
+    }
 }
 const setup = async () => {
     web3 = new Web3(ganache.provider);
@@ -46,6 +63,7 @@ const setup = async () => {
     const govAddress = await resolver.methods.get("TestGovernance.test").call();
     console.log("Governance Address ", govAddress);
     token = new web3.eth.Contract(IToken.abi, tokenAddress);
+    await deployBatchContract();
 
     for(const account of accounts) {
         await token.methods.mint(account,"10000000000000000000000").send({from: account});
@@ -88,10 +106,9 @@ async function timeTravelOnce(time, setAppTime = false) {
     console.log(`time traveler going to the future +${time}...`);
     await traveler.advanceTimeAndBlock(time);
     const block2 = await web3.eth.getBlock("latest");
-    console.log("new block time", block2.timestamp);
     if(setAppTime)
         app.setTime(block2.timestamp * 1000);
-    return block2.timestamp;
+    return {timestamp: block2.timestamp, blockNumber: block2.number};
 }
 
 const bootNode = async (delayParam = 0) => {
@@ -112,7 +129,8 @@ const bootNode = async (delayParam = 0) => {
         number_retries: 3,
         test_resolver: resolverAddress,
         additional_liquidation_delay: delayParam,
-        liquidation_run_every: 5000
+        liquidation_run_every: 5000,
+        batch_contract: batchContract._address
     });
     app.start();
     while(!app.isInitialized()) {
@@ -125,55 +143,31 @@ const closeNode = async (force = false) => {
         return app.shutdown(force);
 }
 
-const waitForEvent = async (eventName, blockNumber) => {
-    await printEstimations();
+const waitForEventAtSameBlock = async (eventName, numberOfEvents, blockNumber) => {
     while(true) {
         try {
-            const newBlockNumber = await web3.eth.getBlockNumber();
-            console.log(`${blockNumber} - ${newBlockNumber}`);
-            const events = await superToken.getPastEvents(eventName, {fromBlock: blockNumber, toBlock: newBlockNumber});
-            if(events.length > 0) {
-                return events;
+            console.log(`checking block: ${blockNumber}`);
+            const events = await superToken.getPastEvents(eventName, {fromBlock: blockNumber, toBlock: blockNumber});
+            if(events.length ===  numberOfEvents) {
+                return true;
             }
             await delay(1000);
-            await timeTravelOnce(1, true);
+            const r = await timeTravelOnce(1, true);
+            blockNumber += 1;
         } catch(err) {
             exitWithError(err);
         }
     }
 }
 
-const printEstimations = async () => {
-    console.log("==========ESTIMATIONS==========");
-    const estimations = await app.getEstimations();
-    for(const est of estimations) {
-        console.log(`SuperToken: ${est.superToken} - account: ${est.address} : ${new Date(est.zestimation) }`);
-    }
-    console.log("===============================");
-}
-
-const expectLiquidation = (event, node, account) => {
-    expect(event.returnValues.liquidatorAccount).to.equal(node);
-    expect(event.returnValues.bailoutAmount).to.equal("0");
-    expect(event.returnValues.penaltyAccount).to.equal(account);
-}
-
-const expectBailout = (event, node, account) => {
-    expect(event.returnValues.liquidatorAccount).to.equal(node);
-    expect(event.returnValues.bailoutAmount).not.equal("0");
-    expect(event.returnValues.penaltyAccount).to.equal(account);
-}
-describe("GAS Integration tests", () => {
+describe("Integration scripts tests", () => {
 
     before(async function() {
         await setup();
         snapId = await takeSnapshot();
-        //await bootNode();
     });
 
     beforeEach(async () => {
-        //console.log("Revert to snapshot with id: ", snapId.id);
-        //await revertToSnapShot(snapId.id);
         await setup();
     });
 
@@ -185,40 +179,24 @@ describe("GAS Integration tests", () => {
         closeNode(true);
     });
 
-    it("Scale gas on timeout", async () => {
+    it("Send a batch Liquidation to close multi streams", async () => {
         try {
+            const flowData1 = cfa.methods.createFlow(superToken._address,accounts[0],"1000000000000000","0x").encodeABI();
+            await host.methods.callAgreement(cfa._address, flowData1, "0x").send({from: accounts[1], gas: 1000000});
+            await host.methods.callAgreement(cfa._address, flowData1, "0x").send({from: accounts[2], gas: 1000000});
+            await host.methods.callAgreement(cfa._address, flowData1, "0x").send({from: accounts[3], gas: 1000000});
+            await host.methods.callAgreement(cfa._address, flowData1, "0x").send({from: accounts[4], gas: 1000000});
+            await host.methods.callAgreement(cfa._address, flowData1, "0x").send({from: accounts[5], gas: 1000000});
+            //await timeTravelOnce(1);
+            const tx = await superToken.methods.transferAll(accounts[9]).send({from: accounts[1], gas: 1000000});
+            await superToken.methods.transferAll(accounts[9]).send({from: accounts[2], gas: 1000000});
+            await superToken.methods.transferAll(accounts[9]).send({from: accounts[3], gas: 1000000});
+            await superToken.methods.transferAll(accounts[9]).send({from: accounts[4], gas: 1000000});
+            await superToken.methods.transferAll(accounts[9]).send({from: accounts[5], gas: 1000000});
             await bootNode();
-            app.setTestFlag("TIMEOUT_ON_LOW_GAS_PRICE", { minimumGas: 2000000000});
-            const data = cfa.methods.createFlow(
-                superToken._address,
-                accounts[2],
-                "10000000000000000",
-                "0x"
-            ).encodeABI();
-            await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
-            const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
-            const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
-            expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
-        } catch(err) {
-            exitWithError(err);
-        }
-    });
-
-    it("Should hit gas limit and and only 1 wei", async () => {
-        try {
-            await bootNode();
-            app.setTestFlag("TIMEOUT_ON_LOW_GAS_PRICE", { minimumGas: 2000000000});
-            const data = cfa.methods.createFlow(
-                superToken._address,
-                accounts[2],
-                "10000000000000000",
-                "0x"
-            ).encodeABI();
-            await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
-            const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
-            const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
-            expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
-        } catch(err) {
+            let result = await waitForEventAtSameBlock("AgreementLiquidatedBy", 5, tx.blockNumber);
+            expect(result).to.equal(true);
+        } catch(err) {
             exitWithError(err);
         }
     });

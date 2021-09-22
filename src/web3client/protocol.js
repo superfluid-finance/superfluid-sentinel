@@ -330,9 +330,8 @@ class Protocol {
                                     break;
                                 }
                                 case "AgreementLiquidatedBy": {
-                                    //console.log(event);
                                     this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address]}, liquidated acc ${event.penaltyAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`); 
-                                    if (event.bailoutAmount !== '0') {
+                                    if (event.bailoutAmount !== "0") {
                                         this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.bailoutAmount)}`);
                                     }
                                 }

@@ -50,7 +50,7 @@ class Config {
             }
             this.DB = (process.env.DB_PATH !== undefined && process.env.DB_PATH !== "") ? process.env.DB_PATH : "./db.sqlite";
             this.ADDITIONAL_LIQUIDATION_DELAY = process.env.ADDITIONAL_LIQUIDATION_DELAY || 0;
-            this.TX_TIMEOUT = process.env.TX_TIMEOUT*1000 || 60000;;
+            this.TX_TIMEOUT = process.env.TX_TIMEOUT*1000 || 60000;
             this.PROTOCOL_RELEASE_VERSION = process.env.PROTOCOL_RELEASE_VERSION || "v1";
             this.MAX_GAS_PRICE = process.env.MAX_GAS_PRICE || 500000000000;
             this.RETRY_GAS_MULTIPLIER = process.env.RETRY_GAS_MULTIPLIER || 1.15;

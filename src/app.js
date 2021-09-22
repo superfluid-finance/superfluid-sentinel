@@ -24,6 +24,10 @@ class App {
      * @dev Load all dependancies needed to run the agent
     */
     constructor(config) {
+
+        //Helpers global functions
+        const delay = ms => new Promise(res => setTimeout(res, ms))
+
         this.config = new Config(config);
         this.logger = new Logger(this);
         this.client = new Client(this);
@@ -43,7 +47,10 @@ class App {
         this.db = DB;
         this.db.queries = new Repository(this);
         this.server = new HTTPServer(this);
-        this._isShutdown
+        this._isShutdown = false;
+        this.timer = {
+            delay:delay
+        }
     }
 
     async run(fn, time) {
@@ -101,6 +108,7 @@ class App {
             this._isShutdown = false;
             if(this.config.COLD_BOOT) {
                 //drop existing database to force a full boot
+                this.logger.debug(`resync all database data`);
                 await this.db.sync({ force: true });
             } else {
                 await this.db.sync();
@@ -126,10 +134,11 @@ class App {
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
-            if(this.config.httpServer) {
+            if(this.config.RUN_HTTP_SERVER) {
                 setTimeout(() => this.server.start(), 1000);
             }
             //run liquidation job every x milliseconds
+            this.logger.debug(`running liquidation job every ${this.config.LIQUIDATION_RUN_EVERY}`);
             this.run(this.liquidator, this.config.LIQUIDATION_RUN_EVERY);
         } catch(err) {
             this.logger.error(`app.start() - ${err}`);

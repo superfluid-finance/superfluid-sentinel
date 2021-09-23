@@ -128,7 +128,7 @@ The starting gas price is currently determined using the `eth_gasPrice` RPC meth
 
 ## License
 
-[TODO]
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Disclaimer
 

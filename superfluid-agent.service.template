@@ -8,7 +8,7 @@ WorkingDirectory=<agent root directory>
 
 ExecStart=<path to npm> start
 
-# If you're using nvm, you can use this instead:
+# If you are using nvm, you can use this instead:
 #Environment="NODE_VERSION=14"
 #ExecStart=<PATH TO HOME>/.nvm/nvm-exec npm start
 

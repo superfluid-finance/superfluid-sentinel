@@ -1,4 +1,4 @@
-# Superfluid Community Agent
+# Community Solvency Agent
 
 The agent monitors the state of Superfluid agreements on the configured network and liquidates [critical agreements](https://docs.superfluid.finance/superfluid/docs/constant-flow-agreement#liquidation-and-solvency).
 
@@ -18,8 +18,8 @@ Requires Node.js v12+ and npm already installed.
 
 First, check out this repository and cd into it:
 ```
-git clone https://github.com/superfluid-finance/superfluid-community-agent.git
-cd superfluid-community-agent
+git clone https://github.com/superfluid-finance/community-solvency-agent.git
+cd community-solvency-agent
 ```
 
 Then install dependencies with:

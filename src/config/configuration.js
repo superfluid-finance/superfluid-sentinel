@@ -64,7 +64,7 @@ class Config {
             this.SHUTDOWN_ON_ERROR = process.env.SHUTDOWN_ON_ERROR || false;
             this.METRICS = process.env.METRICS || true;
             this.METRICS_PORT = process.env.METRICS_PORT || 3000;
-            this.LIQUIDATION_RUN_EVERY = process.env.LIQUIDATION_RUN_EVERY || 30000;
+            this.LIQUIDATION_RUN_EVERY = process.env.LIQUIDATION_RUN_EVERY*1000 || 30000;
             this.LIQUIDATION_MUTEX_COUNTER = process.env.LIQUIDATION_MUTEX_COUNTER || 15;
             this.MAX_BATCH_TX = process.env.MAX_BATCH_TX || 20;
             this.LOG_LEVEL = process.env.LOG_LEVEL || "info"
@@ -95,17 +95,17 @@ class Config {
             PROTOCOL_RELEASE_VERSION: this.PROTOCOL_RELEASE_VERSION,
             MAX_GAS_PRICE: this.MAX_GAS_PRICE,
             RETRY_GAS_MULTIPLIER: this.RETRY_GAS_MULTIPLIER,
-            CLO_ADDR : this.CLO_ADDR,
-            CONCURRENCY:this.CONCURRENCY,
-            LISTEN_MODE:this.LISTEN_MODE,
-            NUM_RETRIES:this.NUM_RETRIES,
-            COLD_BOOT:this.COLD_BOOT,
-            SHUTDOWN_ON_ERROR:this.SHUTDOWN_ON_ERROR,
-            METRICS:this.METRICS,
-            METRICS_PORT:this.METRICS_PORT,
-            LIQUIDATION_RUN_EVERY:this.LIQUIDATION_RUN_EVERY,
-            LIQUIDATION_MUTEX_COUNTER:this.LIQUIDATION_MUTEX_COUNTER,
-            MAX_BATCH_TX:this.MAX_BATCH_TX,
+            CLO_ADDR: this.CLO_ADDR,
+            CONCURRENCY: this.CONCURRENCY,
+            LISTEN_MODE: this.LISTEN_MODE,
+            NUM_RETRIES: this.NUM_RETRIES,
+            COLD_BOOT: this.COLD_BOOT,
+            SHUTDOWN_ON_ERROR: this.SHUTDOWN_ON_ERROR,
+            METRICS: this.METRICS,
+            METRICS_PORT: this.METRICS_PORT,
+            LIQUIDATION_RUN_EVERY: this.LIQUIDATION_RUN_EVERY,
+            LIQUIDATION_MUTEX_COUNTER: this.LIQUIDATION_MUTEX_COUNTER,
+            MAX_BATCH_TX: this.MAX_BATCH_TX,
             LOG_LEVEL: this.LOG_LEVEL
         }
     }

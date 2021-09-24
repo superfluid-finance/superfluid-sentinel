@@ -1,5 +1,5 @@
 {
-  "name": "community-solvency",
+  "name": "community-solvency-agent",
   "version": "0.1.0",
   "description": "Superfluid community solvency agent",
   "main": "main.js",
@@ -33,7 +33,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@decentral.ee/web3-helpers": "^0.5.3",
     "@superfluid-finance/ethereum-contracts": "dev",

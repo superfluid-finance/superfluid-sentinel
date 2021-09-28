@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 User=<username>
-WorkingDirectory=<agent root directory>
+WorkingDirectory=<sentinel root directory>
 
 ExecStart=<path to npm> start
 

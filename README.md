@@ -14,7 +14,7 @@ An account funded with native coins.
 
 ### Native Setup
 
-Requires Node.js v12+ and npm already installed.
+Requires Node.js v14+ and npm already installed.
 
 First, check out this repository and cd into it:
 ```

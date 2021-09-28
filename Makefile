@@ -1,5 +1,5 @@
 PROJECT_NAME=superfluid
-IMAGE_NAME=community-solvency
+IMAGE_NAME=sentinel
 VERSION=$(ENVIRONMENT)-$(USER)
 
 export IMAGE_TAG=$(IMAGE_NAME):$(VERSION)

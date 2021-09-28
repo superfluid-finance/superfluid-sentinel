@@ -3,13 +3,13 @@ const program = require("commander");
 const package = require("../../package.json");
 program.version(package.version, '-v, --version');
 program
-    .description("Superfluid Community Agent")
+    .description("Superfluid Sentinel")
     .option("-H, --http-rpc-node [value]", "HTTP RPC Node URL")
     .option("-W, --ws-rpc-node [value]", "WebSocket RPC Node URL")
     .option("-k, --private-key [value]","Private Key")
     .option("-m, --mnemonic [value]","Mnemonic")
     .option("--max-query-block-range [value]", "Max query block range (default: 2000)")
-    .option("-t, --tokens [value]", "Addresses of SuperTokens the agent should watch (default: all SuperTokens)")
+    .option("-t, --tokens [value]", "Addresses of SuperTokens the sentinel should watch (default: all SuperTokens)")
     .option("-p, --db-path [value]", "Path of the DB file (default: db.sqlite)")
     .option("-d, --additional-liquidation-delay [value]", "Time to wait (seconds) after an agreement becoming critical before doing a liquidation (default: 0)")
     .option("--tx-timeout [value]", "Time to wait (seconds) before re-broadcasting a pending transaction with higher gas price (default: 60)")

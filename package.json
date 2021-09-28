@@ -1,7 +1,7 @@
 {
-  "name": "community-solvency-agent",
+  "name": "superfluid-sentinel",
   "version": "0.1.0",
-  "description": "Superfluid community solvency agent",
+  "description": "Superfluid Sentinel",
   "main": "main.js",
   "scripts": {
     "start": "node main.js",

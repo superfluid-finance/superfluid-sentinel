@@ -1,5 +1,5 @@
 [Unit]
-Description=Superfluid Agent
+Description=Superfluid Sentinel
 After=network.target
 
 [Service]

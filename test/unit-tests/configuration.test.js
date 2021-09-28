@@ -120,7 +120,7 @@ describe("Test Agent user configurations", () => {
             expect(envObj.SHUTDOWN_ON_ERROR).to.equal(config.SHUTDOWN_ON_ERROR);
             expect(envObj.METRICS).to.equal(config.METRICS);
             expect(envObj.METRICS_PORT).to.equal(config.METRICS_PORT);
-            expect(envObj.LIQUIDATION_RUN_EVERY * 1000).to.equal(config.LIQUIDATION_RUN_EVERY);
+            expect(envObj.LIQUIDATION_RUN_EVERY*1000).to.equal(config.LIQUIDATION_RUN_EVERY);
             expect(envObj.LIQUIDATION_MUTEX_COUNTER).to.equal(config.LIQUIDATION_MUTEX_COUNTER);
             expect(envObj.MAX_BATCH_TX).to.equal(config.MAX_BATCH_TX);
             expect(envObj.LOG_LEVEL).to.equal(config.LOG_LEVEL);

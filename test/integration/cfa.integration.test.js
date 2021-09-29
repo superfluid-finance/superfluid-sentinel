@@ -1,97 +1,16 @@
-const Environment = require("@superfluid-finance/ethereum-contracts/scripts/deploy-test-environment");
-const IResolver = require("@superfluid-finance/ethereum-contracts/build/contracts/IResolver.json");
-const ICFA = require("@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json");
-const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IInstantDistributionAgreementV1.json");
-const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
-const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
-const IToken = require("@superfluid-finance/ethereum-contracts/build/contracts/TestToken.json");
-
-const expect = require('chai').expect
-const Web3 = require('web3');
-const traveler = require("ganache-time-traveler");
-const ganache = require("../../scripts/setGanache");
+const protocolHelper = require("../utils/protocolHelper");
+const expect = require("chai").expect
+const ganache = require("../utils/ganache");
 const App = require("../../src/app");
 
 const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
 
-let app, accounts, snapId, web3, ida, cfa, host, superToken, token, resolver, resolverAddress;
+let app, accounts, snapId, protocolVars, web3;
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 const exitWithError = (error) => {
     console.error(error);
     process.exit(1);
-}
-const setup = async () => {
-    web3 = new Web3(ganache.provider);
-    accounts = await web3.eth.getAccounts();
-    await Environment((error) => {
-            if(error)
-                console.log(error);
-        },{ web3: web3 }
-    );
-    resolverAddress = process.env.TEST_RESOLVER_ADDRESS;
-    const superfluidIdent = `Superfluid.test`;
-    resolver = new web3.eth.Contract(IResolver.abi,resolverAddress);
-    const superfluidAddress = await resolver.methods.get(superfluidIdent).call();
-    host = new web3.eth.Contract(ISuperfluid.abi,superfluidAddress);
-    const cfaIdent = web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
-    const idaIdent = web3.utils.sha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
-    const cfaAddress = await host.methods.getAgreementClass(cfaIdent).call();
-    const idaAddress = await host.methods.getAgreementClass(idaIdent).call();
-    cfa = new web3.eth.Contract(ICFA.abi, cfaAddress);
-    ida = new web3.eth.Contract(IIDA.abi, idaAddress);
-    const superTokenAddress = await resolver.methods.get("supertokens.test.fTUSDx").call();
-    superToken = new web3.eth.Contract(ISuperToken.abi, superTokenAddress);
-    const tokenAddress = await superToken.methods.getUnderlyingToken().call();
-    const govAddress = await resolver.methods.get("TestGovernance.test").call();
-    console.log("Governance Address ", govAddress);
-    token = new web3.eth.Contract(IToken.abi, tokenAddress);
-
-    for(const account of accounts) {
-        await token.methods.mint(account,"10000000000000000000000").send({from: account});
-        await token.methods.approve(superTokenAddress, "10000000000000000000000").send({from: account});
-        await superToken.methods.upgrade("10000000000000000000000").send({from: account, gas:400000});
-    }
-
-    await web3.eth.sendTransaction({to:AGENT_ACCOUNT, from:accounts[9], value:web3.utils.toWei("10", "ether")})
-};
-
-const takeSnapshot = () => {
-    return new Promise((resolve, reject) => {
-      web3.currentProvider.send({
-        jsonrpc: '2.0',
-        method: 'evm_snapshot',
-        id: new Date().getTime()
-      }, (err, snapshotId) => {
-        if (err) { return reject(err) }
-        return resolve(snapshotId)
-      })
-    })
-  }
-const revertToSnapShot = (id) => {
-    return new Promise((resolve, reject) => {
-      web3.currentProvider.send({
-        jsonrpc: '2.0',
-        method: 'evm_revert',
-        params: [id],
-        id: new Date().getTime()
-      }, (err, result) => {
-        if (err) { return reject(err) }
-        return resolve(result)
-      })
-    })
-}
-
-async function timeTravelOnce(time, setAppTime = false) {
-    const block1 = await web3.eth.getBlock("latest");
-    console.log("current block time", block1.timestamp);
-    console.log(`time traveler going to the future +${time}...`);
-    await traveler.advanceTimeAndBlock(time);
-    const block2 = await web3.eth.getBlock("latest");
-    console.log("new block time", block2.timestamp);
-    if(setAppTime)
-        app.setTime(block2.timestamp * 1000);
-    return block2.timestamp;
 }
 
 const bootNode = async (delayParam = 0) => {
@@ -131,12 +50,12 @@ const waitForEvent = async (eventName, blockNumber) => {
         try {
             const newBlockNumber = await web3.eth.getBlockNumber();
             console.log(`${blockNumber} - ${newBlockNumber}`);
-            const events = await superToken.getPastEvents(eventName, {fromBlock: blockNumber, toBlock: newBlockNumber});
+            const events = await protocolVars.superToken.getPastEvents(eventName, {fromBlock: blockNumber, toBlock: newBlockNumber});
             if(events.length > 0) {
                 return events;
             }
             await delay(1000);
-            await timeTravelOnce(1, true);
+            await ganache.helper.timeTravelOnce(1, app, true);
         } catch(err) {
             exitWithError(err);
         }
@@ -166,19 +85,21 @@ const expectBailout = (event, node, account) => {
 describe("Integration scripts tests", () => {
 
     before(async function() {
-        await setup();
-        snapId = await takeSnapshot();
-        //await bootNode();
+        protocolVars = await protocolHelper.setup(ganache.provider, AGENT_ACCOUNT);
+        web3 = protocolVars.web3;
+        accounts = protocolVars.accounts;
+        snapId = await ganache.helper.takeEvmSnapshot();
     });
 
     beforeEach(async () => {
-        //console.log("Revert to snapshot with id: ", snapId.id);
-        //await revertToSnapShot(snapId.id);
-        await setup();
     });
 
    afterEach(async () => {
-        //closeNode();
+        try {
+            snapId = await ganache.helper.revertToSnapShot(snapId.result);
+        } catch(err) {
+            exitWithError(err);
+        }
     });
 
     after(async () => {
@@ -187,15 +108,15 @@ describe("Integration scripts tests", () => {
 
     it("Create one stream", async () => {
         try {
-            const data = cfa.methods.createFlow(
-                superToken._address,
+            const data = protocolVars.cfa.methods.createFlow(
+                protocolVars.superToken._address,
                 accounts[2],
                 "10000000000000000",
                 "0x"
             ).encodeABI();
-            await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
             await bootNode();
-            const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
+            const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
         } catch(err) {
@@ -205,24 +126,24 @@ describe("Integration scripts tests", () => {
 
     it("Create small stream then updated to bigger stream", async () => {
         try {
-            const data = cfa.methods.createFlow(
-                superToken._address,
+            const data = protocolVars.cfa.methods.createFlow(
+                protocolVars.superToken._address,
                 accounts[2],
                 "1000",
                 "0x"
             ).encodeABI();
-            await host.methods.callAgreement(cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
             await bootNode();
-            await timeTravelOnce(60);
-            const dataUpdate = cfa.methods.updateFlow(
-                superToken._address,
+            await ganache.helper.timeTravelOnce(60);
+            const dataUpdate = protocolVars.cfa.methods.updateFlow(
+                protocolVars.superToken._address,
                 accounts[2],
                 "1000000000",
                 "0x"
             ).encodeABI();
-            await host.methods.callAgreement(cfa._address, dataUpdate, "0x").send({from: accounts[0], gas: 1000000});
-            await timeTravelOnce(60);
-            const tx = await superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, dataUpdate, "0x").send({from: accounts[0], gas: 1000000});
+            await ganache.helper.timeTravelOnce(60);
+            const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
         } catch(err) {
@@ -232,24 +153,30 @@ describe("Integration scripts tests", () => {
 
     it("Create one out going stream and receive a smaller incoming stream", async () => {
         try {
-            const sendingFlowData = cfa.methods.createFlow(
-                superToken._address,
+            const sendingFlowData = protocolVars.cfa.methods.createFlow(
+                protocolVars.superToken._address,
                 accounts[2],
                 "1000000000",
                 "0x"
             ).encodeABI();
-            await host.methods.callAgreement(cfa._address, sendingFlowData, "0x").send({from: accounts[0], gas: 1000000});
+            await protocolVars.host.methods.callAgreement(
+                protocolVars.cfa._address,
+                sendingFlowData,
+                "0x").send({from: accounts[0], gas: 1000000});
             await bootNode();
-            await timeTravelOnce(60);
-            const receivingFlowData = cfa.methods.createFlow(
-                superToken._address,
+            await ganache.helper.timeTravelOnce(60);
+            const receivingFlowData = protocolVars.cfa.methods.createFlow(
+                protocolVars.superToken._address,
                 accounts[0],
                 "10000",
                 "0x"
             ).encodeABI();
-            await host.methods.callAgreement(cfa._address, receivingFlowData, "0x").send({from: accounts[2], gas: 1000000});
-            await timeTravelOnce(60);
-            const tx = await superToken.methods.transferAll(accounts[5]).send({from: accounts[0], gas: 1000000});
+            await protocolVars.host.methods.callAgreement(
+                protocolVars.cfa._address,
+                receivingFlowData,
+                "0x").send({from: accounts[2], gas: 1000000});
+            await ganache.helper.timeTravelOnce(60);
+            const tx = await protocolVars.superToken.methods.transferAll(accounts[5]).send({from: accounts[0], gas: 1000000});
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
         } catch(err) {
@@ -259,23 +186,23 @@ describe("Integration scripts tests", () => {
 
     it("Create two outgoing streams, and new total outflow rate should apply to the agent estimation logic", async () => {
         try {
-            const flowData = cfa.methods.createFlow(
-                superToken._address,
+            const flowData = protocolVars.cfa.methods.createFlow(
+                protocolVars.superToken._address,
                 accounts[2],
                 "1000000000000000",
                 "0x"
             ).encodeABI();
-            await host.methods.callAgreement(cfa._address, flowData, "0x").send({from: accounts[0], gas: 1000000});
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData, "0x").send({from: accounts[0], gas: 1000000});
             await bootNode();
-            await timeTravelOnce(3600, true);
-            const flowData2 = cfa.methods.createFlow(
-                superToken._address,
+            await ganache.helper.timeTravelOnce(3600, app, true);
+            const flowData2 = protocolVars.cfa.methods.createFlow(
+                protocolVars.superToken._address,
                 accounts[3],
                 "1000000000000000",
                 "0x"
             ).encodeABI();
-            await host.methods.callAgreement(cfa._address, flowData2, "0x").send({from: accounts[0], gas: 1000000});
-            const tx = await superToken.methods.transferAll(accounts[9]).send({from: accounts[0], gas: 1000000});
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData2, "0x").send({from: accounts[0], gas: 1000000});
+            await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[0], gas: 1000000});
             //await timeTravelOnce(3600, true);
             let result = await waitForEvent("AgreementLiquidatedBy", 0);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
@@ -286,24 +213,25 @@ describe("Integration scripts tests", () => {
 
     it("Create a stream with big flow rate, then update the stream with smaller flow rate", async () => {
         try {
-            const flowData = cfa.methods.createFlow(
-                superToken._address,
+            const flowData = protocolVars.cfa.methods.createFlow(
+                protocolVars.superToken._address,
                 accounts[2],
-                "100000",
+                "100000000000000",
                 "0x"
             ).encodeABI();
-            await host.methods.callAgreement(cfa._address, flowData, "0x").send({from: accounts[5], gas: 1000000});
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData, "0x").send({from: accounts[5], gas: 1000000});
+            await ganache.helper.timeTravelOnce(60);
             await bootNode();
-            await timeTravelOnce(60);
-            const firstEstimation = await app.db.queries.getAddressEstimation(accounts[0]);
-            const updateData = cfa.methods.updateFlow(
-                superToken._address,
+            //await ganache.helper.timeTravelOnce(60);
+            const firstEstimation = await app.db.queries.getAddressEstimation(accounts[5]);
+            const updateData = protocolVars.cfa.methods.updateFlow(
+                protocolVars.superToken._address,
                 accounts[2],
                 "1",
                 "0x"
             ).encodeABI();
-            await host.methods.callAgreement(cfa._address, updateData, "0x").send({from: accounts[5], gas: 1000000});
-            await timeTravelOnce(60);
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, updateData, "0x").send({from: accounts[5], gas: 1000000});
+            await ganache.helper.timeTravelOnce(60);
             const secondEstimation = await app.db.queries.getAddressEstimation(accounts[5]);
             expect(firstEstimation[0].zestimation).to.not.equal(32503593600000);
             //the stream is soo small that we mark as not a real estimation

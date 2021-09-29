@@ -6,8 +6,7 @@ const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IIn
 const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
 const SuperTokenModel = require("./../database/models/superTokenModel");
-const CLO = require("../inc/Clown.json");
-    const BatchContract = require("../inc/BatchLiquidator.json");
+const BatchContract = require("../inc/BatchLiquidator.json");
 const {wad4human} = require("@decentral.ee/web3-helpers");
 /*
  *   Web3 and superfluid client:
@@ -30,6 +29,7 @@ class Client {
         this.web3;
         this.web3HTTP;
         this.version = this.app.config.PROTOCOL_RELEASE_VERSION;
+        this.batch;
         this.isInitialized = false;
         this._testMode;
     }
@@ -62,7 +62,6 @@ class Client {
             if(httpChainId.toString() !== wsChainId.toString()) {
                 throw Error("WS and HTTP point to different networks");
             }
-            console.debug("chainId: ", await this.getNetworkId());
             this.isInitialized = true;
         } catch(err) {
             this.app.logger.error(`client.initialize() - ${err}`);
@@ -146,11 +145,6 @@ class Client {
             this.CFAv1WS = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
             this.IDAv1 = new this.web3HTTP.eth.Contract(IIDA.abi, idaAddress);
             this.IDAv1WS = new this.web3.eth.Contract(IIDA.abi, idaAddress);
-            //Agent is a member of a clown
-            if(this.app.config.CLO_ADDR !== undefined) {
-                this.clo = new this.web3.eth.Contract(CLO, this.app.config.CLO_ADDR);
-                this.app.logger.info(`CLO address: ${this.app.config.CLO_ADDR}`);
-            }
         } catch (err) {
             this.app.logger.error(err);
             throw Error(`load superfluid contract : ${err}`)

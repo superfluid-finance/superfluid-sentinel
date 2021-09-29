@@ -32,7 +32,7 @@ const populateEnvVariables= () => {
     process.env.SHUTDOWN_ON_ERROR=true;
     process.env.METRICS=true;
     process.env.METRICS_PORT=3555;
-    process.env.LIQUIDATION_RUN_EVERY=55;
+    process.env.LIQUIDATION_JOB_AWAITS=55;
     process.env.MAX_BATCH_TX=5;
     process.env.LOG_LEVEL="debug";
     return {
@@ -57,7 +57,7 @@ const populateEnvVariables= () => {
         SHUTDOWN_ON_ERROR:process.env.SHUTDOWN_ON_ERROR,
         METRICS:process.env.METRICS,
         METRICS_PORT:process.env.METRICS_PORT,
-        LIQUIDATION_RUN_EVERY:process.env.LIQUIDATION_RUN_EVERY,
+        LIQUIDATION_JOB_AWAITS:process.env.LIQUIDATION_JOB_AWAITS,
         MAX_BATCH_TX:process.env.MAX_BATCH_TX,
         LOG_LEVEL:process.env.LOG_LEVEL
     }
@@ -85,7 +85,7 @@ const removeEnvVariables = () => {
     delete process.env.SHUTDOWN_ON_ERROR;
     delete process.env.METRICS;
     delete process.env.METRICS_PORT;
-    delete process.env.LIQUIDATION_RUN_EVERY;
+    delete process.env.LIQUIDATION_JOB_AWAITS;
     delete process.env.MAX_BATCH_TX;
     delete process.env.LOG_LEVEL;
 }
@@ -117,7 +117,7 @@ describe("Test Agent user configurations", () => {
             expect(envObj.SHUTDOWN_ON_ERROR).to.equal(config.SHUTDOWN_ON_ERROR);
             expect(envObj.METRICS).to.equal(config.METRICS);
             expect(envObj.METRICS_PORT).to.equal(config.METRICS_PORT);
-            expect(envObj.LIQUIDATION_RUN_EVERY*1000).to.equal(config.LIQUIDATION_RUN_EVERY);
+            expect(envObj.LIQUIDATION_JOB_AWAITS*1000).to.equal(config.LIQUIDATION_JOB_AWAITS);
             expect(envObj.MAX_BATCH_TX).to.equal(config.MAX_BATCH_TX);
             expect(envObj.LOG_LEVEL).to.equal(config.LOG_LEVEL);
             removeEnvVariables();

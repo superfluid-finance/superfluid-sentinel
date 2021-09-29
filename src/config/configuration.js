@@ -36,7 +36,7 @@ class Config {
             this.NUM_RETRIES = config.number_retries;
             this.TEST_RESOLVER = config.test_resolver;
             this.SHUTDOWN_ON_ERROR = config.shutdown_on_error;
-            this.LIQUIDATION_RUN_EVERY = config.liquidation_run_every;
+            this.LIQUIDATION_JOB_AWAITS = config.liquidation_job_awaits;
         } else {
 
             this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
@@ -64,7 +64,7 @@ class Config {
             this.SHUTDOWN_ON_ERROR = process.env.SHUTDOWN_ON_ERROR || false;
             this.METRICS = process.env.METRICS || true;
             this.METRICS_PORT = process.env.METRICS_PORT || 3000;
-            this.LIQUIDATION_RUN_EVERY = process.env.LIQUIDATION_RUN_EVERY*1000 || 30000;
+            this.LIQUIDATION_JOB_AWAITS = process.env.LIQUIDATION_JOB_AWAITS*1000 || 30000;
             this.MAX_BATCH_TX = process.env.MAX_BATCH_TX || 20;
             this.LOG_LEVEL = process.env.LOG_LEVEL || "info"
         }
@@ -102,7 +102,7 @@ class Config {
             SHUTDOWN_ON_ERROR: this.SHUTDOWN_ON_ERROR,
             METRICS: this.METRICS,
             METRICS_PORT: this.METRICS_PORT,
-            LIQUIDATION_RUN_EVERY: this.LIQUIDATION_RUN_EVERY,
+            LIQUIDATION_JOB_AWAITS: this.LIQUIDATION_JOB_AWAITS,
             MAX_BATCH_TX: this.MAX_BATCH_TX,
             LOG_LEVEL: this.LOG_LEVEL
         }

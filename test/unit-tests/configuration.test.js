@@ -33,7 +33,6 @@ const populateEnvVariables= () => {
     process.env.METRICS=true;
     process.env.METRICS_PORT=3555;
     process.env.LIQUIDATION_RUN_EVERY=55;
-    process.env.LIQUIDATION_MUTEX_COUNTER=10;
     process.env.MAX_BATCH_TX=5;
     process.env.LOG_LEVEL="debug";
     return {
@@ -59,7 +58,6 @@ const populateEnvVariables= () => {
         METRICS:process.env.METRICS,
         METRICS_PORT:process.env.METRICS_PORT,
         LIQUIDATION_RUN_EVERY:process.env.LIQUIDATION_RUN_EVERY,
-        LIQUIDATION_MUTEX_COUNTER:process.env.LIQUIDATION_MUTEX_COUNTER,
         MAX_BATCH_TX:process.env.MAX_BATCH_TX,
         LOG_LEVEL:process.env.LOG_LEVEL
     }
@@ -88,7 +86,6 @@ const removeEnvVariables = () => {
     delete process.env.METRICS;
     delete process.env.METRICS_PORT;
     delete process.env.LIQUIDATION_RUN_EVERY;
-    delete process.env.LIQUIDATION_MUTEX_COUNTER;
     delete process.env.MAX_BATCH_TX;
     delete process.env.LOG_LEVEL;
 }
@@ -121,7 +118,6 @@ describe("Test Agent user configurations", () => {
             expect(envObj.METRICS).to.equal(config.METRICS);
             expect(envObj.METRICS_PORT).to.equal(config.METRICS_PORT);
             expect(envObj.LIQUIDATION_RUN_EVERY*1000).to.equal(config.LIQUIDATION_RUN_EVERY);
-            expect(envObj.LIQUIDATION_MUTEX_COUNTER).to.equal(config.LIQUIDATION_MUTEX_COUNTER);
             expect(envObj.MAX_BATCH_TX).to.equal(config.MAX_BATCH_TX);
             expect(envObj.LOG_LEVEL).to.equal(config.LOG_LEVEL);
             removeEnvVariables();

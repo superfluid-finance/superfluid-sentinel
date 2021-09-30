@@ -18,7 +18,6 @@ class Bootstrap {
 
     async start() {
         this.app.logger.info("starting bootstrap");
-        this.app.logger.info(`using concurrency: ${this.concurrency}`);
         const systemInfo = await SystemModel.findOne();
         let blockNumber = parseInt(this.app.config.EPOCH_BLOCK);
         if(systemInfo !== null) {
@@ -28,7 +27,7 @@ class Bootstrap {
         if(blockNumber === currentBlockNumber) {
             return;
         }
-        //TODO: return if wrong block numbers
+
         if (blockNumber < currentBlockNumber) {
             try {
                 let queue = async.queue(async function(task) {
@@ -36,7 +35,6 @@ class Bootstrap {
                     while(true) {
                         try {
                             if(task.self.app.client.isSuperTokenRegister(task.token)) {
-                                //task.self.app.logger.info(`getting info account: ${task.account} from supertoken:${task.token}`);
                                 const estimationData = await task.self.app.protocol.liquidationData(task.token, task.account);
                                 await EstimationModel.upsert({
                                     address: task.account,
@@ -109,6 +107,7 @@ class Bootstrap {
                             ]
                         }
                     });
+                    //if the sender don't have open stream, we delete it from database
                     if(flows.length == 0) {
                         await est.destroy();
                     }

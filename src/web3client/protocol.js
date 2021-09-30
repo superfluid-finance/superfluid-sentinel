@@ -294,7 +294,7 @@ class Protocol {
                         if (err === undefined || err == null) {
                             let event = this.app.models.event.transformWeb3Event(evt);
                 if (event.removed) {
-                    this.app.logger.warn(`Event removed: ${event.eventName}, tx ${event.transactionHash}`);
+                    this.app.logger.warn(`Event removed: ${event.eventName}, blockNumber ${event.blockNumber}, tx ${event.transactionHash}`);
                 }
                             switch(event.eventName) {
                                 case "AgreementStateUpdated" : {

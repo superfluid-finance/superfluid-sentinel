@@ -19,11 +19,11 @@ class Liquidator {
     constructor(app) {
         this.app = app;
         this.timeout = this.app.config.TX_TIMEOUT;
-        this.runningMux = 0;
         this.splitBatch = this.app.config.MAX_BATCH_TX;
         this.clo = this.app.config.CLO_ADDR;
         this.txDelay = this.app.config.ADDITIONAL_LIQUIDATION_DELAY;
         this.gasMultiplier = this.app.config.RETRY_GAS_MULTIPLIER;
+        this.canUseBatch = this.app.config.BATCH_CONTRACT !== undefined;
         if(this.clo === undefined) {
             this.app.logger.info("Not configured as CLO -> adding 15 min delay");
             this.txDelay += 900;
@@ -32,36 +32,25 @@ class Liquidator {
 
     async start() {
         try {
-            this.app.logger.debug(`running liquidation job: ${this.runningMux}`);
-            if(this.runningMux > 0) {
-                this.runningMux--;
-                const unlockMux = this.app.config.LIQUIDATION_MUTEX_COUNTER - this.runningMux;
-                this.app.logger.warn(`skip liquidation.start() - Mutex: ${unlockMux}/${this.app.config.LIQUIDATION_MUTEX_COUNTER}`);
-                return;
-            }
-            this.runningMux = this.app.config.LIQUIDATION_MUTEX_COUNTER;
-            if(this.app.config.TOKENS !== undefined) {
-                this.app.logger.info(`SuperTokens to liquidate`);
-                for(const addr of this.app.config.TOKENS) {
-                    this.app.logger.info(this.app.client.superTokenNames[addr]);
-                }
-            }
+            this.app.logger.debug(`running liquidation job`);
             const checkDate = this.app.time.getTimeWithDelay(this.txDelay);
-            const haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
-            if(haveBatchWork.length > 0 && this.app.config.BATCH_CONTRACT !== undefined) {
+            let haveBatchWork = [];
+            //if we have a batchLiquidator contract, use batch calls
+            if(this.canUseBatch) {
+                haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
+                this.app.logger.debug(JSON.stringify(haveBatchWork));
+            }
+            if(haveBatchWork.length > 0) {
                 await this.multiTermination(haveBatchWork, checkDate);
             } else {
-                await this.singleTerminations(
-                    await this.app.db.queries.getLiquidations(
-                        checkDate,
-                        this.app.config.TOKENS
-                    )
-                );
+                const work = await this.app.db.queries.getLiquidations(checkDate, this.app.config.TOKENS);
+                await this.singleTerminations(work);
             }
         } catch(err) {
             this.app.logger.error(`liquidator.start() - ${err}`);
+            return {error:err, msg:undefined };
         } finally {
-            this.runningMux = 0;
+            return {error:undefined, msg:"ended"};
         }
     }
 
@@ -96,7 +85,6 @@ class Liquidator {
                         nonce: networkAccountNonce,
                         chainId: chainId
                     }
-                    this.app.logger.debug(`sending tx from account ${wallet.address}`);
                     const result = await this.sendWithRetry(wallet, txObject, this.timeout);
                     if(result !== undefined && result.error !== undefined) {
                         this.app.logger.error(result.error);
@@ -133,6 +121,7 @@ class Liquidator {
                 }
 
                 if(senders.length === this.splitBatch) {
+                    this.app.logger.debug(`sending a full batch work: load ${senders.length}`);
                     await this.sendBatch(batch.superToken, senders, receivers);
                     senders = new Array();
                     receivers = new Array();
@@ -147,6 +136,7 @@ class Liquidator {
                         receiver: receivers[0]
                     }]);
                 } else {
+                    this.app.logger.debug(`sending a partial batch work: load ${senders.length}`);
                     await this.sendBatch(batch.superToken, senders, receivers);
                 }
                 senders = new Array();
@@ -172,7 +162,6 @@ class Liquidator {
                 nonce: networkAccountNonce,
                 chainId: chainId
             }
-            this.app.logger.debug(`sending tx from account ${wallet.address}`);
             const result = await this.sendWithRetry(wallet, txObject, this.timeout);
             if(result !== undefined && result.error !== undefined) {
                 this.app.logger.error(result.error);
@@ -205,7 +194,6 @@ class Liquidator {
         txObject.gasLimit = gas.gasLimit;
         const signed = await this.signTx(wallet, txObject);
         if(signed.error !== undefined) {
-            console.log(signed.error);
             if(signed.error === "Returned error: replacement transaction underpriced") {
                 this.app.logger.warn(`replacement transaction underpriced`);
                 txObject.retry = txObject.retry + 1;
@@ -220,9 +208,9 @@ class Liquidator {
         }
 
         try {
-            this.app.logger.info(`waiting until timeout for ${ms / 1000} seconds` );
             txObject.txHash = signed.tx.transactionHash;
             signed.tx.timeout = ms;
+            this.app.logger.info(`waiting until timeout for ${ms / 1000} seconds for tx ${txObject.txHash}`);
             //Broadcast transaction
             const tx =  await promiseTimeout(
                 this.app.client.sendSignedTransaction(signed),
@@ -233,7 +221,7 @@ class Liquidator {
 
         } catch(err) {
             if(err.message === "timeout rejection") {
-                this.app.logger.debug(`agent account: ${wallet.address} - replacement with nonce: ${txObject.nonce} tx: ${signed.tx.transactionHash}`)
+                this.app.logger.debug(`timeout of tx: ${signed.tx.transactionHash}`)
                 txObject.retry = txObject.retry + 1;
                 return this.sendWithRetry(wallet, txObject, ms);
             }
@@ -260,7 +248,7 @@ class Liquidator {
                 return {error: err.message, tx: undefined};
             }
 
-            //catch all remaining errors
+            //log remaining errors
             this.app.logger.error(`liquidator.sendWithRetry() - no logic to catch error : ${err}`);
         }
     }

@@ -14,9 +14,10 @@ const utils = require("./utils/utils.js");
 const HTTPServer = require("./httpserver/server");
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 async function trigger(fn, time = 15000) {
     await timeout(time);
-    fn.start();
+    return fn.start();
 }
 
 class App {
@@ -54,9 +55,16 @@ class App {
     }
 
     async run(fn, time) {
+
         if(this._isShutdown)
             return;
-        await trigger(fn, time);
+
+        const result = await trigger(fn, time);
+        if(result.error !== undefined) {
+            this.logger.error(result.error);
+            await this.timer.delay(5000);
+        }
+
         await this.run(fn, time);
     }
     //return if client module is initialized
@@ -117,6 +125,7 @@ class App {
             this.logger.debug(JSON.stringify(this.config.getConfigurationInfo()));
             //create all web3 infrastruture needed
             await this.client.init();
+            //if we are running tests don't try to load network information
             if(!this.config.RUN_TEST_ENV)
                 this.config.loadNetworkInfo(await this.client.getNetworkId());
             if(this.config.BATCH_CONTRACT !== undefined) {
@@ -135,12 +144,12 @@ class App {
             setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
+            //start http server to serve node health reports and dashboard
             if(this.config.METRICS) {
                 setTimeout(() => this.server.start(), 1000);
             }
-            //run liquidation job every x milliseconds
-            this.logger.debug(`running liquidation job every ${this.config.LIQUIDATION_RUN_EVERY}`);
-            this.run(this.liquidator, this.config.LIQUIDATION_RUN_EVERY);
+            //await x milliseconds before running next liquidation job
+            this.run(this.liquidator, this.config.LIQUIDATION_JOB_AWAITS);
         } catch(err) {
             this.logger.error(`app.start() - ${err}`);
             process.exit(1);

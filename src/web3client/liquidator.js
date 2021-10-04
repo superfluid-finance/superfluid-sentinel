@@ -67,12 +67,11 @@ class Liquidator {
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
 
         for(const job of work) {
-            //Returned error: header not found (??)
             if(await this.isPossibleToClose(job.superToken, job.sender, job.receiver))
             {
                 try {
                     const tx = this.app.protocol.generateDeleteFlowABI(job.superToken, job.sender, job.receiver);
-                    const BaseGasPrice = Math.ceil(parseInt(await this.app.client.estimateGasPrice()) * 1.2);
+                    const BaseGasPrice = await this.app.gasEstimator.gasPrice();
                     const txObject = {
                         retry : 1,
                         step : this.gasMultiplier,
@@ -81,7 +80,7 @@ class Liquidator {
                         flowReceiver: job.receiver,
                         superToken: job.superToken,
                         tx: tx,
-                        gasPrice: BaseGasPrice,
+                        gasPrice: BaseGasPrice.gasPrice,
                         nonce: networkAccountNonce,
                         chainId: chainId
                     }
@@ -151,14 +150,14 @@ class Liquidator {
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
         try {
             const tx = this.app.protocol.generateMultiDeleteFlowABI(superToken, senders, receivers);
-            const BaseGasPrice = Math.ceil(parseInt(await this.app.client.estimateGasPrice()) * 1.2);
+            const BaseGasPrice = await this.app.gasEstimator.gasPrice();
             const txObject = {
                 retry : 1,
                 step : this.gasMultiplier,
                 target: this.app.config.BATCH_CONTRACT,
                 superToken: superToken,
                 tx: tx,
-                gasPrice: BaseGasPrice,
+                gasPrice: BaseGasPrice.gasPrice,
                 nonce: networkAccountNonce,
                 chainId: chainId
             }
@@ -177,7 +176,7 @@ class Liquidator {
     async sendWithRetry(wallet, txObject, ms) {
         await this.app.timer.delay(1000);
         //When estimate gas we get a preview of what can happen when send the transaction. Depending on the error we should execute specific logic
-        const gas = await this.estimateGasLimit(wallet, txObject);
+        const gas = await this.app.gasEstimator.gasLimit(wallet, txObject);
         if(gas.error !== undefined) {
             this.app.logger.error(gas.error);
             if(gas.error.message === "Returned error: execution reverted: CFA: flow does not exist") {
@@ -252,22 +251,10 @@ class Liquidator {
             this.app.logger.error(`liquidator.sendWithRetry() - no logic to catch error : ${err}`);
         }
     }
-    async estimateGasLimit(wallet, txObject) {
-        try {
-            let result = await this.app.client.web3.eth.estimateGas({
-                from: wallet.address,
-                to: txObject.target,
-                data: txObject.tx
-                });
-                result += Math.ceil(parseInt(result) * 1.2);
-            return { error: undefined, gasLimit : result };
-        } catch(err) {
-            return { error: err, gasLimit : undefined };
-        }
-    }
+
     async signTx(wallet, txObject) {
         try {
-            txObject.gasPrice = this._updateGasPrice(txObject.gasPrice, txObject.retry, txObject.step);
+            txObject.gasPrice = this.app.gasEstimator.updateGasPrice(txObject.gasPrice, txObject.retry, txObject.step);
             const unsignedTx = {
                 chainId : txObject.chainId,
                 to : txObject.target,
@@ -286,23 +273,6 @@ class Liquidator {
         } catch(err) {
             return { tx: undefined, error: err};
         }
-    }
-
-    _updateGasPrice(originalGasPrice, retryNumber, step) {
-        let gasPrice = originalGasPrice;
-        if(retryNumber > 1) {
-            if(this.app.config.MAX_GAS_PRICE !== undefined
-                && parseInt(originalGasPrice) >= this.app.config.MAX_GAS_PRICE
-            )
-            {
-                this.app.logger.debug(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
-                gasPrice = this.app.config.MAX_GAS_PRICE;
-            } else {
-                gasPrice = Math.ceil(parseInt(gasPrice) * step);
-            }
-            this.app.logger.debug(`update gas price from ${originalGasPrice} to ${gasPrice}`);
-        }
-        return gasPrice;
     }
 }
 

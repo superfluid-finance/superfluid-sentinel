@@ -22,7 +22,7 @@ const bootNode = async (delayParam = 0) => {
         epoch_block: 0,
         DB: "TestDatabase.sqlite",
         protocol_release_version: "test",
-        tx_timeout: 300000,
+        tx_timeout: 20,
         max_query_block_range: 500000,
         max_gas_price:4000000000,
         concurrency: 1,

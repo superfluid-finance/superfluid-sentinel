@@ -145,7 +145,7 @@ class App {
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
             //start http server to serve node health reports and dashboard
-            if(this.config.METRICS) {
+            if(this.config.METRICS == true) {
                 setTimeout(() => this.server.start(), 1000);
             }
             //await x milliseconds before running next liquidation job

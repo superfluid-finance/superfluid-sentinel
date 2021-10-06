@@ -58,7 +58,7 @@ class Config {
 
             //extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
             this.CONCURRENCY = process.env.CONCURRENCY || 1;
-            this.LISTEN_MODE = process.env.LISTEN_MODE || 0;
+            this.LISTEN_MODE = process.env.LISTEN_MODE || 1;
             this.NUM_RETRIES = process.env.NUM_RETRIES || 10;
             this.COLD_BOOT = process.env.COLD_BOOT || 0;
             this.SHUTDOWN_ON_ERROR = process.env.SHUTDOWN_ON_ERROR || false;

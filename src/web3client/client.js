@@ -212,7 +212,7 @@ class Client {
             this.superTokensCount++;
             isListed = 1;
         } else if(this.app.config.LISTEN_MODE == 1) {
-            const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${superTokenAddress}`;
+            const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${newSuperToken}`;
             this.app.logger.info(tokenInfo);
             this.superTokenNames[newSuperToken] = tokenInfo;
             this.superTokens[superTokenWS._address] = superTokenWS;

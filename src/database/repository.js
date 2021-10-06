@@ -1,5 +1,6 @@
 const { QueryTypes, Op } = require("sequelize");
 const EstimationModel = require("../database/models/accountEstimationModel");
+const UserConfig = require("../database/models/userConfiguration");
 
 class Repository {
 
@@ -136,6 +137,19 @@ class Repository {
     return this.app.db.query("SELECT 1", {
       type: QueryTypes.SELECT
     });
+  }
+
+  async getConfiguration() {
+    return UserConfig.findOne();
+  }
+
+  async saveConfiguration(configString) {
+    const fromDB = await UserConfig.findOne();
+    if(fromDB !== null) {
+      fromDB.config = configString;
+      return fromDB.save();
+    }
+    return UserConfig.create({ config: configString });
   }
 }
 

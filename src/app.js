@@ -49,6 +49,7 @@ class App {
         this.db.queries = new Repository(this);
         this.server = new HTTPServer(this);
         this._isShutdown = false;
+        this._needResync = false;
         this.timer = {
             delay:delay
         }
@@ -122,7 +123,19 @@ class App {
                 await this.db.sync();
             }
             //log configuration data
-            this.logger.debug(JSON.stringify(this.config.getConfigurationInfo()));
+            const userConfig = this.config.getConfigurationInfo();
+            this.logger.debug(JSON.stringify(userConfig));
+            //check important change of configurations
+            const res = await this.db.queries.getConfiguration();
+            if(res !== null) {
+                const dbuserConfig = JSON.parse(res.config)
+                if(dbuserConfig.LISTEN_MODE !== userConfig.LISTEN_MODE && userConfig.LISTEN_MODE == 1) {
+                    this._needResync = true;
+                    this.logger.error(`ATTENTION: LISTEN_MODE changed from the last boot, please resync the database`);
+                }
+            }
+            await this.db.queries.saveConfiguration(JSON.stringify(userConfig));
+
             //create all web3 infrastruture needed
             await this.client.init();
             //if we are running tests don't try to load network information

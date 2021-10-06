@@ -272,6 +272,9 @@ class Protocol {
 
     async subscribeAllTokensEvents() {
         try {
+            if(this.app._needResync) {
+                this.app.logger.error(`ATTENTION: LISTEN_MODE changed from the last boot, please resync the database`);
+            }
             const superTokenInstances = this.client.getSuperTokenInstances();
             for(let key of Object.keys(superTokenInstances)) {
                 this.subscribeEvents(key);

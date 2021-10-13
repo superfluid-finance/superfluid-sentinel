@@ -11,7 +11,6 @@ class Config {
             this.LOG_LEVEL = "debug";
 
             this.HTTP_RPC_NODE = config.http_rpc_node;
-            this.WS_RPC_NODE = config.ws_rpc_node;
             this.MNEMONIC = config.mnemonic;
             this.MNEMONIC_INDEX = config.mnemonic_index;
             this.PRIVATE_KEY = config.private_key;
@@ -26,6 +25,7 @@ class Config {
             this.MAX_GAS_PRICE = config.max_gas_price || 500000000000;
             this.RETRY_GAS_MULTIPLIER = config.retry_gas_multiplier || 1.15;
             this.CLO_ADDR = config.clo_addr;
+            this.POLLING_INTERNVAL = config.polling_interval*1000 || 10000;
 
             this.EPOCH_BLOCK = config.epoch_block;
             this.BATCH_CONTRACT =config.batch_contract;
@@ -40,7 +40,6 @@ class Config {
         } else {
 
             this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
-            this.WS_RPC_NODE = process.env.WS_RPC_NODE;
             this.MNEMONIC = process.env.MNEMONIC;
             this.MNEMONIC_INDEX = process.env.MNEMONIC_INDEX || 0;
             this.PRIVATE_KEY = process.env.PRIVATE_KEY;
@@ -67,13 +66,11 @@ class Config {
             this.LIQUIDATION_JOB_AWAITS = process.env.LIQUIDATION_JOB_AWAITS*1000 || 30000;
             this.MAX_BATCH_TX = process.env.MAX_BATCH_TX || 20;
             this.LOG_LEVEL = process.env.LOG_LEVEL || "info"
+            this.POLLING_INTERNVAL = process.env.POLLING_INTERNVAL*1000 || 10000;
         }
 
         if (this.HTTP_RPC_NODE === undefined) {
             throw Error('required configuration item missing: HTTP_RPC_NODE');
-        }
-        if (this.WS_RPC_NODE === undefined) {
-            throw Error('required configuration item missing: WS_RPC_NODE');
         }
     }
 
@@ -104,7 +101,8 @@ class Config {
             METRICS_PORT: this.METRICS_PORT,
             LIQUIDATION_JOB_AWAITS: this.LIQUIDATION_JOB_AWAITS,
             MAX_BATCH_TX: this.MAX_BATCH_TX,
-            LOG_LEVEL: this.LOG_LEVEL
+            LOG_LEVEL: this.LOG_LEVEL,
+            POLLING_INTERNVAL: this.POLLING_INTERNVAL
         }
     }
 }

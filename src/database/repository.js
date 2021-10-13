@@ -1,5 +1,6 @@
 const { QueryTypes, Op } = require("sequelize");
 const EstimationModel = require("../database/models/accountEstimationModel");
+const SystemModel = require("../database/models/systemModel");
 const UserConfig = require("../database/models/userConfiguration");
 
 class Repository {
@@ -80,15 +81,7 @@ class Repository {
   async getEstimations() {
     return EstimationModel.findAll({
       attributes: ['address', 'superToken', 'zestimation'],
-      where:
-      {
-          [Op.or]: [
-              { now : true},
-              {
-                  zestimation: { [Op.gt]: 0 }
-              }
-          ]
-      }
+      where: { zestimation: { [Op.gt]: 0 } }
   });
   }
 
@@ -150,6 +143,15 @@ class Repository {
       return fromDB.save();
     }
     return UserConfig.create({ config: configString });
+  }
+
+  async updateBlockNumber(newBlockNumber) {
+    const systemInfo = await SystemModel.findOne();
+    if(systemInfo !== null && systemInfo.blockNumber < newBlockNumber) {
+      systemInfo.blockNumber = Number(newBlockNumber);
+      systemInfo.superTokenBlockNumber = Number(newBlockNumber);
+      return systemInfo.save();
+    }
   }
 }
 

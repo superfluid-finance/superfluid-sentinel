@@ -12,7 +12,6 @@ const exitWithError = (error) => {
 
 const populateEnvVariables= () => {
     process.env.HTTP_RPC_NODE="http://127.0.0.1:8545";
-    process.env.WS_RPC_NODE="ws://127.0.0.1:8545";
     process.env.MNEMONIC="clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return";
     process.env.MNEMONIC_INDEX=0
     process.env.PRIVATE_KEY="0x4b2058f23c4a47002e35c06e9c0beb6af7ff8f1638dee7e38dec852a3b4aef84"
@@ -35,9 +34,9 @@ const populateEnvVariables= () => {
     process.env.LIQUIDATION_JOB_AWAITS=55;
     process.env.MAX_BATCH_TX=5;
     process.env.LOG_LEVEL="debug";
+    process.env.POLLING_INTERNVAL=10;
     return {
         HTTP_RPC_NODE:process.env.HTTP_RPC_NODE,
-        WS_RPC_NODE:process.env.WS_RPC_NODE,
         MNEMONIC:process.env.MNEMONIC,
         MNEMONIC_INDEX:process.env.MNEMONIC_INDEX,
         PRIVATE_KEY:process.env.PRIVATE_KEY,
@@ -59,13 +58,13 @@ const populateEnvVariables= () => {
         METRICS_PORT:process.env.METRICS_PORT,
         LIQUIDATION_JOB_AWAITS:process.env.LIQUIDATION_JOB_AWAITS,
         MAX_BATCH_TX:process.env.MAX_BATCH_TX,
-        LOG_LEVEL:process.env.LOG_LEVEL
+        LOG_LEVEL:process.env.LOG_LEVEL,
+        POLLING_INTERNVAL:process.env.POLLING_INTERNVAL
     }
 }
 
 const removeEnvVariables = () => {
     delete process.env.HTTP_RPC_NODE;
-    delete process.env.WS_RPC_NODE;
     delete process.env.MNEMONIC;
     delete process.env.MNEMONIC_INDEX;
     delete process.env.PRIVATE_KEY;
@@ -88,6 +87,7 @@ const removeEnvVariables = () => {
     delete process.env.LIQUIDATION_JOB_AWAITS;
     delete process.env.MAX_BATCH_TX;
     delete process.env.LOG_LEVEL;
+    delete process.env.POLLING_INTERNVAL;
 }
 
 describe("Test Agent user configurations", () => {
@@ -97,7 +97,6 @@ describe("Test Agent user configurations", () => {
             const envObj = populateEnvVariables();
             const config = new configModule();
             expect(envObj.HTTP_RPC_NODE).to.equal(config.HTTP_RPC_NODE);
-            expect(envObj.WS_RPC_NODE).to.equal(config.WS_RPC_NODE);
             expect(envObj.MNEMONIC).to.equal(config.MNEMONIC);
             expect(envObj.MNEMONIC_INDEX).to.equal(config.MNEMONIC_INDEX);
             expect(envObj.PRIVATE_KEY).to.equal(config.PRIVATE_KEY);
@@ -120,6 +119,7 @@ describe("Test Agent user configurations", () => {
             expect(envObj.LIQUIDATION_JOB_AWAITS*1000).to.equal(config.LIQUIDATION_JOB_AWAITS);
             expect(envObj.MAX_BATCH_TX).to.equal(config.MAX_BATCH_TX);
             expect(envObj.LOG_LEVEL).to.equal(config.LOG_LEVEL);
+            expect(envObj.POLLING_INTERNVAL * 1000).to.equal(config.POLLING_INTERNVAL);
             removeEnvVariables();
         } catch(err) {
             exitWithError(err);

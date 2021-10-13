@@ -25,23 +25,8 @@ const AccountEstimationModel = db.define("estimations", {
         type: Sequelize.DATE,
         allowNull: false,
     },
-    zlastChecked: {
+    blockNumber: {
         type: Sequelize.INTEGER,
-        allowNull: false,
-    },
-    found: {
-        type: Sequelize.BOOLEAN,
-        allowNull: false,
-    },
-    recalculate: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false,
-        allowNull: false,
-    },
-    now: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false,
-        allowNull: false,
     }
 });
 

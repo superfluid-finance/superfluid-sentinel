@@ -1,3 +1,13 @@
+const web3Utils = require('web3').utils;
+
+toChecksumAddress = (address) => {
+    const result = web3Utils.toChecksumAddress(address);
+    if(result) {
+        return result;
+    }
+    return undefined;
+}
+
 class EventModel {
 
     // @title transformWeb3Event
@@ -7,25 +17,27 @@ class EventModel {
         if(event != null && event !== undefined) {
             let obj = {
                 eventName: event.event,
-                token: event.returnValues.token,
-                address: event.address,
+                logIndex: event.logIndex,
+                blockNumber: event.blockNumber,
+                token: toChecksumAddress(event.returnValues.token),
+                address: toChecksumAddress(event.address),
                 blockNumber: parseInt(event.blockNumber),
                 transactionHash: event.transactionHash,
                 agreementClass : event.returnValues.agreementClass,
                 id : event.returnValues.id,
                 data : event.returnValues.data,
                 state : event.returnValues.state,
-                account: event.returnValues.account,
-                sender: event.returnValues.sender,
-                receiver: event.returnValues.receiver,
-                penaltyAccount: event.returnValues.penaltyAccount,
-                bondAccount: event.returnValues.bondAccount,
-                liquidatorAccount: event.returnValues.liquidatorAccount,
-                to: event.returnValues.to,
-                from: event.returnValues.from,
-                publisher: event.returnValues.publisher,
+                account: toChecksumAddress(event.returnValues.account),
+                sender:   toChecksumAddress(event.returnValues.sender),
+                receiver: toChecksumAddress(event.returnValues.receiver),
+                penaltyAccount: toChecksumAddress(event.returnValues.penaltyAccount),
+                bondAccount: toChecksumAddress(event.returnValues.bondAccount),
+                liquidatorAccount: toChecksumAddress(event.returnValues.liquidatorAccount),
+                to: toChecksumAddress(event.returnValues.to),
+                from: toChecksumAddress(event.returnValues.from),
+                publisher: toChecksumAddress(event.returnValues.publisher),
                 indexId: event.returnValues.indexId,
-                subscriber: event.returnValues.subscriber,
+                subscriber: toChecksumAddress(event.returnValues.subscriber),
                 amount: event.returnValues.amount,
                 value: event.returnValues.value,
                 rewardAmount: event.returnValues.rewardAmount,

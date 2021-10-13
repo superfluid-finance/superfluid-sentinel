@@ -43,6 +43,7 @@ class Liquidator {
             if(haveBatchWork.length > 0) {
                 await this.multiTermination(haveBatchWork, checkDate);
             } else {
+                console.log("Using delay of ", checkDate);
                 const work = await this.app.db.queries.getLiquidations(checkDate, this.app.config.TOKENS);
                 await this.singleTerminations(work);
             }
@@ -64,7 +65,7 @@ class Liquidator {
 
         const wallet = this.app.client.getAccount();
         const chainId = await this.app.client.getNetworkId();
-        let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
+        let networkAccountNonce = await this.app.client.web3HTTP.eth.getTransactionCount(wallet.address);
 
         for(const job of work) {
             if(await this.isPossibleToClose(job.superToken, job.sender, job.receiver))
@@ -96,7 +97,7 @@ class Liquidator {
                 }
             } else {
                 this.app.logger.debug(`address ${job.sender} is solvent at ${job.superToken}`);
-                this.app.protocol.newEstimation(job.superToken, job.sender);
+                await this.app.queues.addQueuedEstimation(job.superToken, job.sender);
                 await this.app.timer.delay(500);
             }
         }
@@ -147,7 +148,7 @@ class Liquidator {
     async sendBatch(superToken, senders, receivers) {
         const wallet = this.app.client.getAccount();
         const chainId = await this.app.client.getNetworkId();
-        let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
+        let networkAccountNonce = await this.app.client.web3HTTP.eth.getTransactionCount(wallet.address);
         try {
             const tx = this.app.protocol.generateMultiDeleteFlowABI(superToken, senders, receivers);
             const BaseGasPrice = await this.app.gasEstimator.gasPrice();

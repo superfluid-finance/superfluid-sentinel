@@ -32,6 +32,10 @@ class Liquidator {
 
     async start() {
         try {
+            if(this.app._isShutdown) {
+                this.app.logger.info(`app.shutdown() - closing liquidation`);
+                return;
+            }
             this.app.logger.debug(`running liquidation job`);
             const checkDate = this.app.time.getTimeWithDelay(this.txDelay);
             let haveBatchWork = [];

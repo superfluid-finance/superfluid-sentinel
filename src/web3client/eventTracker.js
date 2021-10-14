@@ -83,6 +83,10 @@ class EventTracker {
         })
     }
 
+    _disconnect() {
+        return this.blockTracker.removeAllListeners();
+    }
+
     async processSuperTokenEvent(event) {
         try {
 

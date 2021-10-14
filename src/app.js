@@ -59,9 +59,10 @@ class App {
     }
 
     async run(fn, time) {
-
-        if(this._isShutdown)
+        if(this._isShutdown) {
+            this.logger.info(`app.shutdown() - closing app runner`);
             return;
+        }
 
         const result = await trigger(fn, time);
         if(result.error !== undefined) {
@@ -91,11 +92,13 @@ class App {
         }
 
         try {
-            await this.protocol.unsubscribeTokens();
-            await this.protocol.unsubscribeAgreements();
+            this.logger.info(`app.shutdown() - closing event tracker`);
+            this.eventTracker._disconnect();
+            this.logger.info(`app.shutdown() - closing client`);
             this.client.disconnect();
-            await this.db.close();
             this.time.resetTime();
+            this.logger.info(`app.shutdown() - closing database`);
+            await this.db.close();
             return;
         } catch(err) {
             this.logger.error(`app.shutdown() - ${err}`);
@@ -117,6 +120,7 @@ class App {
 
     async start() {
         try {
+            this.logger.debug(`booting sentinel`);
             this._isShutdown = false;
             if(this.config.COLD_BOOT) {
                 //drop existing database to force a full boot
@@ -147,7 +151,7 @@ class App {
             if(this.config.BATCH_CONTRACT !== undefined) {
                 await this.client.loadBatchContract();
             }
-            //Collect events to detect superTokens and accounts
+            //collect events to detect superTokens and accounts
             await this.loadEvents.start();
             //query balances to make liquidations estimations
             let currentBlock = await this.bootstrap.start();
@@ -159,7 +163,6 @@ class App {
             this.queues.init();
             setTimeout(() => this.queues.start(), 1000);
             setTimeout(() => this.eventTracker.start(currentBlock), 1000);
-            
             //start http server to serve node health reports and dashboard
             if(this.config.METRICS === "true") {
                 setTimeout(() => this.server.start(), 1000);

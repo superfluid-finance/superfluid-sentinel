@@ -21,7 +21,7 @@ const bootNode = async (delayParam = 0) => {
         epoch_block: 0,
         DB: "datadir/test.sqlite",
         protocol_release_version: "test",
-        tx_timeout: 10,
+        tx_timeout: 30,
         max_query_block_range: 500000,
         max_gas_price:4000000000,
         concurrency: 1,
@@ -40,7 +40,7 @@ const bootNode = async (delayParam = 0) => {
     }
 }
 
-const closeNode = async (force = false) => {
+const stopSentinel = async (force = false) => {
     if(app !== undefined)
         return app.shutdown(force);
 }
@@ -83,6 +83,7 @@ const expectBailout = (event, node, account) => {
     expect(event.returnValues.bailoutAmount).not.equal("0");
     expect(event.returnValues.penaltyAccount).to.equal(account);
 }
+
 describe("Integration scripts tests", () => {
 
     before(async function() {
@@ -97,6 +98,9 @@ describe("Integration scripts tests", () => {
 
    afterEach(async () => {
         try {
+            const result = await stopSentinel();
+            console.log("HERE")
+            console.log(result);
             snapId = await ganache.helper.revertToSnapShot(snapId.result);
         } catch(err) {
             exitWithError(err);
@@ -104,7 +108,9 @@ describe("Integration scripts tests", () => {
     });
 
     after(async () => {
-        closeNode(true);
+        //await stopSentinel();
+        //console.log(ganache.close);
+        ganache.close();
     });
 
     it.only("Create one stream", async () => {
@@ -118,7 +124,6 @@ describe("Integration scripts tests", () => {
             await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
             await bootNode();
             const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
-            console.log(tx)
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
         } catch(err) {
@@ -213,7 +218,7 @@ describe("Integration scripts tests", () => {
         }
     });
 
-    it("Create a stream with big flow rate, then update the stream with smaller flow rate", async () => {
+    it.skip("Create a stream with big flow rate, then update the stream with smaller flow rate", async () => {
         try {
             const flowData = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,

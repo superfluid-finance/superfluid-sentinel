@@ -149,8 +149,10 @@ class Queues {
     }
 
     async run(fn, time) {
-        if(this.app._isShutdown)
+        if(this.app._isShutdown) {
+            this.app.logger.info(`app.shutdown() - closing queues`);
             return;
+        }
         await trigger(fn, time);
         await this.run(fn, time);
     }

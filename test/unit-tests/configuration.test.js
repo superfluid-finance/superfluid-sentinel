@@ -26,7 +26,7 @@ const populateEnvVariables= () => {
     process.env.RETRY_GAS_MULTIPLIER= 1.1;
     process.env.CLO_ADDR="0xAB4075f621100563f4551C0Ca50944809b03E948";
     process.env.CONCURRENCY=2;
-    process.env.LISTEN_MODE=0;
+    process.env.ONLY_LISTED_TOKENS=false;
     process.env.NUM_RETRIES=5;
     process.env.COLD_BOOT=0;
     process.env.SHUTDOWN_ON_ERROR=true;
@@ -51,7 +51,7 @@ const populateEnvVariables= () => {
         RETRY_GAS_MULTIPLIER:process.env.RETRY_GAS_MULTIPLIER,
         CLO_ADDR:process.env.CLO_ADDR,
         CONCURRENCY:process.env.CONCURRENCY,
-        LISTEN_MODE:process.env.LISTEN_MODE,
+        ONLY_LISTED_TOKENS:process.env.ONLY_LISTED_TOKENS,
         NUM_RETRIES:process.env.NUM_RETRIES,
         COLD_BOOT:process.env.COLD_BOOT,
         SHUTDOWN_ON_ERROR:process.env.SHUTDOWN_ON_ERROR,
@@ -79,7 +79,7 @@ const removeEnvVariables = () => {
     delete process.env.RETRY_GAS_MULTIPLIER;
     delete process.env.CLO_ADDR;
     delete process.env.CONCURRENCY;
-    delete process.env.LISTEN_MODE;
+    delete process.env.ONLY_LISTED_TOKENS;
     delete process.env.NUM_RETRIES;
     delete process.env.COLD_BOOT;
     delete process.env.SHUTDOWN_ON_ERROR;
@@ -111,7 +111,7 @@ describe("Test Agent user configurations", () => {
             expect(envObj.RETRY_GAS_MULTIPLIER).to.equal(config.RETRY_GAS_MULTIPLIER);
             expect(envObj.CLO_ADDR).to.equal(config.CLO_ADDR);
             expect(envObj.CONCURRENCY).to.equal(config.CONCURRENCY);
-            expect(envObj.LISTEN_MODE).to.equal(config.LISTEN_MODE);
+            expect(envObj.ONLY_LISTED_TOKENS).to.equal(config.ONLY_LISTED_TOKENS);
             expect(envObj.NUM_RETRIES).to.equal(config.NUM_RETRIES);
             expect(envObj.COLD_BOOT).to.equal(config.COLD_BOOT);
             expect(envObj.SHUTDOWN_ON_ERROR).to.equal(config.SHUTDOWN_ON_ERROR);

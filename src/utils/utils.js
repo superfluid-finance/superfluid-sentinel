@@ -22,10 +22,18 @@ function generateAccounts(mnemonic, accountIndex) {
 }
 
 
+function sortString(a, b) {
+    let x = a.toLowerCase(),
+        y = b.toLowerCase();
+    return x == y ? 0 : x > y ? 1 : -1;
+}
+
+
 
 module.exports = {
     getTimeUnix,
     getNextMonthUnix,
     checkOrCreate,
-    generateAccounts
+    generateAccounts,
+    sortString
 };

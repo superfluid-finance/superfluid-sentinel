@@ -18,13 +18,8 @@ class Liquidator {
 
     constructor(app) {
         this.app = app;
-        this.timeout = this.app.config.TX_TIMEOUT;
-        this.splitBatch = this.app.config.MAX_BATCH_TX;
-        this.clo = this.app.config.CLO_ADDR;
         this.txDelay = this.app.config.ADDITIONAL_LIQUIDATION_DELAY;
-        this.gasMultiplier = this.app.config.RETRY_GAS_MULTIPLIER;
-        this.canUseBatch = this.app.config.BATCH_CONTRACT !== undefined;
-        if(this.clo === undefined) {
+        if(this.app.config.CLO_ADDR === undefined) {
             this.app.logger.info("Not configured as CLO -> adding 15 min delay");
             this.txDelay += 900;
         }
@@ -36,7 +31,7 @@ class Liquidator {
             const checkDate = this.app.time.getTimeWithDelay(this.txDelay);
             let haveBatchWork = [];
             //if we have a batchLiquidator contract, use batch calls
-            if(this.canUseBatch) {
+            if(this.app.config.BATCH_CONTRACT !== undefined) {
                 haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
                 this.app.logger.debug(JSON.stringify(haveBatchWork));
             }
@@ -74,7 +69,7 @@ class Liquidator {
                     const BaseGasPrice = await this.app.gasEstimator.gasPrice();
                     const txObject = {
                         retry : 1,
-                        step : this.gasMultiplier,
+                        step : this.app.config.RETRY_GAS_MULTIPLIER,
                         target: this.app.client.sf._address,
                         flowSender: job.sender,
                         flowReceiver: job.receiver,
@@ -84,7 +79,7 @@ class Liquidator {
                         nonce: networkAccountNonce,
                         chainId: chainId
                     }
-                    const result = await this.sendWithRetry(wallet, txObject, this.timeout);
+                    const result = await this.sendWithRetry(wallet, txObject, this.app.config.TX_TIMEOUT);
                     if(result !== undefined && result.error !== undefined) {
                         this.app.logger.error(result.error);
                     } else {
@@ -119,7 +114,7 @@ class Liquidator {
                     receivers.push(flow.receiver);
                 }
 
-                if(senders.length === this.splitBatch) {
+                if(senders.length === this.app.config.MAX_BATCH_TX) {
                     this.app.logger.debug(`sending a full batch work: load ${senders.length}`);
                     await this.sendBatch(batch.superToken, senders, receivers);
                     senders = new Array();
@@ -153,7 +148,7 @@ class Liquidator {
             const BaseGasPrice = await this.app.gasEstimator.gasPrice();
             const txObject = {
                 retry : 1,
-                step : this.gasMultiplier,
+                step : this.app.config.RETRY_GAS_MULTIPLIER,
                 target: this.app.config.BATCH_CONTRACT,
                 superToken: superToken,
                 tx: tx,
@@ -161,7 +156,7 @@ class Liquidator {
                 nonce: networkAccountNonce,
                 chainId: chainId
             }
-            const result = await this.sendWithRetry(wallet, txObject, this.timeout);
+            const result = await this.sendWithRetry(wallet, txObject, this.app.config.TX_TIMEOUT);
             if(result !== undefined && result.error !== undefined) {
                 this.app.logger.error(result.error);
             } else {

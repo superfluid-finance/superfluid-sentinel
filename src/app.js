@@ -36,7 +36,7 @@ class App {
         this.gasEstimator = new Gas(this);
         this.loadEvents = new LoadEvents(this);
         const models = {
-            event : new EventModel()
+            event: new EventModel()
         };
         this.models = models;
         this.liquidator = new Liquidator(this);
@@ -51,7 +51,7 @@ class App {
         this._isShutdown = false;
         this._needResync = false;
         this.timer = {
-            delay:delay
+            delay: delay
         }
     }
 
@@ -115,7 +115,7 @@ class App {
     async start() {
         try {
             this._isShutdown = false;
-            if(this.config.COLD_BOOT) {
+            if (this.config.COLD_BOOT) {
                 //drop existing database to force a full boot
                 this.logger.debug(`resync all database data`);
                 await this.db.sync({ force: true });
@@ -125,14 +125,9 @@ class App {
             //log configuration data
             const userConfig = this.config.getConfigurationInfo();
             this.logger.debug(JSON.stringify(userConfig));
-            //check important change of configurations
-            const res = await this.db.queries.getConfiguration();
-            if(res !== null) {
-                const dbuserConfig = JSON.parse(res.config)
-                if(dbuserConfig.LISTEN_MODE !== userConfig.LISTEN_MODE && userConfig.LISTEN_MODE == 1) {
-                    this._needResync = true;
-                    this.logger.error(`ATTENTION: LISTEN_MODE changed from the last boot, please resync the database`);
-                }
+            this._needResync = await this.checkConfigurationChanges(userConfig);
+            if (this._needResync) {
+                this.logger.error(`ATTENTION: Configuration changed from last boot, please resync the database`);
             }
             await this.db.queries.saveConfiguration(JSON.stringify(userConfig));
 
@@ -166,6 +161,30 @@ class App {
         } catch(err) {
             this.logger.error(`app.start() - ${err}`);
             process.exit(1);
+        }
+    }
+
+    async checkConfigurationChanges(userConfig) {
+        //check important change of configurations
+        const res = await this.db.queries.getConfiguration();
+        if (res !== null) {
+            let needResync = false;
+            const dbuserConfig = JSON.parse(res.config);
+            if (dbuserConfig.TOKENS === undefined && userConfig.TOKENS !== undefined) {
+                needResync = true;
+            } else if (userConfig.TOKENS) {
+                const sortedDBTokens = dbuserConfig.TOKENS.sort(this.utils.sortString);
+                const sortedConfigTokens = userConfig.TOKENS.sort(this.utils.sortString);
+                const match = sortedDBTokens.filter(x => sortedConfigTokens.includes(x));
+                if (match.length < sortedConfigTokens.length) {
+                    needResync = true;
+                }
+            }
+
+            if (dbuserConfig.ONLY_LISTED_TOKENS !== userConfig.ONLY_LISTED_TOKENS && userConfig.ONLY_LISTED_TOKENS == false) {
+                needResync = true;
+            }
+            return needResync;
         }
     }
 }

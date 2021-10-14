@@ -155,12 +155,12 @@ class Client {
         try {
             let filter = {
                 attributes: ['address'],
-                where: {listed: 1}
             };
 
-            if(this.app.config.LISTEN_MODE == 1) {
+            if(this.app.config.ONLY_LISTED_TOKENS == true) {
                 filter = {
-                    attributes: ['address']
+                    attributes: ['address'],
+                    where: {listed: 1}
                 };
             }
             const superTokensDB = await SuperTokenModel.findAll(filter);
@@ -203,7 +203,7 @@ class Client {
             `supertokens.${this.version}.${tokenSymbol}`
         ).call();
         let isListed = 0;
-        if(superTokenAddress === superTokenWS._address) {
+        if(this.app.config.ONLY_LISTED_TOKENS == true && superTokenAddress === superTokenWS._address) {
             const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${superTokenAddress}`;
             this.app.logger.info(tokenInfo);
             this.superTokenNames[newSuperToken] = tokenInfo;
@@ -211,7 +211,7 @@ class Client {
             this.superTokensHTTP[superTokenAddress] = superTokenHTTP;
             this.superTokensCount++;
             isListed = 1;
-        } else if(this.app.config.LISTEN_MODE == 1) {
+        } else {
             const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${newSuperToken}`;
             this.app.logger.info(tokenInfo);
             this.superTokenNames[newSuperToken] = tokenInfo;

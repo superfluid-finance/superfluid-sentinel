@@ -32,11 +32,11 @@ class Config {
 
             this.CONCURRENCY = config.concurrency;
             this.COLD_BOOT = config.cold_boot;
-            this.LISTEN_MODE = config.listen_mode;
             this.NUM_RETRIES = config.number_retries;
             this.TEST_RESOLVER = config.test_resolver;
             this.SHUTDOWN_ON_ERROR = config.shutdown_on_error;
             this.LIQUIDATION_JOB_AWAITS = config.liquidation_job_awaits;
+            this.ONLY_LISTED_TOKENS = config.only_listed_tokens || false;
         } else {
 
             this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
@@ -58,7 +58,7 @@ class Config {
 
             //extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
             this.CONCURRENCY = process.env.CONCURRENCY || 1;
-            this.LISTEN_MODE = process.env.LISTEN_MODE || 1;
+            this.ONLY_LISTED_TOKENS = process.env.ONLY_LISTED_TOKENS || false;
             this.NUM_RETRIES = process.env.NUM_RETRIES || 10;
             this.COLD_BOOT = process.env.COLD_BOOT || 0;
             this.SHUTDOWN_ON_ERROR = process.env.SHUTDOWN_ON_ERROR || false;
@@ -96,7 +96,7 @@ class Config {
             RETRY_GAS_MULTIPLIER: this.RETRY_GAS_MULTIPLIER,
             CLO_ADDR: this.CLO_ADDR,
             CONCURRENCY: this.CONCURRENCY,
-            LISTEN_MODE: this.LISTEN_MODE,
+            ONLY_LISTED_TOKENS: this.ONLY_LISTED_TOKENS,
             NUM_RETRIES: this.NUM_RETRIES,
             COLD_BOOT: this.COLD_BOOT,
             SHUTDOWN_ON_ERROR: this.SHUTDOWN_ON_ERROR,

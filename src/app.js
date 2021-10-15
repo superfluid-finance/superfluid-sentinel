@@ -49,7 +49,6 @@ class App {
         this.db.queries = new Repository(this);
         this.server = new HTTPServer(this);
         this._isShutdown = false;
-        this._needResync = false;
         this.timer = {
             delay: delay
         }
@@ -125,9 +124,8 @@ class App {
             //log configuration data
             const userConfig = this.config.getConfigurationInfo();
             this.logger.debug(JSON.stringify(userConfig));
-            this._needResync = await this.checkConfigurationChanges(userConfig);
-            if (this._needResync) {
-                this.logger.error(`ATTENTION: Configuration changed from last boot, please resync the database`);
+            if (await this.isResyncNeeded(userConfig)) {
+                this.logger.error(`ATTENTION: Configuration changed since last run, please re-sync.`);
                 process.exit(1);
             }
             await this.db.queries.saveConfiguration(JSON.stringify(userConfig));
@@ -165,7 +163,7 @@ class App {
         }
     }
 
-    async checkConfigurationChanges(userConfig) {
+    async isResyncNeeded(userConfig) {
         //check important change of configurations
         const res = await this.db.queries.getConfiguration();
         if (res !== null) {

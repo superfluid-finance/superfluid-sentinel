@@ -75,6 +75,12 @@ class Config {
         if (this.WS_RPC_NODE === undefined) {
             throw Error('required configuration item missing: WS_RPC_NODE');
         }
+
+        if(this.TOKENS !== undefined &&
+            Array.from(new Set(this.TOKENS.map(x => x.toLowerCase()))).length !== this.TOKENS.length
+        ) {
+            throw Error('duplicate tokens set from configuration: TOKENS');
+        }
     }
 
     loadNetworkInfo(chainId) {

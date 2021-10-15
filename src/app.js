@@ -36,7 +36,7 @@ class App {
         this.gasEstimator = new Gas(this);
         this.loadEvents = new LoadEvents(this);
         const models = {
-            event : new EventModel()
+            event: new EventModel()
         };
         this.models = models;
         this.liquidator = new Liquidator(this);
@@ -50,7 +50,7 @@ class App {
         this.server = new HTTPServer(this);
         this._isShutdown = false;
         this.timer = {
-            delay:delay
+            delay: delay
         }
     }
 
@@ -114,7 +114,7 @@ class App {
     async start() {
         try {
             this._isShutdown = false;
-            if(this.config.COLD_BOOT) {
+            if (this.config.COLD_BOOT) {
                 //drop existing database to force a full boot
                 this.logger.debug(`resync all database data`);
                 await this.db.sync({ force: true });
@@ -122,7 +122,14 @@ class App {
                 await this.db.sync();
             }
             //log configuration data
-            this.logger.debug(JSON.stringify(this.config.getConfigurationInfo()));
+            const userConfig = this.config.getConfigurationInfo();
+            this.logger.debug(JSON.stringify(userConfig));
+            if (await this.isResyncNeeded(userConfig)) {
+                this.logger.error(`ATTENTION: Configuration changed since last run, please re-sync.`);
+                process.exit(1);
+            }
+            await this.db.queries.saveConfiguration(JSON.stringify(userConfig));
+
             //create all web3 infrastruture needed
             await this.client.init();
             //if we are running tests don't try to load network information
@@ -145,7 +152,7 @@ class App {
             setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
             setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
             //start http server to serve node health reports and dashboard
-            if(this.config.METRICS) {
+            if(this.config.METRICS == true) {
                 setTimeout(() => this.server.start(), 1000);
             }
             //await x milliseconds before running next liquidation job
@@ -154,6 +161,30 @@ class App {
             this.logger.error(`app.start() - ${err}`);
             process.exit(1);
         }
+    }
+
+    async isResyncNeeded(userConfig) {
+        //check important change of configurations
+        const res = await this.db.queries.getConfiguration();
+        if (res !== null) {
+            let needResync = false;
+            const dbuserConfig = JSON.parse(res.config);
+            if (dbuserConfig.TOKENS === undefined && userConfig.TOKENS !== undefined) {
+                needResync = true;
+            } else if (userConfig.TOKENS) {
+                const sortedDBTokens = dbuserConfig.TOKENS.sort(this.utils.sortString);
+                const sortedConfigTokens = userConfig.TOKENS.sort(this.utils.sortString);
+                const match = sortedDBTokens.filter(x => sortedConfigTokens.includes(x));
+                if (match.length < sortedConfigTokens.length) {
+                    needResync = true;
+                }
+            }
+            if (dbuserConfig.ONLY_LISTED_TOKENS !== userConfig.ONLY_LISTED_TOKENS && userConfig.ONLY_LISTED_TOKENS == false) {
+                needResync = true;
+            }
+            return needResync;
+        }
+        return false;
     }
 }
 

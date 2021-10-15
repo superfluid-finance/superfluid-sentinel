@@ -1,4 +1,12 @@
-require("dotenv").config();
+const path = require('path')
+let args = process.argv.slice(2)[0];
+if(args === undefined) {
+    require("dotenv").config();
+} else {
+    require('dotenv').config({ path: path.resolve(__dirname, `../../.env-${args}`) })
+}
+
+
 const program = require("commander");
 const package = require("../../package.json");
 program.version(package.version, '-v, --version');

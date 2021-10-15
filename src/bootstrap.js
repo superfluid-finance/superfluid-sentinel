@@ -11,9 +11,7 @@ class Bootstrap {
 
     constructor(app) {
         this.app = app;
-        this.concurrency = this.app.config.CONCURRENCY;
         this.numRetries = this.app.config.NUM_RETRIES;
-        this.listenMode = this.app.config.LISTEN_MODE;
     }
 
     async start() {

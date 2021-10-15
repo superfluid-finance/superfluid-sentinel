@@ -11,6 +11,7 @@ WORKDIR /usr/src/app
 COPY ["package.json", "package-lock.json*", "./"]
 RUN npm ci --only=production
 
+RUN chown node:node /usr/src/app
 COPY --chown=node:node . /usr/src/app
 
 # Add a simple init system so that Node would respect process signals

@@ -66,7 +66,7 @@ class Liquidator {
             {
                 try {
                     const tx = this.app.protocol.generateDeleteFlowABI(job.superToken, job.sender, job.receiver);
-                    const BaseGasPrice = await this.app.gasEstimator.gasPrice();
+                    const BaseGasPrice = await this.app.gasEstimator.getGasPrice();
                     const txObject = {
                         retry : 1,
                         step : this.app.config.RETRY_GAS_MULTIPLIER,
@@ -145,7 +145,7 @@ class Liquidator {
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
         try {
             const tx = this.app.protocol.generateMultiDeleteFlowABI(superToken, senders, receivers);
-            const BaseGasPrice = await this.app.gasEstimator.gasPrice();
+            const BaseGasPrice = await this.app.gasEstimator.getGasPrice();
             const txObject = {
                 retry : 1,
                 step : this.app.config.RETRY_GAS_MULTIPLIER,
@@ -171,7 +171,7 @@ class Liquidator {
     async sendWithRetry(wallet, txObject, ms) {
         await this.app.timer.delay(1000);
         //When estimate gas we get a preview of what can happen when send the transaction. Depending on the error we should execute specific logic
-        const gas = await this.app.gasEstimator.gasLimit(wallet, txObject);
+        const gas = await this.app.gasEstimator.getGasLimit(wallet, txObject);
         if(gas.error !== undefined) {
             this.app.logger.error(gas.error);
             if(gas.error.message === "Returned error: execution reverted: CFA: flow does not exist") {
@@ -249,7 +249,7 @@ class Liquidator {
 
     async signTx(wallet, txObject) {
         try {
-            txObject.gasPrice = this.app.gasEstimator.updateGasPrice(txObject.gasPrice, txObject.retry, txObject.step);
+            txObject.gasPrice = this.app.gasEstimator.getUpdatedGasPrice(txObject.gasPrice, txObject.retry, txObject.step);
             const unsignedTx = {
                 chainId : txObject.chainId,
                 to : txObject.target,

@@ -36,7 +36,7 @@ class Config {
             this.TEST_RESOLVER = config.test_resolver;
             this.SHUTDOWN_ON_ERROR = config.shutdown_on_error;
             this.LIQUIDATION_JOB_AWAITS = config.liquidation_job_awaits;
-            this.ONLY_LISTED_TOKENS = config.only_listed_tokens || false;
+            this.ONLY_LISTED_TOKENS = config.only_listed_tokens === "true";
         } else {
 
             this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
@@ -58,10 +58,10 @@ class Config {
 
             //extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
             this.CONCURRENCY = process.env.CONCURRENCY || 1;
-            this.ONLY_LISTED_TOKENS = process.env.ONLY_LISTED_TOKENS || false;
+            this.ONLY_LISTED_TOKENS = process.env.ONLY_LISTED_TOKENS === "true";
             this.NUM_RETRIES = process.env.NUM_RETRIES || 10;
             this.COLD_BOOT = process.env.COLD_BOOT || 0;
-            this.SHUTDOWN_ON_ERROR = process.env.SHUTDOWN_ON_ERROR || false;
+            this.SHUTDOWN_ON_ERROR = process.env.SHUTDOWN_ON_ERROR === "true";
             this.METRICS = process.env.METRICS || true;
             this.METRICS_PORT = process.env.METRICS_PORT || 3000;
             this.LIQUIDATION_JOB_AWAITS = process.env.LIQUIDATION_JOB_AWAITS*1000 || 30000;

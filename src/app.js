@@ -128,6 +128,7 @@ class App {
             this._needResync = await this.checkConfigurationChanges(userConfig);
             if (this._needResync) {
                 this.logger.error(`ATTENTION: Configuration changed from last boot, please resync the database`);
+                process.exit(1);
             }
             await this.db.queries.saveConfiguration(JSON.stringify(userConfig));
 
@@ -180,12 +181,12 @@ class App {
                     needResync = true;
                 }
             }
-
             if (dbuserConfig.ONLY_LISTED_TOKENS !== userConfig.ONLY_LISTED_TOKENS && userConfig.ONLY_LISTED_TOKENS == false) {
                 needResync = true;
             }
             return needResync;
         }
+        return false;
     }
 }
 

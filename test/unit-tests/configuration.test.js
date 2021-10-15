@@ -111,11 +111,11 @@ describe("Test Agent user configurations", () => {
             expect(envObj.RETRY_GAS_MULTIPLIER).to.equal(config.RETRY_GAS_MULTIPLIER);
             expect(envObj.CLO_ADDR).to.equal(config.CLO_ADDR);
             expect(envObj.CONCURRENCY).to.equal(config.CONCURRENCY);
-            expect(envObj.ONLY_LISTED_TOKENS).to.equal(config.ONLY_LISTED_TOKENS);
+            expect(envObj.ONLY_LISTED_TOKENS.toString()).to.equal(config.ONLY_LISTED_TOKENS.toString());
             expect(envObj.NUM_RETRIES).to.equal(config.NUM_RETRIES);
             expect(envObj.COLD_BOOT).to.equal(config.COLD_BOOT);
-            expect(envObj.SHUTDOWN_ON_ERROR).to.equal(config.SHUTDOWN_ON_ERROR);
-            expect(envObj.METRICS).to.equal(config.METRICS);
+            expect(envObj.SHUTDOWN_ON_ERROR.toString()).to.equal(config.SHUTDOWN_ON_ERROR.toString());
+            expect(envObj.METRICS.toString()).to.equal(config.METRICS.toString());
             expect(envObj.METRICS_PORT).to.equal(config.METRICS_PORT);
             expect(envObj.LIQUIDATION_JOB_AWAITS*1000).to.equal(config.LIQUIDATION_JOB_AWAITS);
             expect(envObj.MAX_BATCH_TX).to.equal(config.MAX_BATCH_TX);

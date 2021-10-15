@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  solvency:
+  sentinel:
     build: .
     restart: unless-stopped
     env_file: .env

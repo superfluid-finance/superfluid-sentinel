@@ -28,7 +28,7 @@
     "ethereumjs-wallet": "^1.0.1",
     "express": "^4.17.1",
     "sequelize": "^6.6.5",
-    "sqlite3": "^4.2.0",
+    "sqlite3": "^5.0.2",
     "web3": "1.5.3",
     "winston": "^3.3.3"
   },

@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1.3
 
 # Always add commit hash for reproducability
-FROM node:16.9.1-alpine@sha256:aca897c4ab3de699aa6c5dbf81424de3dfd15f226b7de86b1d30559ccd5d2644
+FROM node:14.18.1-alpine@sha256:557f00fb5d780597b0e7bcdc6d93abeb7e73599bcbfeba5832dc5646a8d3f120
 
 # Enable prod optimizations
 ENV NODE_ENV=production
@@ -11,6 +11,7 @@ WORKDIR /usr/src/app
 COPY ["package.json", "package-lock.json*", "./"]
 RUN npm ci --only=production
 
+RUN chown node:node /usr/src/app
 COPY --chown=node:node . /usr/src/app
 
 # Add a simple init system so that Node would respect process signals

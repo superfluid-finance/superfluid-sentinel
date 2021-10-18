@@ -35,6 +35,7 @@ class Liquidator {
                 haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
                 this.app.logger.debug(JSON.stringify(haveBatchWork));
             }
+
             if(haveBatchWork.length > 0) {
                 await this.multiTermination(haveBatchWork, checkDate);
             } else {
@@ -109,11 +110,15 @@ class Liquidator {
             );
 
             for(const flow of streams) {
+
                 if(await this.isPossibleToClose(flow.superToken, flow.sender, flow.receiver)) {
                     senders.push(flow.sender);
                     receivers.push(flow.receiver);
+                } else {
+                    this.app.logger.debug(`address ${flow.sender} is solvent at ${flow.superToken}`);
+                    this.app.protocol.newEstimation(flow.superToken, flow.sender);
+                    await this.app.timer.delay(500);
                 }
-
                 if(senders.length === this.app.config.MAX_BATCH_TX) {
                     this.app.logger.debug(`sending a full batch work: load ${senders.length}`);
                     await this.sendBatch(batch.superToken, senders, receivers);

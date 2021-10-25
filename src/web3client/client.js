@@ -125,8 +125,16 @@ class Client {
     async _loadSuperTokensFromDB() {
         try {
             let filter = {
+                attributes: ['address'],
                 attributes: ['address']
             };
+
+            if(this.app.config.ONLY_LISTED_TOKENS == true) {
+                filter = {
+                    attributes: ['address'],
+                    where: {listed: 1}
+                };
+            }
             const superTokensDB = await SuperTokenModel.findAll(filter);
             let promises = superTokensDB.map(async (token) => {
                 return this.loadSuperToken(token.address);
@@ -167,6 +175,7 @@ class Client {
         ).call();
 
         let isListed = 0;
+        if(this.app.config.ONLY_LISTED_TOKENS == true && superTokenAddress === superTokenWS._address) {
         if(superTokenAddress === superTokenHTTP._address) {
             const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${superTokenAddress}`;
             this.app.logger.info(tokenInfo);
@@ -176,6 +185,8 @@ class Client {
             isListed = 1;
         } else if(this.app.config.LISTEN_MODE == 1) {
             const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${newSuperToken}`;
+            const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${newSuperToken}`;
+        } else {
             this.app.logger.info(tokenInfo);
             this.superTokenNames[newSuperToken.toUpperCase()] = tokenInfo;
             this.superTokensHTTP[newSuperToken.toUpperCase()] = superTokenHTTP;

@@ -39,7 +39,7 @@ class App {
         this.gasEstimator = new Gas(this);
         this.loadEvents = new LoadEvents(this);
         const models = {
-            event : new EventModel()
+            event: new EventModel()
         };
         this.models = models;
         this.liquidator = new Liquidator(this);
@@ -54,7 +54,7 @@ class App {
         this._isShutdown = false;
         this._needResync = false;
         this.timer = {
-            delay:delay
+            delay: delay
         }
     }
 
@@ -122,7 +122,7 @@ class App {
         try {
             this.logger.debug(`booting sentinel`);
             this._isShutdown = false;
-            if(this.config.COLD_BOOT) {
+            if (this.config.COLD_BOOT) {
                 //drop existing database to force a full boot
                 this.logger.debug(`resyncing database data`);
                 await this.db.sync({ force: true });
@@ -132,14 +132,9 @@ class App {
             //log configuration data
             const userConfig = this.config.getConfigurationInfo();
             this.logger.debug(JSON.stringify(userConfig));
-            //check important change of configurations
-            const res = await this.db.queries.getConfiguration();
-            if(res !== null) {
-                const dbuserConfig = JSON.parse(res.config)
-                if(dbuserConfig.LISTEN_MODE !== userConfig.LISTEN_MODE && userConfig.LISTEN_MODE == 1) {
-                    this._needResync = true;
-                    this.logger.error(`ATTENTION: LISTEN_MODE changed from the last boot, please resync the database`);
-                }
+            if (await this.isResyncNeeded(userConfig)) {
+                this.logger.error(`ATTENTION: Configuration changed since last run, please re-sync.`);
+                process.exit(1);
             }
             await this.db.queries.saveConfiguration(JSON.stringify(userConfig));
 
@@ -164,7 +159,7 @@ class App {
             setTimeout(() => this.queues.start(), 1000);
             setTimeout(() => this.eventTracker.start(currentBlock), 1000);
             //start http server to serve node health reports and dashboard
-            if(this.config.METRICS === "true") {
+            if(this.config.METRICS == true) {
                 setTimeout(() => this.server.start(), 1000);
             }
             if(true) {
@@ -175,6 +170,30 @@ class App {
             this.logger.error(`app.start() - ${err}`);
             process.exit(1);
         }
+    }
+
+    async isResyncNeeded(userConfig) {
+        //check important change of configurations
+        const res = await this.db.queries.getConfiguration();
+        if (res !== null) {
+            let needResync = false;
+            const dbuserConfig = JSON.parse(res.config);
+            if (dbuserConfig.TOKENS === undefined && userConfig.TOKENS !== undefined) {
+                needResync = true;
+            } else if (userConfig.TOKENS) {
+                const sortedDBTokens = dbuserConfig.TOKENS.sort(this.utils.sortString);
+                const sortedConfigTokens = userConfig.TOKENS.sort(this.utils.sortString);
+                const match = sortedDBTokens.filter(x => sortedConfigTokens.includes(x));
+                if (match.length < sortedConfigTokens.length) {
+                    needResync = true;
+                }
+            }
+            if (dbuserConfig.ONLY_LISTED_TOKENS !== userConfig.ONLY_LISTED_TOKENS && userConfig.ONLY_LISTED_TOKENS == false) {
+                needResync = true;
+            }
+            return needResync;
+        }
+        return false;
     }
 }
 

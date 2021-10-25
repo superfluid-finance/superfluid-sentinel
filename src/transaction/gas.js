@@ -4,7 +4,7 @@ class Gas {
         this.app = app;
     }
 
-    async gasLimit(wallet, txObject) {
+    async getGasLimit(wallet, txObject) {
         try {
             let result = await this.app.client.web3HTTP.eth.estimateGas({
                 from: wallet.address,
@@ -19,7 +19,7 @@ class Gas {
         }
     }
 
-    async gasPrice() {
+    async getGasPrice() {
         try {
             const price = await this.app.client.web3HTTP.eth.getGasPrice();
             return { gasPrice: price, error: undefined };
@@ -29,7 +29,7 @@ class Gas {
         }
     }
 
-    updateGasPrice(originalGasPrice, retryNumber, step) {
+    getUpdatedGasPrice(originalGasPrice, retryNumber, step) {
         let gasPrice = originalGasPrice;
         if(retryNumber > 1) {
             if(this.app.config.MAX_GAS_PRICE !== undefined

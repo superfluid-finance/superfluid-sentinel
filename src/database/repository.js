@@ -1,6 +1,5 @@
 const { QueryTypes, Op } = require("sequelize");
 const EstimationModel = require("../database/models/accountEstimationModel");
-const SystemModel = require("../database/models/systemModel");
 const UserConfig = require("../database/models/userConfiguration");
 
 class Repository {
@@ -131,6 +130,14 @@ class Repository {
       type: QueryTypes.SELECT
     });
   }
+  async updateBlockNumber(newBlockNumber) {
+    const systemInfo = await SystemModel.findOne();
+    if(systemInfo !== null && systemInfo.blockNumber < newBlockNumber) {
+      systemInfo.blockNumber = Number(newBlockNumber);
+      systemInfo.superTokenBlockNumber = Number(newBlockNumber);
+    }
+      return systemInfo.save();
+  }
 
   async getConfiguration() {
     return UserConfig.findOne();
@@ -143,15 +150,6 @@ class Repository {
       return fromDB.save();
     }
     return UserConfig.create({ config: configString });
-  }
-
-  async updateBlockNumber(newBlockNumber) {
-    const systemInfo = await SystemModel.findOne();
-    if(systemInfo !== null && systemInfo.blockNumber < newBlockNumber) {
-      systemInfo.blockNumber = Number(newBlockNumber);
-      systemInfo.superTokenBlockNumber = Number(newBlockNumber);
-      return systemInfo.save();
-    }
   }
 }
 

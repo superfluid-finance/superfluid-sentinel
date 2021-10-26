@@ -120,7 +120,7 @@ class Liquidator {
                     receivers.push(flow.receiver);
                 } else {
                     this.app.logger.debug(`address ${flow.sender} is solvent at ${flow.superToken}`);
-                    this.app.protocol.newEstimation(flow.superToken, flow.sender);
+                    await this.app.queues.addQueuedEstimation(flow.superToken, flow.sender);
                     await this.app.timer.delay(500);
                 }
                 if(senders.length === this.app.config.MAX_BATCH_TX) {

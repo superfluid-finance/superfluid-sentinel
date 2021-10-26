@@ -1,6 +1,5 @@
 const SystemModel = require("./database/models/systemModel");
 const EstimationModel = require("./database/models/accountEstimationModel");
-const FlowUpdatedModel = require("./database/models/flowUpdatedModel");
 const AgreementModel =  require("./database/models/agreementModel");
 const { Op } = require("sequelize");
 const async = require("async");
@@ -25,7 +24,6 @@ class Bootstrap {
         if(blockNumber === currentBlockNumber) {
             return;
         }
-        console.log(`BT: ${blockNumber} -> ${currentBlockNumber}`)
         if (blockNumber < currentBlockNumber) {
             try {
                 let queue = async.queue(async function(task) {

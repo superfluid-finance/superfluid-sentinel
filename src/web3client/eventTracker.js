@@ -2,7 +2,6 @@ const { PollingBlockTracker } = require("eth-block-tracker");
 const superTokenEvents = require("../models/SuperTokensEventsAbi");
 const CFAEvents = require("../models/CFAEventsAbi");
 const IDAEvents = require("../models/IDAEventsAbi");
-const IDAModel = require("../database/models/IDAModel");
 const decoder = require("ethjs-abi");
 const { wad4human } = require("@decentral.ee/web3-helpers");
 
@@ -21,7 +20,7 @@ class EventTracker {
     }
 
     getPastBlockAndParseEvents(oldBlock, newBlock) {
-        this.app.client.web3HTTP.eth.getPastLogs({
+        this.app.client.web3.eth.getPastLogs({
             fromBlock: oldBlock,
             toBlock: newBlock,
             address: this.app.client.getSFAddresses()
@@ -45,27 +44,14 @@ class EventTracker {
         });
     }
 
-    _parseEvent(abi, log) {
-        let event = log;
-        for(let a in abi) {
-            const decodeResult = decoder.decodeLogItem(abi[a.toString()], log);
-            if(decodeResult) {
-                event.returnValues = decodeResult;
-                event.event = decodeResult._eventName;
-                return this.app.models.event.transformWeb3Event(event);
-            }
-        }
-    }
-
     async start(oldBlock) {
         if(this.app.client.isInitialized === undefined || !this.app.client.isInitialized) {
             throw Error("BlockTracker.start() - client is not initialized ");
         }
         if(oldBlock) {
-            console.log(`Starting with old block of : ${oldBlock}`);
             this.oldSeenBlock = oldBlock;
         }
-        const provider = this.app.client.web3HTTP.eth.currentProvider;
+        const provider = this.app.client.web3.eth.currentProvider;
         this.blockTracker = new PollingBlockTracker({provider, pollingInterval: this.app.config.POLLING_INTERNVAL})
         const self = this;
         this.blockTracker.on('sync', ({ newBlock, oldBlock }) => {
@@ -76,15 +62,10 @@ class EventTracker {
                 self.updateBlockNumber(oldBlock + 1, newBlock);
             } else if(self.oldSeenBlock) {
                 self.app.logger.debug(`first sync #${Number(self.oldSeenBlock) + 1} -> #${Number(newBlock)}`);
-
                 self.getPastBlockAndParseEvents(self.oldSeenBlock, newBlock);
                 self.updateBlockNumber(self.oldSeenBlock + 1, newBlock);
             }
         })
-    }
-
-    _disconnect() {
-        return this.blockTracker.removeAllListeners();
     }
 
     async processSuperTokenEvent(event) {
@@ -102,17 +83,7 @@ class EventTracker {
                     });
                     break;
                 }
-                case "TokenUpgraded" :
-                case "TokenDowngraded" : {
-                    this.app.queues.estimationQueue.push({
-                        self: this,
-                        account: event.account,
-                        token: event.address
-                    });
-                    break;
-                }
                 case "Transfer" : {
-                    console.log("Got a transfer event")
                     this.app.queues.estimationQueue.push([
                         {
                             self: this,
@@ -128,7 +99,7 @@ class EventTracker {
                     break;
                 }
                 case "AgreementLiquidatedBy": {
-                    this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address.toUpperCase()]}, liquidated acc ${event.penaltyAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
+                    this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.penaltyAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
                     if (event.bailoutAmount.toString() !== "0") {
                         this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.bailoutAmount)}`);
                     }
@@ -165,15 +136,6 @@ class EventTracker {
                             token: event.token
                         }
                     ]);
-                    for(const sub of subscribers) {
-                        this.app.queues.estimationQueue.push([
-                            {
-                                self: this,
-                                account: sub.subscriber,
-                                token: event.token
-                            }
-                        ]);
-                    }
                     break;
                 }
                 default: {
@@ -191,6 +153,22 @@ class EventTracker {
         this.app.logger.error(err);
         throw Error(`ida events ${err}`);
     }
+    }
+
+    _parseEvent(abi, log) {
+        let event = log;
+        for(let a in abi) {
+            const decodeResult = decoder.decodeLogItem(abi[a.toString()], log);
+            if(decodeResult) {
+                event.returnValues = decodeResult;
+                event.event = decodeResult._eventName;
+                return this.app.models.event.transformWeb3Event(event);
+            }
+        }
+    }
+
+    _disconnect() {
+        return this.blockTracker.removeAllListeners();
     }
 }
 

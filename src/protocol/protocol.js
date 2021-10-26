@@ -13,7 +13,7 @@ class Protocol {
                 timestamp = Math.floor(new Date().getTime() / 1000);
             }
 
-            return this.client.superTokensHTTP[token.toUpperCase()].methods.realtimeBalanceOf(
+            return this.client.superTokens[token.toLowerCase()].methods.realtimeBalanceOf(
                 address,
                 timestamp
             ).call();
@@ -87,9 +87,7 @@ class Protocol {
 
     async isAccountCriticalNow(superToken, account) {
         try {
-            console.log(superToken.toUpperCase())
-            console.log(superToken)
-            return this.app.client.superTokensHTTP[superToken.toUpperCase()].methods.isAccountCriticalNow(account).call();
+            return this.app.client.superTokens[superToken.toLowerCase()].methods.isAccountCriticalNow(account).call();
         } catch(err) {
             throw Error(`protocol.isAccountCriticalNow: ${err}`);
         }
@@ -127,7 +125,7 @@ class Protocol {
 
     generateId(sender, receiver) {
         try {
-            return this.client.web3HTTP.utils.soliditySha3(sender, receiver);
+            return this.client.web3.utils.soliditySha3(sender, receiver);
         } catch(err) {
             this.app.logger.error(err);
             throw Error(`generateId: ${err}`);

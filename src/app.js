@@ -72,10 +72,12 @@ class App {
 
         await this.run(fn, time);
     }
+
     //return if client module is initialized
     isInitialized() {
         return this.client.isInitialized;
     }
+
     //return estimations saved on database
     async getEstimations() {
         return this.db.queries.getEstimations();

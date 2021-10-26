@@ -1,6 +1,7 @@
 const { QueryTypes, Op } = require("sequelize");
 const EstimationModel = require("../database/models/accountEstimationModel");
 const UserConfig = require("../database/models/userConfiguration");
+const SystemModel = require("../database/models/systemModel");
 
 class Repository {
 

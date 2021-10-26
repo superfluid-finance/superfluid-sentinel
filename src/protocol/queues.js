@@ -23,7 +23,6 @@ class Queues {
     init() {
         this.estimationQueue = async.queue(async function(task) {
             let keepTrying = 1;
-            console.log("Estimation running")
             if(task.account === "0x0000000000000000000000000000000000000000") {
                 return;
             }
@@ -40,7 +39,6 @@ class Queues {
                             zestimationHuman : estimationData.estimation,
                             blockNumber: task.blockNumber
                         });
-                        console.log(`${task.account} - ${estimationData.estimation}`)
                     } else {
                         console.log(`reject account: ${task.account } supertoken: ${task.token} not subscribed`);
                     }

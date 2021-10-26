@@ -59,6 +59,21 @@ If all is well, you may want to set the service to autostart:
 systemctl enable superfluid-sentinel.service
 ```
 
+#### Run multiple instances
+
+In order to run sentinels for multiple networks in parallel, create network specific env files which are named `.env-<network-name>`.  
+E.g. if you want to run a sentinel for xdai and a sentinel for polygon, prepare env files `.env-xdai` and `.env-polygon` with the respective settings.    
+You need to set `DB_PATH` to different values instead of using the default value.  
+You may also want to set the variable `CHAIN_ID` (e.g. `CHAIN_ID=100` for xdai). This makes sure you don't accidentally use the wrong RPC node or write to a sqlite file created for a different network.
+
+With the env files in place, you can start instances like this:
+```
+npm start <network-name>
+```
+For example: `npm start xdai`will start an instance configured according to the settings in `.env-xdai`.  
+
+If you use systemd, create instance specific copies of the service file, e.g. `superfluid-sentinel-xdai.service`, and add the network name to the start command, e.g. `ExecStart=/usr/bin/npm start xdai`.
+
 ### Docker Setup
 
 This part of the guide assumes you have a recent version of Docker and docker-compose installed.

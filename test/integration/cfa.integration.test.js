@@ -15,23 +15,23 @@ const exitWithError = (error) => {
 
 const bootNode = async (delayParam = 0) => {
     app = new App({
-        ws_rpc_node: "ws://127.0.0.1:8545",
         http_rpc_node: "http://127.0.0.1:8545",
         mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
         mnemonic_index: 100,
         epoch_block: 0,
-        DB: "TestDatabase.sqlite",
+        DB: "datadir/test.sqlite",
         protocol_release_version: "test",
-        tx_timeout: 300000,
+        tx_timeout: 30,
         max_query_block_range: 500000,
         max_gas_price:4000000000,
         concurrency: 1,
         cold_boot: 1,
-        listen_mode: 1,
+        only_listed_tokens: 1,
         number_retries: 3,
         test_resolver: resolverAddress,
         additional_liquidation_delay: delayParam,
-        liquidation_run_every: 5000
+        liquidation_run_every: 5000,
+        polling_interval: 10
     });
     app.start();
     while(!app.isInitialized()) {
@@ -39,7 +39,7 @@ const bootNode = async (delayParam = 0) => {
     }
 }
 
-const closeNode = async (force = false) => {
+const stopSentinel = async (force = false) => {
     if(app !== undefined)
         return app.shutdown(force);
 }
@@ -82,6 +82,7 @@ const expectBailout = (event, node, account) => {
     expect(event.returnValues.bailoutAmount).not.equal("0");
     expect(event.returnValues.penaltyAccount).to.equal(account);
 }
+
 describe("Integration scripts tests", () => {
 
     before(async function() {
@@ -96,6 +97,9 @@ describe("Integration scripts tests", () => {
 
    afterEach(async () => {
         try {
+            const result = await stopSentinel();
+            console.log("HERE")
+            console.log(result);
             snapId = await ganache.helper.revertToSnapShot(snapId.result);
         } catch(err) {
             exitWithError(err);
@@ -103,10 +107,12 @@ describe("Integration scripts tests", () => {
     });
 
     after(async () => {
-        closeNode(true);
+        //await stopSentinel();
+        //console.log(ganache.close);
+        ganache.close();
     });
 
-    it("Create one stream", async () => {
+    it.only("Create one stream", async () => {
         try {
             const data = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,
@@ -211,7 +217,7 @@ describe("Integration scripts tests", () => {
         }
     });
 
-    it("Create a stream with big flow rate, then update the stream with smaller flow rate", async () => {
+    it.skip("Create a stream with big flow rate, then update the stream with smaller flow rate", async () => {
         try {
             const flowData = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,
@@ -224,15 +230,20 @@ describe("Integration scripts tests", () => {
             await bootNode();
             //await ganache.helper.timeTravelOnce(60);
             const firstEstimation = await app.db.queries.getAddressEstimation(accounts[5]);
+            //await ganache.helper.timeTravelUntil(1, 20);
             const updateData = protocolVars.cfa.methods.updateFlow(
                 protocolVars.superToken._address,
                 accounts[2],
                 "1",
                 "0x"
             ).encodeABI();
-            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, updateData, "0x").send({from: accounts[5], gas: 1000000});
-            await ganache.helper.timeTravelOnce(60);
+            await ganache.helper.timeTravelUntil(1, 20);
+            const x = await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, updateData, "0x").send({from: accounts[5], gas: 1000000});
+            console.log(x)
+            await ganache.helper.timeTravelUntil(1, 20);
             const secondEstimation = await app.db.queries.getAddressEstimation(accounts[5]);
+            console.log("Estimation 1: ", firstEstimation[0].zestimation)
+            console.log("Estimation 2: ", secondEstimation[0].zestimation)
             expect(firstEstimation[0].zestimation).to.not.equal(32503593600000);
             //the stream is soo small that we mark as not a real estimation
             expect(secondEstimation[0].zestimation).to.equal(32503593600000);

@@ -1,6 +1,5 @@
 const SystemModel = require("./database/models/systemModel");
 const EstimationModel = require("./database/models/accountEstimationModel");
-const FlowUpdatedModel = require("./database/models/flowUpdatedModel");
 const AgreementModel =  require("./database/models/agreementModel");
 const { Op } = require("sequelize");
 const async = require("async");
@@ -11,9 +10,7 @@ class Bootstrap {
 
     constructor(app) {
         this.app = app;
-        this.concurrency = this.app.config.CONCURRENCY;
         this.numRetries = this.app.config.NUM_RETRIES;
-        this.listenMode = this.app.config.LISTEN_MODE;
     }
 
     async start() {
@@ -27,7 +24,6 @@ class Bootstrap {
         if(blockNumber === currentBlockNumber) {
             return;
         }
-
         if (blockNumber < currentBlockNumber) {
             try {
                 let queue = async.queue(async function(task) {
@@ -43,10 +39,7 @@ class Bootstrap {
                                     totalBalance: estimationData.totalBalance,
                                     zestimation: new Date(estimationData.estimation).getTime(),
                                     zestimationHuman : estimationData.estimation,
-                                    zlastChecked: task.self.app.getTimeUnix(),
-                                    recalculate : 0,
-                                    found: 0,
-                                    now: 0,
+                                    blockNumber: task.blockNumber
                                 });
                             }
                             break;
@@ -60,12 +53,12 @@ class Bootstrap {
                     }
                 }, this.concurency);
                 const users = await this.app.db.queries.getAccounts(blockNumber);
-                const now = this.app.getTimeUnix();
                 for(let user of users) {
                     queue.push({
                         self: this,
                         account: user.account,
-                        token: user.superToken
+                        token: user.superToken,
+                        blockNumber: blockNumber
                     });
                 }
 
@@ -82,7 +75,7 @@ class Bootstrap {
                             sender: flow.sender,
                             receiver: flow.receiver,
                             flowRate: flow.flowRate,
-                            zlastChecked: now
+                            blockNumber: blockNumber
                         });
                     } catch(err) {
                         console.error(err);
@@ -107,7 +100,7 @@ class Bootstrap {
                             ]
                         }
                     });
-                    //if the sender don't have open stream, we delete it from database
+                    //if the sender don't have open stream, delete it from database
                     if(flows.length == 0) {
                         await est.destroy();
                     }
@@ -115,6 +108,7 @@ class Bootstrap {
                 systemInfo.blockNumber = currentBlockNumber;
                 await systemInfo.save();
                 this.app.logger.info("finish bootstrap");
+                return currentBlockNumber;
             } catch(err) {
                 this.app.logger.error(err);
                 process.exit(1);

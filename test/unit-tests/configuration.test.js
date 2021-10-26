@@ -12,7 +12,6 @@ const exitWithError = (error) => {
 
 const populateEnvVariables= () => {
     process.env.HTTP_RPC_NODE="http://127.0.0.1:8545";
-    process.env.WS_RPC_NODE="ws://127.0.0.1:8545";
     process.env.MNEMONIC="clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return";
     process.env.MNEMONIC_INDEX=0
     process.env.PRIVATE_KEY="0x4b2058f23c4a47002e35c06e9c0beb6af7ff8f1638dee7e38dec852a3b4aef84"
@@ -26,7 +25,7 @@ const populateEnvVariables= () => {
     process.env.RETRY_GAS_MULTIPLIER= 1.1;
     process.env.CLO_ADDR="0xAB4075f621100563f4551C0Ca50944809b03E948";
     process.env.CONCURRENCY=2;
-    process.env.LISTEN_MODE=0;
+    process.env.ONLY_LISTED_TOKENS=false;
     process.env.NUM_RETRIES=5;
     process.env.COLD_BOOT=0;
     process.env.SHUTDOWN_ON_ERROR=true;
@@ -35,9 +34,9 @@ const populateEnvVariables= () => {
     process.env.LIQUIDATION_JOB_AWAITS=55;
     process.env.MAX_BATCH_TX=5;
     process.env.LOG_LEVEL="debug";
+    process.env.POLLING_INTERNVAL=10;
     return {
         HTTP_RPC_NODE:process.env.HTTP_RPC_NODE,
-        WS_RPC_NODE:process.env.WS_RPC_NODE,
         MNEMONIC:process.env.MNEMONIC,
         MNEMONIC_INDEX:process.env.MNEMONIC_INDEX,
         PRIVATE_KEY:process.env.PRIVATE_KEY,
@@ -51,7 +50,7 @@ const populateEnvVariables= () => {
         RETRY_GAS_MULTIPLIER:process.env.RETRY_GAS_MULTIPLIER,
         CLO_ADDR:process.env.CLO_ADDR,
         CONCURRENCY:process.env.CONCURRENCY,
-        LISTEN_MODE:process.env.LISTEN_MODE,
+        ONLY_LISTED_TOKENS:process.env.ONLY_LISTED_TOKENS,
         NUM_RETRIES:process.env.NUM_RETRIES,
         COLD_BOOT:process.env.COLD_BOOT,
         SHUTDOWN_ON_ERROR:process.env.SHUTDOWN_ON_ERROR,
@@ -59,13 +58,13 @@ const populateEnvVariables= () => {
         METRICS_PORT:process.env.METRICS_PORT,
         LIQUIDATION_JOB_AWAITS:process.env.LIQUIDATION_JOB_AWAITS,
         MAX_BATCH_TX:process.env.MAX_BATCH_TX,
-        LOG_LEVEL:process.env.LOG_LEVEL
+        LOG_LEVEL:process.env.LOG_LEVEL,
+        POLLING_INTERNVAL:process.env.POLLING_INTERNVAL
     }
 }
 
 const removeEnvVariables = () => {
     delete process.env.HTTP_RPC_NODE;
-    delete process.env.WS_RPC_NODE;
     delete process.env.MNEMONIC;
     delete process.env.MNEMONIC_INDEX;
     delete process.env.PRIVATE_KEY;
@@ -79,7 +78,7 @@ const removeEnvVariables = () => {
     delete process.env.RETRY_GAS_MULTIPLIER;
     delete process.env.CLO_ADDR;
     delete process.env.CONCURRENCY;
-    delete process.env.LISTEN_MODE;
+    delete process.env.ONLY_LISTED_TOKENS;
     delete process.env.NUM_RETRIES;
     delete process.env.COLD_BOOT;
     delete process.env.SHUTDOWN_ON_ERROR;
@@ -88,6 +87,7 @@ const removeEnvVariables = () => {
     delete process.env.LIQUIDATION_JOB_AWAITS;
     delete process.env.MAX_BATCH_TX;
     delete process.env.LOG_LEVEL;
+    delete process.env.POLLING_INTERNVAL;
 }
 
 describe("Test Agent user configurations", () => {
@@ -97,7 +97,6 @@ describe("Test Agent user configurations", () => {
             const envObj = populateEnvVariables();
             const config = new configModule();
             expect(envObj.HTTP_RPC_NODE).to.equal(config.HTTP_RPC_NODE);
-            expect(envObj.WS_RPC_NODE).to.equal(config.WS_RPC_NODE);
             expect(envObj.MNEMONIC).to.equal(config.MNEMONIC);
             expect(envObj.MNEMONIC_INDEX).to.equal(config.MNEMONIC_INDEX);
             expect(envObj.PRIVATE_KEY).to.equal(config.PRIVATE_KEY);
@@ -111,15 +110,16 @@ describe("Test Agent user configurations", () => {
             expect(envObj.RETRY_GAS_MULTIPLIER).to.equal(config.RETRY_GAS_MULTIPLIER);
             expect(envObj.CLO_ADDR).to.equal(config.CLO_ADDR);
             expect(envObj.CONCURRENCY).to.equal(config.CONCURRENCY);
-            expect(envObj.LISTEN_MODE).to.equal(config.LISTEN_MODE);
+            expect(envObj.ONLY_LISTED_TOKENS.toString()).to.equal(config.ONLY_LISTED_TOKENS.toString());
             expect(envObj.NUM_RETRIES).to.equal(config.NUM_RETRIES);
             expect(envObj.COLD_BOOT).to.equal(config.COLD_BOOT);
-            expect(envObj.SHUTDOWN_ON_ERROR).to.equal(config.SHUTDOWN_ON_ERROR);
-            expect(envObj.METRICS).to.equal(config.METRICS);
+            expect(envObj.SHUTDOWN_ON_ERROR.toString()).to.equal(config.SHUTDOWN_ON_ERROR.toString());
+            expect(envObj.METRICS.toString()).to.equal(config.METRICS.toString());
             expect(envObj.METRICS_PORT).to.equal(config.METRICS_PORT);
             expect(envObj.LIQUIDATION_JOB_AWAITS*1000).to.equal(config.LIQUIDATION_JOB_AWAITS);
             expect(envObj.MAX_BATCH_TX).to.equal(config.MAX_BATCH_TX);
             expect(envObj.LOG_LEVEL).to.equal(config.LOG_LEVEL);
+            expect(envObj.POLLING_INTERNVAL * 1000).to.equal(config.POLLING_INTERNVAL);
             removeEnvVariables();
         } catch(err) {
             exitWithError(err);

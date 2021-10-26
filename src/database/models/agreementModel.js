@@ -22,10 +22,10 @@ const AgreementModel = db.define("agreements", {
         type: Sequelize.INTEGER,
         allowNull: false
     },
-    zlastChecked: {
+    blockNumber: {
         type: Sequelize.INTEGER,
         allowNull: false,
-    },
+    }
 });
 
 module.exports = AgreementModel;

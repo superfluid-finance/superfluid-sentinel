@@ -1,10 +1,7 @@
 const async = require("async");
-const BN = require("bn.js");
 const EstimationModel = require("../database/models/accountEstimationModel");
 const AgreementModel =  require("../database/models/agreementModel");
 const IDAModel = require("../database/models/IDAModel");
-const { Op } = require("sequelize");
-const { wad4human } = require("@decentral.ee/web3-helpers");
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function trigger(fn, ms) {

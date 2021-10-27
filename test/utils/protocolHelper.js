@@ -14,7 +14,7 @@ async function setup(provider, agentAccount) {
     await Environment((error) => {
             if(error)
                 console.log(error);
-        },{ web3: web3 }
+        },  [":", "fTUSD"], { web3: web3 }
     );
     resolverAddress = process.env.TEST_RESOLVER_ADDRESS;
     const superfluidIdent = `Superfluid.test`;

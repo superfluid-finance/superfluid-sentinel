@@ -125,7 +125,6 @@ class Client {
     async _loadSuperTokensFromDB() {
         try {
             let filter = {
-                attributes: ['address'],
                 attributes: ['address']
             };
 
@@ -148,7 +147,7 @@ class Client {
 
     async loadSuperTokens(newSuperTokens) {
         try {
-            //await this._loadSuperTokensFromDB();
+            await this._loadSuperTokensFromDB();
             let promises = newSuperTokens.map(async (token) => {
                 return  this.loadSuperToken(token);
             })

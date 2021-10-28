@@ -23,7 +23,8 @@ class Report {
                 chainId: await this.app.client.getNetworkId()
             },
             rpc: {
-                totalRequests: this.app.client.getTotalRequests()
+                totalRequests: this.app.client.getTotalRequests(),
+                isSyncing : await  this.app.client.web3.eth.isSyncing()
             },
             db: {
                 healthCheck: await this.checkDatabase()

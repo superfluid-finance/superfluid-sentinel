@@ -127,8 +127,6 @@ class EventTracker {
         if(this.app.client.isSuperTokenRegister(event.token)) {
             switch(event.eventName) {
                 case "IndexUpdated" : {
-                    //Recalculate balances
-                    const subscribers = await this.app.db.queries.getIDASubscribers(event.token, event.publisher);
                     this.app.queues.estimationQueue.push([
                         {
                             self: this,

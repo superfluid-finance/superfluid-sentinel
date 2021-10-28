@@ -61,7 +61,7 @@ class EventTracker {
                 self.getPastBlockAndParseEvents(Number(oldBlock) + 1, newBlock);
                 self.updateBlockNumber(oldBlock + 1, newBlock);
             } else if(self.oldSeenBlock) {
-                self.app.logger.debug(`first sync #${Number(self.oldSeenBlock) + 1} -> #${Number(newBlock)}`);
+                self.app.logger.debug(`first sync #${Number(self.oldSeenBlock) + 1} -> #${Number(newBlock)}`)
                 self.getPastBlockAndParseEvents(self.oldSeenBlock, newBlock);
                 self.updateBlockNumber(self.oldSeenBlock + 1, newBlock);
             }
@@ -124,29 +124,22 @@ class EventTracker {
 
     async processIDAEvent(event) {
         try {
-        if(this.app.client.isSuperTokenRegister(event.token)) {
-            switch(event.eventName) {
-                case "IndexUpdated" : {
-                    this.app.queues.estimationQueue.push([
-                        {
-                            self: this,
-                            account: event.publisher,
-                            token: event.token
-                        }
-                    ]);
-                    break;
+            if(this.app.client.isSuperTokenRegister(event.token)) {
+                switch(event.eventName) {
+                    case "IndexUpdated" : {
+                        this.app.queues.estimationQueue.push([
+                            {
+                                self: this,
+                                account: event.publisher,
+                                token: event.token
+                            }
+                        ]);
+                        break;
+                    }
                 }
-                default: {
-                    //Save to DB
-                    this.app.queues.IDAQueue.push({
-                        self: this,
-                        event: event
-                    });
-                }
+            } else {
+                this.app.logger.debug(`token:${event.token} is not subscribed`);
             }
-        } else {
-            this.app.logger.debug(`token:${event.token} is not subscribed`);
-        }
     } catch(err) {
         this.app.logger.error(err);
         throw Error(`ida events ${err}`);

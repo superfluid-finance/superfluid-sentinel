@@ -42,17 +42,7 @@ class LoadEvents {
                             keepTrying > 5
                         );
 
-                        let resultIDA = await task.self.app.protocol.getIDAAgreementEvents(
-                            "SubscriptionApproved", {
-                                fromBlock: task.fromBlock,
-                                toBlock: task.toBlock
-                            },
-                            keepTrying > 5
-                        );
-
                         result = result.map(task.self.app.models.event.transformWeb3Event);
-                        resultIDA = resultIDA.map(task.self.app.models.event.transformWeb3Event)
-                            .filter(i => i.eventName !== undefined);
 
                         for(let event of result) {
                             const agreementId = task.self.app.protocol.generateId(event.sender, event.receiver);
@@ -66,17 +56,6 @@ class LoadEvents {
                                 flowRate: event.flowRate,
                                 agreementId: agreementId,
                                 hashId: hashId
-                            });
-                        }
-                        for(let event of resultIDA) {
-                            await IDAModel.upsert({
-                                eventName: event.eventName,
-                                address: event.address,
-                                blockNumber: event.blockNumber,
-                                superToken: event.token,
-                                publisher: event.publisher,
-                                subscriber: event.subscriber,
-                                indexId: event.indexId,
                             });
                         }
                         break;

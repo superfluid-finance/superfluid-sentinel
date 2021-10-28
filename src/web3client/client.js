@@ -28,6 +28,7 @@ class Client {
         this.batch;
         this.isInitialized = false;
         this._testMode;
+        this.totalRequests = 0;
     }
 
     async initialize() {
@@ -201,7 +202,6 @@ class Client {
         const result = this.superTokens[token.toLowerCase()];
         return result !== undefined;
     }
-
     async getNetworkId() {
         if(this.networkId === undefined) {
             this.networkId = await this.web3.eth.net.getId();
@@ -288,6 +288,14 @@ class Client {
 
     getSFAddresses() {
         return [...this.superTokensAddresses,this.IDAv1._address, this.CFAv1._address];
+    }
+
+    getTotalRequests() {
+        return this.totalRequests;
+    }
+
+    addTotalRequest(numReqs = 1) {
+        this.totalRequests = this.totalRequests + numReqs;
     }
 
     setTestFlag(flag, options) {

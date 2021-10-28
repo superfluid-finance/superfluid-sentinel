@@ -9,6 +9,7 @@ class Protocol {
 
     async getAccountRealtimeBalance(token, address, timestamp) {
         try {
+            this.client.addTotalRequest();
             if(timestamp === undefined) {
                 timestamp = Math.floor(new Date().getTime() / 1000);
             }
@@ -17,7 +18,6 @@ class Protocol {
                 address,
                 timestamp
             ).call();
-
         } catch(err) {
             console.error(err)
             throw Error(`account balance (${token}): ${err}`)
@@ -26,6 +26,7 @@ class Protocol {
 
     async getAccountAgreementRealtimeBalance(token, account, timestamp) {
         try {
+            this.client.addTotalRequest();
             if(timestamp === undefined) {
                 timestamp = Math.floor(new Date().getTime() / 1000);
             }
@@ -42,6 +43,7 @@ class Protocol {
 
     async getUserNetFlow(token, account) {
         try {
+            this.client.addTotalRequest();
             return this.client.CFAv1.methods.getNetFlow(token, account).call();
         } catch(err) {
             console.error(err);
@@ -51,6 +53,7 @@ class Protocol {
 
     async getAgreementEvents(eventName, filter) {
         try {
+            this.client.addTotalRequest();
             return this.client.CFAv1.getPastEvents(eventName, filter);
         } catch(err) {
             console.error(err);
@@ -60,6 +63,7 @@ class Protocol {
 
     async getIDAAgreementEvents(eventName, filter) {
         try {
+            this.client.addTotalRequest();
             return this.client.IDAv1.getPastEvents(eventName, filter);
         } catch(err) {
             console.error(err);
@@ -87,6 +91,7 @@ class Protocol {
 
     async isAccountCriticalNow(superToken, account) {
         try {
+            this.client.addTotalRequest();
             return this.app.client.superTokens[superToken.toLowerCase()].methods.isAccountCriticalNow(account).call();
         } catch(err) {
             throw Error(`protocol.isAccountCriticalNow: ${err}`);
@@ -95,6 +100,7 @@ class Protocol {
 
     async liquidationData(token, account) {
         try {
+            this.client.addTotalRequest(2);
             const now = Math.floor(new Date().getTime() / 1000);
             let arrPromise = [
                 this.getUserNetFlow(token, account),
@@ -113,6 +119,7 @@ class Protocol {
 
     async checkFlow(superToken, sender, receiver) {
         try {
+            this.client.addTotalRequest();
             const result = await this.app.client.CFAv1.methods.getFlow(superToken, sender, receiver).call();
             if(result.flowRate !== "0") {
                 return result;

@@ -22,13 +22,16 @@ class Report {
             network: {
                 chainId: await this.app.client.getNetworkId()
             },
+            rpc: {
+                totalRequests: this.app.client.getTotalRequests()
+            },
             db: {
                 healthCheck: await this.checkDatabase()
             },
             agent_account: {
                 address: this.app.client.getAccountAddress(),
                 balance: await this.app.client.getAccountBalance(),
-            }
+            },
         };
     }
 }

@@ -56,18 +56,6 @@ class Repository {
 
   }
 
-  async getIDASubscribers(superToken, publisher) {
-    const sqlquery = `SELECT DISTINCT subscriber from idaevents IDA
-    INNER JOIN agreements AGR on IDA.subscriber = AGR.sender AND IDA.superToken = AGR.superToken
-    WHERE eventName = "SubscriptionApproved"
-    AND publisher = :pb
-    AND IDA.superToken = :st`;
-    return this.app.db.query(sqlquery, {
-      replacements: [{ pb: publisher }, {st: superToken}],
-      type: QueryTypes.SELECT
-    });
-  }
-
   async getAddressEstimation(address) {
     return EstimationModel.findAll({
       attributes: ['address', 'superToken', 'zestimation'],

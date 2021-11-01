@@ -23,7 +23,7 @@ const populateEnvVariables= () => {
     process.env.PROTOCOL_RELEASE_VERSION= "v1";
     process.env.MAX_GAS_PRICE= 500;
     process.env.RETRY_GAS_MULTIPLIER= 1.1;
-    process.env.CLO_ADDR="0xAB4075f621100563f4551C0Ca50944809b03E948";
+    process.env.PIC="0xAB4075f621100563f4551C0Ca50944809b03E948";
     process.env.CONCURRENCY=2;
     process.env.ONLY_LISTED_TOKENS=false;
     process.env.NUM_RETRIES=5;
@@ -48,7 +48,7 @@ const populateEnvVariables= () => {
         PROTOCOL_RELEASE_VERSION:process.env.PROTOCOL_RELEASE_VERSION,
         MAX_GAS_PRICE:process.env.MAX_GAS_PRICE,
         RETRY_GAS_MULTIPLIER:process.env.RETRY_GAS_MULTIPLIER,
-        CLO_ADDR:process.env.CLO_ADDR,
+        PIC:process.env.PIC,
         CONCURRENCY:process.env.CONCURRENCY,
         ONLY_LISTED_TOKENS:process.env.ONLY_LISTED_TOKENS,
         NUM_RETRIES:process.env.NUM_RETRIES,
@@ -76,7 +76,7 @@ const removeEnvVariables = () => {
     delete process.env.PROTOCOL_RELEASE_VERSION;
     delete process.env.MAX_GAS_PRICE;
     delete process.env.RETRY_GAS_MULTIPLIER;
-    delete process.env.CLO_ADDR;
+    delete process.env.PIC;
     delete process.env.CONCURRENCY;
     delete process.env.ONLY_LISTED_TOKENS;
     delete process.env.NUM_RETRIES;
@@ -108,7 +108,7 @@ describe("Test Agent user configurations", () => {
             expect(envObj.PROTOCOL_RELEASE_VERSION).to.equal(config.PROTOCOL_RELEASE_VERSION);
             expect(envObj.MAX_GAS_PRICE).to.equal(config.MAX_GAS_PRICE);
             expect(envObj.RETRY_GAS_MULTIPLIER).to.equal(config.RETRY_GAS_MULTIPLIER);
-            expect(envObj.CLO_ADDR).to.equal(config.CLO_ADDR);
+            expect(envObj.PIC).to.equal(config.PIC);
             expect(envObj.CONCURRENCY).to.equal(config.CONCURRENCY);
             expect(envObj.ONLY_LISTED_TOKENS.toString()).to.equal(config.ONLY_LISTED_TOKENS.toString());
             expect(envObj.NUM_RETRIES).to.equal(config.NUM_RETRIES);

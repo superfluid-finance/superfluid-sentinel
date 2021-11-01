@@ -24,8 +24,8 @@ class Config {
             this.PROTOCOL_RELEASE_VERSION = config.protocol_release_version || "v1";
             this.MAX_GAS_PRICE = config.max_gas_price || 500000000000;
             this.RETRY_GAS_MULTIPLIER = config.retry_gas_multiplier || 1.15;
-            this.CLO_ADDR = config.clo_addr;
             this.POLLING_INTERNVAL = config.polling_interval*1000 || 10000;
+            this.PIC = config.pic;
 
             this.EPOCH_BLOCK = config.epoch_block;
             this.BATCH_CONTRACT =config.batch_contract;
@@ -53,7 +53,7 @@ class Config {
             this.PROTOCOL_RELEASE_VERSION = process.env.PROTOCOL_RELEASE_VERSION || "v1";
             this.MAX_GAS_PRICE = process.env.MAX_GAS_PRICE || 500000000000;
             this.RETRY_GAS_MULTIPLIER = process.env.RETRY_GAS_MULTIPLIER || 1.15;
-            this.CLO_ADDR = process.env.CLO_ADDR;
+            this.PIC = process.env.PIC;
 
             //extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
             this.CONCURRENCY = process.env.CONCURRENCY || 1;
@@ -97,7 +97,7 @@ class Config {
             PROTOCOL_RELEASE_VERSION: this.PROTOCOL_RELEASE_VERSION,
             MAX_GAS_PRICE: this.MAX_GAS_PRICE,
             RETRY_GAS_MULTIPLIER: this.RETRY_GAS_MULTIPLIER,
-            CLO_ADDR: this.CLO_ADDR,
+            PIC: this.PIC,
             CONCURRENCY: this.CONCURRENCY,
             ONLY_LISTED_TOKENS: this.ONLY_LISTED_TOKENS,
             NUM_RETRIES: this.NUM_RETRIES,

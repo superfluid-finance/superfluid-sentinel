@@ -2,6 +2,7 @@ const { PollingBlockTracker } = require("eth-block-tracker");
 const superTokenEvents = require("../models/SuperTokensEventsAbi");
 const CFAEvents = require("../models/CFAEventsAbi");
 const IDAEvents = require("../models/IDAEventsAbi");
+const TOGAEvents = require("../models/TOGAEventsAbi")
 const decoder = require("ethjs-abi");
 const { wad4human } = require("@decentral.ee/web3-helpers");
 
@@ -37,6 +38,11 @@ class EventTracker {
                         const ida = this._parseEvent(IDAEvents,log);
                         if(ida) {
                             this.processIDAEvent(ida);
+                        } else {
+                            const toga = this._parseEvent(TOGAEvents,log);
+                            if(toga) {
+                                this.processTOGAEvent(toga);
+                            }
                         }
                     }
                 }
@@ -54,21 +60,27 @@ class EventTracker {
         const provider = this.app.client.web3.eth.currentProvider;
         this.blockTracker = new PollingBlockTracker({provider, pollingInterval: this.app.config.POLLING_INTERNVAL})
         const self = this;
-        this.blockTracker.on('sync', ({ newBlock, oldBlock }) => {
-            if (oldBlock) {
-                self.app.logger.debug(`sync #${Number(oldBlock) + 1} -> #${Number(newBlock)}`);
-                self.app.db.queries.updateBlockNumber(oldBlock);
-                self.getPastBlockAndParseEvents(Number(oldBlock) + 1, newBlock);
-                self.updateBlockNumber(oldBlock + 1, newBlock);
-            } else if(self.oldSeenBlock) {
-                self.app.logger.debug(`first sync #${Number(self.oldSeenBlock) + 1} -> #${Number(newBlock)}`)
-                self.getPastBlockAndParseEvents(self.oldSeenBlock, newBlock);
-                self.updateBlockNumber(self.oldSeenBlock + 1, newBlock);
-            }
-        })
+        try {
+            this.blockTracker.on('sync', ({ newBlock, oldBlock }) => {
+                if (oldBlock) {
+                    self.app.logger.debug(`sync #${Number(oldBlock) + 1} -> #${Number(newBlock)}`);
+                    self.app.db.queries.updateBlockNumber(oldBlock);
+                    self.getPastBlockAndParseEvents(Number(oldBlock) + 1, newBlock);
+                    self.updateBlockNumber(oldBlock + 1, newBlock);
+                } else if(self.oldSeenBlock) {
+                    self.app.logger.debug(`first sync #${Number(self.oldSeenBlock) + 1} -> #${Number(newBlock)}`)
+                    self.getPastBlockAndParseEvents(self.oldSeenBlock, newBlock);
+                    self.updateBlockNumber(self.oldSeenBlock + 1, newBlock);
+                }
+                self.app.client.addTotalRequest();
+            });
+        } catch(err) {
+            this.app.logger.error(err);
+            //retry how many times? - process.exit(1) || this.start(oldBlock);
+        }
     }
 
-    async processSuperTokenEvent(event) {
+    processSuperTokenEvent(event) {
         try {
 
             if (event.removed) {
@@ -76,6 +88,7 @@ class EventTracker {
             }
             switch(event.eventName) {
                 case "AgreementStateUpdated" : {
+                    console.log(`${event.eventName} [${event.address}] -  ${event.account}`);
                     this.app.queues.agreementUpdateQueue.push({
                         self: this,
                         account: event.account,
@@ -84,16 +97,19 @@ class EventTracker {
                     break;
                 }
                 case "Transfer" : {
+                    console.log(`${event.eventName} [${event.address}] - sender ${event.from} receiver ${event.to}`);
                     this.app.queues.estimationQueue.push([
                         {
                             self: this,
                             account: event.from,
-                            token: event.address
+                            token: event.address,
+                            blockNumber: event.blockNumber
                         },
                         {
                             self: this,
                             account: event.to,
-                            token: event.address
+                            token: event.address,
+                            blockNumber: event.blockNumber
                         }
                     ]);
                     break;
@@ -103,6 +119,7 @@ class EventTracker {
                     if (event.bailoutAmount.toString() !== "0") {
                         this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.bailoutAmount)}`);
                     }
+                    break;
                 }
             }
         } catch(err) {
@@ -127,18 +144,39 @@ class EventTracker {
             if(this.app.client.isSuperTokenRegister(event.token)) {
                 switch(event.eventName) {
                     case "IndexUpdated" : {
+                        console.log(`[IndexUpdated] - ${event.eventName} [${event.token}] - publisher ${event.publisher}`);
                         this.app.queues.estimationQueue.push([
                             {
                                 self: this,
                                 account: event.publisher,
-                                token: event.token
+                                token: event.token,
+                                blockNumber: event.blockNumber
                             }
                         ]);
                         break;
                     }
                 }
             } else {
-                this.app.logger.debug(`token:${event.token} is not subscribed`);
+                this.app.logger.debug(`[IDA]: token ${event.token} is not subscribed`);
+            }
+    } catch(err) {
+        this.app.logger.error(err);
+        throw Error(`ida events ${err}`);
+    }
+    }
+
+    async processTOGAEvent(event) {
+        try {
+            if(this.app.client.isSuperTokenRegister(event.token)) {
+                switch(event.eventName) {
+                    case "NewPIC" : {
+                        console.log(`${event.eventName} [${event.token}] new pic ${event.pic}`);
+                        this.app.protocol.calculateAndSaveTokenDelay(event.token);
+                        break;
+                    }
+                }
+            } else {
+                this.app.logger.debug(`[TOGA]: token ${event.token} is not subscribed`);
             }
     } catch(err) {
         this.app.logger.error(err);

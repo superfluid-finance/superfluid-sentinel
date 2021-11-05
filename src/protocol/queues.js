@@ -1,6 +1,6 @@
 const async = require("async");
 const EstimationModel = require("../database/models/accountEstimationModel");
-const AgreementModel =  require("../database/models/agreementModel");
+const AgreementModel = require("../database/models/agreementModel");
 const IDAModel = require("../database/models/IDAModel");
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -13,19 +13,17 @@ class Queues {
 
     constructor(app) {
         this.app = app;
-        this.client = this.app.client;
-        this.numRetries = this.app.config.NUM_RETRIES;
     }
 
     init() {
-        this.estimationQueue = async.queue(async function(task) {
+        this.estimationQueue = async.queue(async function (task) {
             let keepTrying = 1;
-            if(task.account === "0x0000000000000000000000000000000000000000") {
+            if (task.account === "0x0000000000000000000000000000000000000000") {
                 return;
             }
-            while(true) {
+            while (true) {
                 try {
-                    if(task.self.app.client.isSuperTokenRegister(task.token)) {
+                    if (task.self.app.client.isSuperTokenRegister(task.token)) {
                         const estimationData = await task.self.app.protocol.liquidationData(task.token, task.account);
                         await EstimationModel.upsert({
                             address: task.account,
@@ -33,33 +31,35 @@ class Queues {
                             totalNetFlowRate: estimationData.totalNetFlowRate,
                             totalBalance: estimationData.totalBalance,
                             zestimation: new Date(estimationData.estimation).getTime(),
-                            zestimationHuman : estimationData.estimation,
+                            zestimationHuman: estimationData.estimation,
                             blockNumber: task.blockNumber
                         });
+                        console.log(`${task.blockNumber} new estimation [${task.token}]: ${task.account} - ${estimationData.estimation}`);
                     } else {
-                        console.log(`reject account: ${task.account } supertoken: ${task.token} not subscribed`);
+                        console.log(`reject account: ${task.account} supertoken: ${task.token} not subscribed`);
                     }
                     break;
-                } catch(err) {
+                } catch (err) {
                     keepTrying++
                     task.self.app.logger.error(err);
-                    if(keepTrying > task.self.config.NUM_RETRIES) {
+                    if (keepTrying > task.self.app.config.NUM_RETRIES) {
+                        task.self.app.logger.error(`exhausted number of retries`);
                         process.exit(1);
                     }
                 }
             }
         }, 1);
 
-        this.agreementUpdateQueue = async.queue(async function(task) {
+        this.agreementUpdateQueue = async.queue(async function (task) {
             let keepTrying = 1;
-            if(task.account === "0x0000000000000000000000000000000000000000") {
+            if (task.account === "0x0000000000000000000000000000000000000000") {
                 return;
             }
-            while(true) {
+            while (true) {
                 try {
                     let senderFilter = {
-                        filter : {
-                            "sender" : task.account
+                        filter: {
+                            "sender": task.account
                         },
                         fromBlock: task.blockNumber,
                         toBlock: task.blockNumber,
@@ -74,7 +74,7 @@ class Queues {
                         task.self.app.models.event.transformWeb3Event
                     );
 
-                    allFlowUpdatedEvents.sort(function(a,b) {
+                    allFlowUpdatedEvents.sort(function (a, b) {
                         return a.blockNumber > b.blockNumber;
                     }).forEach(e => {
                         e.agreementId = task.self.app.protocol.generateId(e.sender, e.receiver);
@@ -84,7 +84,9 @@ class Queues {
                         e.blockNumber = e.blockNumber;
                     });
 
-                    for(let event of allFlowUpdatedEvents) {
+
+                    console.log(allFlowUpdatedEvents)
+                    for (let event of allFlowUpdatedEvents) {
                         await AgreementModel.upsert({
                             agreementId: event.agreementId,
                             superToken: event.superToken,
@@ -93,8 +95,7 @@ class Queues {
                             flowRate: event.flowRate,
                             blockNumber: event.blockNumber
                         });
-
-                        task.self.estimationQueue.push([{
+                        task.self.app.queues.estimationQueue.push([{
                             self: task.self,
                             account: event.sender,
                             token: event.superToken,
@@ -105,23 +106,25 @@ class Queues {
                             token: event.superToken,
                             blockNumber: event.blockNumber
                         }]);
+
                     }
                     break;
-                } catch(err) {
+                } catch (err) {
                     keepTrying++;
-                    console.error(`#${task.self.config.NUM_RETRIES} - agreementUpdateQueue: ${err}`);
-                    if(keepTrying > task.self.config.NUM_RETRIES) {
+                    task.self.app.logger.error(err);
+                    if (keepTrying > task.self.app.config.NUM_RETRIES) {
+                        task.self.app.logger.error(`exhausted number of retries`);
                         process.exit(1);
                     }
                 }
             }
         }, 1);
 
-        this.IDAQueue = async.queue(async function(task) {
+        this.IDAQueue = async.queue(async function (task) {
             let keepTrying = 1;
-            while(true) {
+            while (true) {
                 try {
-                    if(task.event.eventName !== undefined) {
+                    if (task.event.eventName !== undefined) {
                         await IDAModel.upsert({
                             eventName: task.event.eventName,
                             address: task.event.address,
@@ -132,10 +135,10 @@ class Queues {
                             indexId: task.event.indexId.toString(),
                         });
                     }
-                } catch(err) {
+                } catch (err) {
                     keepTrying++;
                     console.error(`#${task.self.config.NUM_RETRIES} - IDAQueue: ${err}`);
-                    if(keepTrying > task.self.config.NUM_RETRIES) {
+                    if (keepTrying > task.self.config.NUM_RETRIES) {
                         process.exit(1);
                     }
                 }
@@ -144,7 +147,7 @@ class Queues {
     }
 
     async run(fn, time) {
-        if(this.app._isShutdown) {
+        if (this.app._isShutdown) {
             this.app.logger.info(`app.shutdown() - closing queues`);
             return;
         }
@@ -167,7 +170,7 @@ class Queues {
     }
 
     async addQueuedAgreement(account, blockNumber) {
-        agreementUpdateQueue.push({
+        this.agreementUpdateQueue.push({
             self: this,
             account: account,
             blockNumber: blockNumber

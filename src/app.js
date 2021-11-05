@@ -51,11 +51,12 @@ class App {
         this.db = DB;
         this.db.queries = new Repository(this);
         this.server = new HTTPServer(this);
-        this._isShutdown = false;
-        this._needResync = false;
         this.timer = {
             delay: delay
         }
+
+        this._isShutdown = false;
+        this._needResync = false;
     }
 
     async run(fn, time) {
@@ -101,6 +102,15 @@ class App {
             this.time.resetTime();
             this.logger.info(`app.shutdown() - closing database`);
             await this.db.close();
+            let counter = 5;
+            while(counter > 0) {
+                await this.timer.delay(3000);
+                console.log(this.liquidator._closed)
+                if(this.liquidator._closed) {
+                    return
+                }
+                counter--;
+            }
             return;
         } catch(err) {
             this.logger.error(`app.shutdown() - ${err}`);
@@ -148,15 +158,18 @@ class App {
             if(this.config.BATCH_CONTRACT !== undefined) {
                 await this.client.loadBatchContract();
             }
-            //collect events to detect superTokens and accounts
-            await this.loadEvents.start();
-            //query balances to make liquidations estimations
-            let currentBlock = await this.bootstrap.start();
-            //cold boot take some time, we missed some blocks in the boot phase, run again to be near real.time
-            if(this.config.COLD_BOOT == 1) {
-                await this.loadEvents.start();
-                currentBlock = await this.bootstrap.start();
+            if(this.config.TOGA_CONTRACT !== undefined) {
+                await this.client.loadTogaContract();
             }
+            //collect events to detect superTokens and accounts
+            const currentBlock = await this.loadEvents.start();
+            //query balances to make liquidations estimations
+            await this.bootstrap.start();
+            //cold boot take some time, we missed some blocks in the boot phase, run again to be near real.time
+            //if(this.config.COLD_BOOT == 1) {
+            //const currentBlock = await this.loadEvents.start();
+            //await this.bootstrap.start();
+            //}
             this.queues.init();
             setTimeout(() => this.queues.start(), 1000);
             setTimeout(() => this.eventTracker.start(currentBlock), 1000);

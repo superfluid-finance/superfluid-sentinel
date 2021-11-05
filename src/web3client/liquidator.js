@@ -1,3 +1,5 @@
+const SuperTokenModel = require("./../database/models/superTokenModel");
+
 function promiseTimeout(promise, ms) {
 
     let timeout = new Promise((resolve, reject) => {
@@ -19,10 +21,12 @@ class Liquidator {
     constructor(app) {
         this.app = app;
         this.txDelay = this.app.config.ADDITIONAL_LIQUIDATION_DELAY;
-        if(this.app.config.CLO_ADDR === undefined) {
-            this.app.logger.info("Not configured as CLO -> adding 15 min delay");
+        /*
+        if(this.app.config.PIC === undefined) {
+            this.app.logger.info("Not configured as PIC -> adding 15 min delay default");
             this.txDelay += 900;
         }
+        */
     }
 
     async start() {
@@ -32,7 +36,7 @@ class Liquidator {
                 return;
             }
             this.app.logger.debug(`running liquidation job`);
-            const checkDate = this.app.time.getTimeWithDelay(this.txDelay);
+            const checkDate = this.app.time.getTimeWithDelay(0);
             let haveBatchWork = [];
             //if we have a batchLiquidator contract, use batch calls
             if(this.app.config.BATCH_CONTRACT !== undefined) {
@@ -65,7 +69,6 @@ class Liquidator {
         const wallet = this.app.client.getAccount();
         const chainId = await this.app.client.getNetworkId();
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
-
         for(const job of work) {
             if(await this.isPossibleToClose(job.superToken, job.sender, job.receiver))
             {
@@ -124,6 +127,7 @@ class Liquidator {
                     await this.app.timer.delay(500);
                 }
                 if(senders.length === this.app.config.MAX_BATCH_TX) {
+                if(senders.length == parseInt(this.app.config.MAX_BATCH_TX)) {
                     this.app.logger.debug(`sending a full batch work: load ${senders.length}`);
                     await this.sendBatch(batch.superToken, senders, receivers);
                     senders = new Array();
@@ -188,6 +192,10 @@ class Liquidator {
             }
 
             if(gas.error.message === "Returned error: execution reverted") {
+                //TODO: Solve this EVM return error
+            }
+
+            if(gas.error.message === "Returned error: execution reverted: CallUtils: target reverted") {
                 //TODO: Solve this EVM return error
             }
 

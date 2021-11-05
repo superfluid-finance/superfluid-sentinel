@@ -83,9 +83,10 @@ class Repository {
       inSnippedLimit = `LIMIT ${limitRows}`;
     }
 
-    const sqlquery = `SELECT agr.superToken, agr.sender, agr.receiver, est.zestimation, est.zestimationHuman FROM agreements agr
+    const sqlquery = `SELECT agr.superToken, agr.sender, agr.receiver, est.zestimation, est.zestimationHuman, (est.zestimation + (st.delay * 1000)) as computedEstimation FROM agreements agr
+    INNER JOIN supertokens st on agr.superToken == st.address
     INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.zestimation <> 0
-    WHERE agr.flowRate <> 0 and est.zestimation <= :dt ${inSnipped}
+    WHERE agr.flowRate <> 0 and (est.zestimation + (st.delay * 1000)) <= :dt ${inSnipped}
     ORDER BY agr.superToken, agr.sender, agr.flowRate DESC ${inSnippedLimit}`;
 
     if(inSnipped !== "") {
@@ -102,8 +103,9 @@ class Repository {
 
   async getNumberOfBatchCalls(checkDate) {
     const sqlquery = `SELECT agr.superToken, count(*) as numberTxs  FROM agreements agr
+    INNER JOIN supertokens st on agr.superToken == st.address
     INNER JOIN estimations est on agr.sender = est.address and agr.superToken = est.superToken and est.zestimation <> 0
-    where agr.flowRate <> 0 and est.zestimation <= :dt
+    where agr.flowRate <> 0 and (est.zestimation + (st.delay * 1000))  <= :dt
     group by agr.superToken
     having count(*) > 1
     order by count(*) desc`;

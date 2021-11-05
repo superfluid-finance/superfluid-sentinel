@@ -5,8 +5,10 @@ const ICFA = require("@superfluid-finance/ethereum-contracts/build/contracts/ICo
 const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IInstantDistributionAgreementV1.json");
 const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
+const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
 const SuperTokenModel = require("./../database/models/superTokenModel");
 const BatchContract = require("../inc/BatchLiquidator.json");
+const TogaContract = require("../inc/TOGA.json");
 const {wad4human} = require("@decentral.ee/web3-helpers");
 /*
  *   Web3 and superfluid client:
@@ -20,6 +22,7 @@ class Client {
         this.CFAv1;
         this.IDAv1;
         this.sf;
+        this.gov;
         this.superTokenNames = new Map();
         this.superTokens = new Map();
         this.superTokensAddresses = new Array();
@@ -81,10 +84,25 @@ class Client {
         try {
             if(this.app.config.BATCH_CONTRACT !== undefined) {
                 this.batch = new this.web3.eth.Contract(BatchContract, this.app.config.BATCH_CONTRACT);
+            } else {
+                this.app.logger.info("Batch Contract not found")
             }
         } catch(err) {
             this.app.logger.error(err);
             throw Error(`client.loadBatchContract() : ${err}`)
+        }
+    }
+
+    async loadTogaContract() {
+        try {
+            if(this.app.config.TOGA_CONTRACT !== undefined) {
+                this.toga = new this.web3.eth.Contract(TogaContract, this.app.config.TOGA_CONTRACT);
+            } else {
+                this.app.logger.info("TOGA Contract not found")
+            }
+        } catch(err) {
+            this.app.logger.error(err);
+            throw Error(`client.loadTogaContract() : ${err}`)
         }
     }
 
@@ -109,10 +127,13 @@ class Client {
                 ISuperfluid.abi,
                 superfluidAddress
             );
+            const govAddress = await this.sf.methods.getGovernance().call();
+            this.gov = new this.web3.eth.Contract(SuperfluidGovernance.abi, govAddress)
             const cfaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
             const idaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
             const cfaAddress = await this.sf.methods.getAgreementClass(cfaIdent).call();
             const idaAddress = await this.sf.methods.getAgreementClass(idaIdent).call();
+            this.app.logger.info(`SuperfluidGovernance: ${govAddress}`);
             this.app.logger.info(`CFA address: ${cfaAddress}`);
             this.app.logger.info(`IDA address: ${idaAddress}`);
             this.CFAv1 = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
@@ -174,8 +195,8 @@ class Client {
             `supertokens.${this.version}.${tokenSymbol}`
         ).call();
 
-        let isListed = 0;
-        if(this.app.config.ONLY_LISTED_TOKENS == true && superTokenAddress === superTokenWS._address) {
+        let isListed = superTokenAddress === newSuperToken;
+        if(this.app.config.ONLY_LISTED_TOKENS == true && isListed) {
             const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${superTokenAddress}`;
             this.app.logger.info(tokenInfo);
             this.superTokenNames[newSuperToken.toLowerCase()] = tokenInfo;
@@ -202,6 +223,7 @@ class Client {
         const result = this.superTokens[token.toLowerCase()];
         return result !== undefined;
     }
+
     async getNetworkId() {
         if(this.networkId === undefined) {
             this.networkId = await this.web3.eth.net.getId();
@@ -287,7 +309,8 @@ class Client {
     }
 
     getSFAddresses() {
-        return [...this.superTokensAddresses,this.IDAv1._address, this.CFAv1._address];
+        const togaAddress = this.toga !== undefined ? this.toga._address : undefined;
+        return [...this.superTokensAddresses,this.IDAv1._address, this.CFAv1._address, togaAddress].filter(n=>n);
     }
 
     getTotalRequests() {

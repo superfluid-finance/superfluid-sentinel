@@ -28,7 +28,8 @@ class Config {
             this.PIC = config.pic;
 
             this.EPOCH_BLOCK = config.epoch_block;
-            this.BATCH_CONTRACT =config.batch_contract;
+            this.BATCH_CONTRACT = config.batch_contract;
+            this.TOGA = config.toga;
 
             this.CONCURRENCY = config.concurrency;
             this.COLD_BOOT = config.cold_boot;
@@ -83,6 +84,7 @@ class Config {
     loadNetworkInfo(chainId) {
         this.EPOCH_BLOCK = networkConfigs[chainId].epoch || 0;
         this.BATCH_CONTRACT = networkConfigs[chainId].batch;
+        this.TOGA_CONTRACT = networkConfigs[chainId].toga || undefined;
     }
 
     getConfigurationInfo() {

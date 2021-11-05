@@ -14,7 +14,6 @@ class Gas {
                 result += Math.ceil(parseInt(result) * 1.2);
             return { error: undefined, gasLimit : result };
         } catch(err) {
-            console.error(err);
             return { error: err, gasLimit : undefined };
         }
     }
@@ -24,7 +23,6 @@ class Gas {
             const price = await this.app.client.web3.eth.getGasPrice();
             return { gasPrice: price, error: undefined };
         } catch(err) {
-            console.error(err);
             return { gasPrice : undefined, error: err };
         }
     }

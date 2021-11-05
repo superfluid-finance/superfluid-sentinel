@@ -58,7 +58,7 @@ class Bootstrap {
                         self: this,
                         account: user.account,
                         token: user.superToken,
-                        blockNumber: blockNumber
+                        blockNumber: currentBlockNumber
                     });
                 }
 

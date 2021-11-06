@@ -153,10 +153,14 @@ class Protocol {
         try {
             const registerTokenPIC = await this.getCurrentPIC(superToken);
             const rewardAccount = await this.getRewardAddress(superToken);
-
             const token = await SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });
             token.pic = registerTokenPIC;
-            if (registerTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === registerTokenPIC.toLowerCase()) {
+
+            if(this.app.config.PIC === undefined) {
+                //TOOD: When 3P implememnt change this to be pirate
+                token.delay = 900 + parseInt(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
+                this.app.logger.debug(`${superToken} configuration PIC address not given, adding ${token.delay}s of delay`);
+            } else if (registerTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === registerTokenPIC.toLowerCase()) {
                 token.delay = 0;
                 this.app.logger.debug(`${superToken} is part of PIC address, removing delay`);
             } else if(rewardAccount.toLowerCase() === this.app.config.PIC.toLowerCase()) {
@@ -166,6 +170,7 @@ class Protocol {
                 token.delay = 900 + parseInt(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
                 this.app.logger.debug(`${superToken} is not part of your PIC address, adding ${token.delay}s of delay`);
             }
+
             await token.save();
         } catch (err) {
             this.app.logger.error(err);

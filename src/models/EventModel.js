@@ -18,10 +18,10 @@ class EventModel {
                 let obj = {
                     eventName: event.event,
                     logIndex: event.logIndex,
-                    blockNumber: event.blockNumber,
                     token: toChecksumAddress(event.returnValues.token),
                     address: toChecksumAddress(event.address),
                     blockNumber: parseInt(event.blockNumber),
+                    blockHash: event.blockHash,
                     transactionHash: event.transactionHash,
                     agreementClass: event.returnValues.agreementClass,
                     id: event.returnValues.id,

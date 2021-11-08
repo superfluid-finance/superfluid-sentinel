@@ -92,7 +92,7 @@ class Liquidator {
                 }
             } else {
                 this.app.logger.debug(`address ${job.sender} is solvent at ${job.superToken}`);
-                await this.app.queues.addQueuedEstimation(job.superToken, job.sender);
+                await this.app.queues.addQueuedEstimation(job.superToken, job.sender, "Liquidation job");
                 await this.app.timer.delay(500);
             }
         }
@@ -116,7 +116,7 @@ class Liquidator {
                     receivers.push(flow.receiver);
                 } else {
                     this.app.logger.debug(`address ${flow.sender} is solvent at ${flow.superToken}`);
-                    await this.app.queues.addQueuedEstimation(flow.superToken, flow.sender);
+                    await this.app.queues.addQueuedEstimation(flow.superToken, flow.sender, "Liquidation job");
                     await this.app.timer.delay(500);
                 }
                 if (senders.length === this.app.config.MAX_BATCH_TX) {

@@ -92,7 +92,10 @@ class EventTracker {
                     this.app.queues.agreementUpdateQueue.push({
                         self: this,
                         account: event.account,
-                        blockNumber: event.blockNumber
+                        blockNumber: event.blockNumber,
+                        blockHash: event.blockHash,
+                        transactionHash: event.transactionHash,
+                        parentCaller: "processSuperTokenEvent"
                     });
                     break;
                 }
@@ -103,13 +106,19 @@ class EventTracker {
                             self: this,
                             account: event.from,
                             token: event.address,
-                            blockNumber: event.blockNumber
+                            blockNumber: event.blockNumber,
+                            blockHash: event.blockHash,
+                            transactionHash: event.transactionHash,
+                            parentCaller: "processSuperTokenEvent",
                         },
                         {
                             self: this,
                             account: event.to,
                             token: event.address,
-                            blockNumber: event.blockNumber
+                            blockNumber: event.blockNumber,
+                            blockHash: event.blockHash,
+                            transactionHash: event.transactionHash,
+                            parentCaller: "processSuperTokenEvent",
                         }
                     ]);
                     break;
@@ -150,7 +159,10 @@ class EventTracker {
                                 self: this,
                                 account: event.publisher,
                                 token: event.token,
-                                blockNumber: event.blockNumber
+                                blockNumber: event.blockNumber,
+                                blockHash: event.blockHash,
+                                transactionHash: event.transactionHash,
+                                parentCaller: "processIDAEvent",
                             }
                         ]);
                         break;

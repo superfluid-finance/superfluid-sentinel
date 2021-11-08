@@ -24,6 +24,8 @@ class Queues {
             while (true) {
                 try {
                     if (task.self.app.client.isSuperTokenRegister(task.token)) {
+                        task.self.app.logger.debug(`Parent Caller ${task.parentCaller}`);
+                        task.self.app.logger.debug(`EstimationQueue - BlockHash: ${task.blockHash} TransactionHash: ${task.transactionHash}`);
                         const estimationData = await task.self.app.protocol.liquidationData(task.token, task.account);
                         await EstimationModel.upsert({
                             address: task.account,
@@ -34,7 +36,7 @@ class Queues {
                             zestimationHuman: estimationData.estimation,
                             blockNumber: task.blockNumber
                         });
-                        console.log(`${task.blockNumber} new estimation [${task.token}]: ${task.account} - ${estimationData.estimation}`);
+                        task.self.app.logger.debug(`${task.blockNumber} new estimation [${task.token}]: ${task.account} - ${estimationData.estimation}`);
                     } else {
                         console.log(`reject account: ${task.account} supertoken: ${task.token} not subscribed`);
                     }
@@ -57,6 +59,8 @@ class Queues {
             }
             while (true) {
                 try {
+                    task.self.app.logger.debug(`Parent Caller ${task.parentCaller}`);
+                    task.self.app.logger.debug(`AgreementUpdateQueue - BlockHash: ${task.blockHash} TransactionHash: ${task.transactionHash}`);
                     let senderFilter = {
                         filter: {
                             "sender": task.account
@@ -85,7 +89,11 @@ class Queues {
                     });
 
 
-                    console.log(allFlowUpdatedEvents)
+                    if(allFlowUpdatedEvents.length === 0) {
+                        task.self.app.logger.debug(`Didn't find FlowUpdated for sender: ${task.account} in blockNumber: ${task.blockNumber} / blockHash ${task.blockHash}`);
+                    } else {
+                        console.log(allFlowUpdatedEvents)
+                    }
                     for (let event of allFlowUpdatedEvents) {
                         await AgreementModel.upsert({
                             agreementId: event.agreementId,
@@ -93,18 +101,24 @@ class Queues {
                             sender: event.sender,
                             receiver: event.receiver,
                             flowRate: event.flowRate,
-                            blockNumber: event.blockNumber
+                            blockNumber: event.blockNumber,
                         });
                         task.self.app.queues.estimationQueue.push([{
                             self: task.self,
                             account: event.sender,
                             token: event.superToken,
-                            blockNumber: event.blockNumber
+                            blockNumber: event.blockNumber,
+                            blockHash: event.blockHash,
+                            transactionHash: event.transactionHash,
+                            parentCaller: "agreementUpdateQueue"
                         }, {
                             self: task.self,
                             account: event.receiver,
                             token: event.superToken,
-                            blockNumber: event.blockNumber
+                            blockNumber: event.blockNumber,
+                            blockHash: event.blockHash,
+                            transactionHash: event.transactionHash,
+                            parentCaller: "agreementUpdateQueue"
                         }]);
 
                     }
@@ -161,19 +175,21 @@ class Queues {
         this.run(this.IDAQueue, 5000);
     }
 
-    async addQueuedEstimation(token, account) {
+    async addQueuedEstimation(token, account, parentCaller) {
         this.estimationQueue.push({
             self: this,
             account: account,
-            token: token
+            token: token,
+            parentCaller: parentCaller
         });
     }
 
-    async addQueuedAgreement(account, blockNumber) {
+    async addQueuedAgreement(account, blockNumber, parentCaller) {
         this.agreementUpdateQueue.push({
             self: this,
             account: account,
-            blockNumber: blockNumber
+            blockNumber: blockNumber,
+            parentCaller: parentCaller
         });
     }
 }

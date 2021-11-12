@@ -36,7 +36,8 @@ class Queues {
                             zestimationHuman: estimationData.estimation,
                             blockNumber: task.blockNumber
                         });
-                        task.self.app.logger.debug(`${task.blockNumber} new estimation [${task.token}]: ${task.account} - ${estimationData.estimation}`);
+                        const estimationOutput = new Date(estimationData.estimation).getTime() > 0 ? estimationData.estimation : "no estimation found";
+                        task.self.app.logger.debug(`[${task.token}]: ${task.account} - ${estimationOutput}`);
                     } else {
                         console.log(`reject account: ${task.account} supertoken: ${task.token} not subscribed`);
                     }

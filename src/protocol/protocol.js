@@ -24,6 +24,18 @@ class Protocol {
         }
     }
 
+    async getAccountRealtimeBalanceOfNow(token, address) {
+        try {
+            this.app.client.addTotalRequest();
+            return this.app.client.superTokens[token.toLowerCase()].methods.realtimeBalanceOfNow(
+                address
+            ).call();
+        } catch (err) {
+            console.error(err)
+            throw Error(`account balance (${token}): ${err}`)
+        }
+    }
+
     async getAccountAgreementRealtimeBalance(token, account, timestamp) {
         try {
             this.app.client.addTotalRequest();
@@ -101,15 +113,17 @@ class Protocol {
     async liquidationData(token, account) {
         try {
             this.app.client.addTotalRequest(2);
-            const now = Math.floor(new Date().getTime() / 1000);
+            //const now = Math.floor(new Date().getTime() / 1000);
+            //now is the resp of balanceOfNow query
             let arrPromise = [
                 this.getUserNetFlow(token, account),
-                this.getAccountRealtimeBalance(token, account, now)
+                //this.getAccountRealtimeBalance(token, account, now),
+                this.getAccountRealtimeBalanceOfNow(token, account)
             ];
             arrPromise = await Promise.all(arrPromise);
             return this._getLiquidationData(
                 new BN(arrPromise[0]),
-                new BN(arrPromise[1].availableBalance),
+                new BN(arrPromise[1].availableBalance)
             );
         } catch (err) {
             console.error(err);
@@ -133,7 +147,7 @@ class Protocol {
     async getCurrentPIC(superToken) {
         try {
             if (this.app.client.toga !== undefined) {
-                return await this.app.client.toga.getCurrentPICInfo(superToken).call();
+                return await this.app.client.toga.methods.getCurrentPICInfo(superToken).call();
             }
             return undefined;
         } catch (err) {
@@ -151,24 +165,24 @@ class Protocol {
 
     async calculateAndSaveTokenDelay(superToken) {
         try {
+            const tokenInfo = this.app.client.superTokenNames[superToken];
             const registerTokenPIC = await this.getCurrentPIC(superToken);
             const rewardAccount = await this.getRewardAddress(superToken);
             const token = await SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });
-            token.pic = registerTokenPIC;
-
+            token.pic = registerTokenPIC === undefined ? undefined : registerTokenPIC.pic;
             if(this.app.config.PIC === undefined) {
                 //TOOD: When 3P implememnt change this to be pirate
                 token.delay = 900 + parseInt(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
-                this.app.logger.debug(`${superToken} configuration PIC address not given, adding ${token.delay}s of delay`);
-            } else if (registerTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === registerTokenPIC.toLowerCase()) {
+                this.app.logger.debug(`${tokenInfo}: PIC address not given, adding ${token.delay}s of delay`);
+            } else if (registerTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === registerTokenPIC.pic.toLowerCase()) {
                 token.delay = 0;
-                this.app.logger.debug(`${superToken} is part of PIC address, removing delay`);
+                this.app.logger.debug(`${tokenInfo}: is part of PIC address, removing delay`);
             } else if(rewardAccount.toLowerCase() === this.app.config.PIC.toLowerCase()) {
                 token.delay = 0;
-                this.app.logger.debug(`${superToken} configured PIC match reward address directly removing delay`);
+                this.app.logger.debug(`${tokenInfo}: configured PIC match reward address directly removing delay`);
             } else {
                 token.delay = 900 + parseInt(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
-                this.app.logger.debug(`${superToken} is not part of your PIC address, adding ${token.delay}s of delay`);
+                this.app.logger.debug(`${tokenInfo}: you are not the PIC for adding ${token.delay}s of delay`);
             }
 
             await token.save();

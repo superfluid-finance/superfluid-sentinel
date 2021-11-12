@@ -20,7 +20,7 @@ class Report {
                 pid: process.pid
             },
             network: {
-                chainId: await this.app.client.getNetworkId()
+                chainId: await this.app.client.getChainId()
             },
             rpc: {
                 totalRequests: this.app.client.getTotalRequests(),

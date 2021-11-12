@@ -32,6 +32,7 @@ class Client {
         this.isInitialized = false;
         this._testMode;
         this.totalRequests = 0;
+        this.totalSkippedBlockRequests = 0;
     }
 
     async initialize() {
@@ -110,10 +111,10 @@ class Client {
         try {
             this.app.logger.debug(`_loadSuperfluidContracts()`);
             let resolverAddress;
-            if(this.app.config.TEST_RESOVER !== undefined) {
-                resolverAddress = this.app.config.TEST_RESOVER;
+            if(this.app.config.TEST_RESOLVER !== undefined) {
+                resolverAddress = this.app.config.TEST_RESOLVER;
             } else {
-                resolverAddress = SDKConfig(await this.getNetworkId()).resolverAddress;
+                resolverAddress = SDKConfig(await this.getChainId()).resolverAddress;
             }
             const superfluidIdent = `Superfluid.${this.version}`;
             console.debug("resolver: ", resolverAddress);
@@ -204,7 +205,7 @@ class Client {
             this.superTokensAddresses.push(superTokenAddress.toLowerCase());
             isListed = 1;
         } else {
-            const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${newSuperToken}`;
+            const tokenInfo = `(${tokenSymbol} - ${tokenName}): ${newSuperToken}`;
             this.app.logger.info(tokenInfo);
             this.superTokenNames[newSuperToken.toLowerCase()] = tokenInfo;
             this.superTokens[newSuperToken.toLowerCase()] = superTokenHTTP;
@@ -224,11 +225,11 @@ class Client {
         return result !== undefined;
     }
 
-    async getNetworkId() {
-        if(this.networkId === undefined) {
-            this.networkId = await this.web3.eth.net.getId();
+    async getChainId() {
+        if(this.chainId === undefined) {
+            this.chainId = await this.web3.eth.getChainId();
         }
-        return this.networkId;
+        return this.chainId;
     }
 
     getAccountAddress() {
@@ -251,9 +252,10 @@ class Client {
         return new this.web3.eth.Contract(ISuperfluid, address);
     }
 
-    async getCurrentBlockNumber() {
-        return await new this.web3.eth.getBlockNumber();
+    async getCurrentBlockNumber(offset) {
+        return (await new this.web3.eth.getBlockNumber()) - offset;
     }
+
     //Add parameter
     async estimateGasPrice() {
         return this.web3.eth.getGasPrice();
@@ -319,6 +321,10 @@ class Client {
 
     addTotalRequest(numReqs = 1) {
         this.totalRequests = this.totalRequests + numReqs;
+    }
+
+    addSkipBlockRequest(numReqs = 1) {
+        this.totalSkippedBlockRequests = this.totalSkippedBlockRequests + numReqs;
     }
 
     setTestFlag(flag, options) {

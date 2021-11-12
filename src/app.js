@@ -154,7 +154,7 @@ class App {
             await this.client.init();
             //if we are running tests don't try to load network information
             if(!this.config.RUN_TEST_ENV)
-                this.config.loadNetworkInfo(await this.client.getNetworkId());
+                this.config.loadNetworkInfo(await this.client.getChainId());
             if(this.config.BATCH_CONTRACT !== undefined) {
                 await this.client.loadBatchContract();
             }
@@ -165,11 +165,6 @@ class App {
             const currentBlock = await this.loadEvents.start();
             //query balances to make liquidations estimations
             await this.bootstrap.start();
-            //cold boot take some time, we missed some blocks in the boot phase, run again to be near real.time
-            //if(this.config.COLD_BOOT == 1) {
-            //const currentBlock = await this.loadEvents.start();
-            //await this.bootstrap.start();
-            //}
             this.queues.init();
             setTimeout(() => this.queues.start(), 1000);
             setTimeout(() => this.eventTracker.start(currentBlock), 1000);

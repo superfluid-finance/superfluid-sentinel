@@ -20,10 +20,7 @@ class Bootstrap {
         if(systemInfo !== null) {
             blockNumber = systemInfo.blockNumber;
         }
-        const currentBlockNumber = await this.app.client.getCurrentBlockNumber();
-        if(blockNumber === currentBlockNumber) {
-            return;
-        }
+        const currentBlockNumber = await this.app.client.getCurrentBlockNumber(this.app.config.BLOCK_OFFSET);
         if (blockNumber < currentBlockNumber) {
             try {
                 let queue = async.queue(async function(task) {

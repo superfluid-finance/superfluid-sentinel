@@ -21,13 +21,14 @@ class LoadEvents {
                 if (systemInfo.superTokenBlockNumber > blockNumber) {
                     blockNumber = systemInfo.superTokenBlockNumber;
                 }
-                if ((await this.app.client.getNetworkId()) !== systemInfo.networkId) {
+                if ((await this.app.client.getChainId()) !== systemInfo.chainId) {
                     throw new Error("different network than from the saved data");
                 }
             }
             let pullCounter = blockNumber;
-            let currentBlockNumber = await this.app.client.getCurrentBlockNumber();
-            this.app.logger.info(`scanning blocks from ${pullCounter} to ${currentBlockNumber}`);
+            let currentBlockNumber = await this.app.client.getCurrentBlockNumber(this.app.config.BLOCK_OFFSET);
+            let testBlockNumber = await this.app.client.getCurrentBlockNumber(0);
+            this.app.logger.info(`scanning blocks from ${pullCounter} to ${currentBlockNumber} - real ${testBlockNumber}`);
             var queue = async.queue(async function (task) {
                 let keepTrying = 1;
                 while (true) {
@@ -86,7 +87,7 @@ class LoadEvents {
             if (systemInfo === null) {
                 await SystemModel.create({
                     blockNumber: blockNumber,
-                    networkId: await this.app.client.getNetworkId(),
+                    chainId: await this.app.client.getChainId(),
                     superTokenBlockNumber: currentBlockNumber
                 });
             } else {

@@ -12,12 +12,10 @@ class EventTracker {
         this.app = app;
         this.blockTracker;
         this.oldSeenBlock
-        this.lastSeenBlock;
     }
 
-    updateBlockNumber(oldSeenBlock, lastSeenBlock) {
+    updateBlockNumber(oldSeenBlock) {
         this.oldSeenBlock = oldSeenBlock;
-        this.lastSeenBlock = lastSeenBlock;
     }
 
     getPastBlockAndParseEvents(oldBlock, newBlock) {
@@ -61,16 +59,26 @@ class EventTracker {
         this.blockTracker = new PollingBlockTracker({provider, pollingInterval: this.app.config.POLLING_INTERNVAL})
         const self = this;
         try {
-            this.blockTracker.on('sync', ({ newBlock, oldBlock }) => {
-                if (oldBlock) {
-                    self.app.logger.debug(`sync #${Number(oldBlock) + 1} -> #${Number(newBlock)}`);
-                    self.app.db.queries.updateBlockNumber(oldBlock);
-                    self.getPastBlockAndParseEvents(Number(oldBlock) + 1, newBlock);
-                    self.updateBlockNumber(oldBlock + 1, newBlock);
-                } else if(self.oldSeenBlock) {
-                    self.app.logger.debug(`first sync #${Number(self.oldSeenBlock) + 1} -> #${Number(newBlock)}`)
-                    self.getPastBlockAndParseEvents(self.oldSeenBlock, newBlock);
-                    self.updateBlockNumber(self.oldSeenBlock + 1, newBlock);
+            this.blockTracker.on('sync', ({ newBlock }) => {
+                const _newBlock = Number(newBlock);
+                const _oldBlock = Number(self.oldSeenBlock);
+                const newBlockOffset = _newBlock - self.app.config.BLOCK_OFFSET;
+                console.log(`[${self.app.config.BLOCK_OFFSET}] oldBlock: ${_oldBlock}, newBlock ${_newBlock} = ${newBlockOffset}`)
+                console.log
+                if(_newBlock - _oldBlock >= self.app.config.BLOCK_OFFSET) {
+                    if (_oldBlock) {
+                        self.app.logger.debug(`sync #${_oldBlock + 1} -> #${newBlockOffset}`);
+                        self.app.db.queries.updateBlockNumber(newBlockOffset);
+                        self.getPastBlockAndParseEvents(_oldBlock + 1, newBlockOffset);
+                        self.updateBlockNumber(newBlockOffset);
+                    } else if(self.oldSeenBlock) {
+                        self.app.logger.debug(`first sync #${_oldBlock + 1} -> #${newBlockOffset}`);
+                        self.getPastBlockAndParseEvents(_oldBlock, newBlockOffset);
+                        self.updateBlockNumber(newBlockOffset);
+                    }
+                } else {
+                    self.app.logger.warn(`skip getting new blocks: new block ${_newBlock}, old block ${_oldBlock}`);
+                    self.app.client.addSkipBlockRequest();
                 }
                 self.app.client.addTotalRequest();
             });
@@ -141,6 +149,8 @@ class EventTracker {
         try {
             if(!this.app.client.isSuperTokenRegister(event.token)) {
                 this.app.logger.warn(`found a new token at ${event.token}`);
+                //if subscribe to all tokens add this one:
+
             }
         } catch(err) {
             this.app.logger.error(err);
@@ -178,6 +188,8 @@ class EventTracker {
     }
 
     async processTOGAEvent(event) {
+        console.log("TOGA")
+        console.log(event)
         try {
             if(this.app.client.isSuperTokenRegister(event.token)) {
                 switch(event.eventName) {

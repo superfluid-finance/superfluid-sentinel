@@ -61,7 +61,7 @@ class Liquidator {
     async singleTerminations(work) {
 
         const wallet = this.app.client.getAccount();
-        const chainId = await this.app.client.getNetworkId();
+        const chainId = await this.app.client.getChainId();
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
         for (const job of work) {
             if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver)) {
@@ -148,7 +148,7 @@ class Liquidator {
 
     async sendBatch(superToken, senders, receivers) {
         const wallet = this.app.client.getAccount();
-        const chainId = await this.app.client.getNetworkId();
+        const chainId = await this.app.client.getChainId();
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
         try {
             const tx = this.app.protocol.generateMultiDeleteFlowABI(superToken, senders, receivers);
@@ -180,7 +180,6 @@ class Liquidator {
         //When estimate gas we get a preview of what can happen when send the transaction. Depending on the error we should execute specific logic
         const gas = await this.app.gasEstimator.getGasLimit(wallet, txObject);
         if (gas.error !== undefined) {
-            this.app.logger.error(gas.error);
             if (gas.error.message === "Returned error: execution reverted: CFA: flow does not exist") {
                 await this.app.protocol.checkFlow(txObject.superToken, txObject.flowSender, txObject.flowReceiver);
             }

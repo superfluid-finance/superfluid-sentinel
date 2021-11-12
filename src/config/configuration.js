@@ -26,6 +26,7 @@ class Config {
             this.RETRY_GAS_MULTIPLIER = config.retry_gas_multiplier || 1.15;
             this.POLLING_INTERNVAL = config.polling_interval*1000 || 10000;
             this.PIC = config.pic;
+            this.BLOCK_OFFSET = config.BLOCK_OFFSET || 0;
 
             this.EPOCH_BLOCK = config.epoch_block;
             this.BATCH_CONTRACT = config.batch_contract;
@@ -55,6 +56,7 @@ class Config {
             this.MAX_GAS_PRICE = process.env.MAX_GAS_PRICE || 500000000000;
             this.RETRY_GAS_MULTIPLIER = process.env.RETRY_GAS_MULTIPLIER || 1.15;
             this.PIC = process.env.PIC;
+            this.TEST_RESOLVER = process.env.TEST_RESOLVER;
 
             //extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
             this.CONCURRENCY = process.env.CONCURRENCY || 1;
@@ -68,6 +70,7 @@ class Config {
             this.MAX_BATCH_TX = process.env.MAX_BATCH_TX || 20;
             this.LOG_LEVEL = process.env.LOG_LEVEL || "info"
             this.POLLING_INTERNVAL = process.env.POLLING_INTERNVAL*1000 || 10000;
+            this.BLOCK_OFFSET = process.env.BLOCK_OFFSET || 6;
         }
 
         if (this.HTTP_RPC_NODE === undefined) {
@@ -110,7 +113,8 @@ class Config {
             LIQUIDATION_JOB_AWAITS: this.LIQUIDATION_JOB_AWAITS,
             MAX_BATCH_TX: this.MAX_BATCH_TX,
             LOG_LEVEL: this.LOG_LEVEL,
-            POLLING_INTERNVAL: this.POLLING_INTERNVAL
+            POLLING_INTERNVAL: this.POLLING_INTERNVAL,
+            BLOCK_OFFSET: this.BLOCK_OFFSET,
         }
     }
 }

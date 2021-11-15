@@ -43,10 +43,10 @@ For persistent operation in the background, you can use the provided systemd uni
 ```
 cp superfluid-sentinel.service.template superfluid-sentinel.service
 ```
-Then edit `superfluid-sentinel.service` to match your setup. You need to set the working directory to the root directory of the sentinel, the usernam to execute with and the path to npm on your system.
+Then edit `superfluid-sentinel.service` to match your setup. You need to set the working directory to the root directory of the sentinel, the username to execute with and the path to npm on your system.
 Then you can install and start the service:
 ```
-ln -s superfluid-sentinel.service /etc/systemd/system/superfluid-sentinel.service
+ln -s $PWD/superfluid-sentinel.service /etc/systemd/system/superfluid-sentinel.service
 systemctl daemon-reload
 systemctl start superfluid-sentinel.service
 ```

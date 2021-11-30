@@ -193,6 +193,14 @@ class Queues {
             parentCaller: parentCaller
         });
     }
+
+    getAgreementQueueLength() {
+        return this.agreementUpdateQueue.length();
+    }
+
+    getEstimationQueueLength() {
+        return this.estimationQueue.length();
+    }
 }
 
 module.exports = Queues;

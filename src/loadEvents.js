@@ -34,16 +34,21 @@ class LoadEvents {
                 while (true) {
                     try {
                         task.self.app.logger.info(`getting blocks: trying #${keepTrying} - from:${task.fromBlock} to:${task.toBlock}`);
-                        let result = await task.self.app.protocol.getAgreementEvents(
-                            "FlowUpdated", {
+                        let query = {
                             fromBlock: task.fromBlock,
                             toBlock: task.toBlock
-                        },
-                            keepTrying > 5
-                        );
-
+                        };
+                        if(task.self.app.config.TOKENS) {
+                            query = {
+                                filter : {
+                                    token: task.self.app.config.TOKENS
+                                },
+                                fromBlock: task.fromBlock,
+                                toBlock: task.toBlock
+                            };
+                        }
+                        let result = await task.self.app.protocol.getAgreementEvents("FlowUpdated", query);
                         result = result.map(task.self.app.models.event.transformWeb3Event);
-
                         for (let event of result) {
                             const agreementId = task.self.app.protocol.generateId(event.sender, event.receiver);
                             const hashId = task.self.app.protocol.generateId(event.token, agreementId);
@@ -122,9 +127,11 @@ class LoadEvents {
                     token: st
                 });
             }
-            await DelayChecker.drain();
-            this.app.logger.info("finish getting delays PIC system");
 
+            if(superTokens.length > 0) {
+                await DelayChecker.drain();
+            }
+            this.app.logger.info("finish getting delays PIC system");
             this.app.logger.info("finish past event to find SuperTokens");
             return currentBlockNumber;
         } catch (err) {

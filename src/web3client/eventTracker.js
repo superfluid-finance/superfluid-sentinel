@@ -64,8 +64,7 @@ class EventTracker {
                 const _oldBlock = Number(self.oldSeenBlock);
                 const newBlockOffset = _newBlock - self.app.config.BLOCK_OFFSET;
                 console.log(`[${self.app.config.BLOCK_OFFSET}] oldBlock: ${_oldBlock}, newBlock ${_newBlock} = ${newBlockOffset}`)
-                console.log
-                if(_newBlock - _oldBlock >= self.app.config.BLOCK_OFFSET) {
+                if(_newBlock - _oldBlock >= self.app.config.BLOCK_OFFSET && (_oldBlock + 1) <= newBlockOffset) {
                     if (_oldBlock) {
                         self.app.logger.debug(`sync #${_oldBlock + 1} -> #${newBlockOffset}`);
                         self.app.db.queries.updateBlockNumber(newBlockOffset);
@@ -149,8 +148,7 @@ class EventTracker {
         try {
             if(!this.app.client.isSuperTokenRegister(event.token)) {
                 this.app.logger.warn(`found a new token at ${event.token}`);
-                //if subscribe to all tokens add this one:
-
+                //TODO: if subscribe to all tokens add this one
             }
         } catch(err) {
             this.app.logger.error(err);
@@ -188,8 +186,6 @@ class EventTracker {
     }
 
     async processTOGAEvent(event) {
-        console.log("TOGA")
-        console.log(event)
         try {
             if(this.app.client.isSuperTokenRegister(event.token)) {
                 switch(event.eventName) {

@@ -20,7 +20,6 @@ class Liquidator {
 
     constructor(app) {
         this.app = app;
-        this.txDelay = this.app.config.ADDITIONAL_LIQUIDATION_DELAY;
     }
 
     async start() {
@@ -37,7 +36,6 @@ class Liquidator {
                 haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
                 this.app.logger.debug(JSON.stringify(haveBatchWork));
             }
-
             if (haveBatchWork.length > 0) {
                 await this.multiTermination(haveBatchWork, checkDate);
             } else {
@@ -100,17 +98,14 @@ class Liquidator {
 
     async multiTermination(batchWork, checkDate) {
         for (const batch of batchWork) {
-
             let senders = new Array();
             let receivers = new Array();
-
             const streams = await this.app.db.queries.getLiquidations(
                 checkDate,
                 batch.superToken
             );
 
             for (const flow of streams) {
-
                 if (await this.isPossibleToClose(flow.superToken, flow.sender, flow.receiver)) {
                     senders.push(flow.sender);
                     receivers.push(flow.receiver);
@@ -119,6 +114,7 @@ class Liquidator {
                     await this.app.queues.addQueuedEstimation(flow.superToken, flow.sender, "Liquidation job");
                     await this.app.timer.delay(500);
                 }
+
                 if (senders.length === this.app.config.MAX_BATCH_TX) {
                     if (senders.length == parseInt(this.app.config.MAX_BATCH_TX)) {
                         this.app.logger.debug(`sending a full batch work: load ${senders.length}`);
@@ -127,20 +123,18 @@ class Liquidator {
                         receivers = new Array();
                     }
                 }
+            }
 
-                if (senders.length !== 0) {
-                    if (senders.length === 1) {
-                        await this.singleTerminations([{
-                            superToken: batch.superToken,
-                            sender: senders[0],
-                            receiver: receivers[0]
-                        }]);
-                    } else {
-                        this.app.logger.debug(`sending a partial batch work: load ${senders.length}`);
-                        await this.sendBatch(batch.superToken, senders, receivers);
-                    }
-                    senders = new Array();
-                    receivers = new Array();
+            if (senders.length !== 0) {
+                if (senders.length === 1) {
+                    await this.singleTerminations([{
+                        superToken: batch.superToken,
+                        sender: senders[0],
+                        receiver: receivers[0]
+                    }]);
+                } else {
+                    this.app.logger.debug(`sending a partial batch work: load ${senders.length}`);
+                    await this.sendBatch(batch.superToken, senders, receivers);
                 }
             }
         }

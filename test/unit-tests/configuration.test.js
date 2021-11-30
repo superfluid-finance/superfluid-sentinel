@@ -24,7 +24,7 @@ const populateEnvVariables= () => {
     process.env.MAX_GAS_PRICE= 500;
     process.env.RETRY_GAS_MULTIPLIER= 1.1;
     process.env.PIC="0xAB4075f621100563f4551C0Ca50944809b03E948";
-    process.env.CONCURRENCY=2;
+    process.env.CONCURRENCY=1;
     process.env.ONLY_LISTED_TOKENS=false;
     process.env.NUM_RETRIES=5;
     process.env.COLD_BOOT=0;
@@ -35,6 +35,7 @@ const populateEnvVariables= () => {
     process.env.MAX_BATCH_TX=5;
     process.env.LOG_LEVEL="debug";
     process.env.POLLING_INTERNVAL=10;
+    process.env.BLOCK_OFFSET = 2;
     return {
         HTTP_RPC_NODE:process.env.HTTP_RPC_NODE,
         MNEMONIC:process.env.MNEMONIC,
@@ -59,7 +60,8 @@ const populateEnvVariables= () => {
         LIQUIDATION_JOB_AWAITS:process.env.LIQUIDATION_JOB_AWAITS,
         MAX_BATCH_TX:process.env.MAX_BATCH_TX,
         LOG_LEVEL:process.env.LOG_LEVEL,
-        POLLING_INTERNVAL:process.env.POLLING_INTERNVAL
+        POLLING_INTERNVAL:process.env.POLLING_INTERNVAL,
+        BLOCK_OFFSET:process.env.BLOCK_OFFSET
     }
 }
 
@@ -88,6 +90,7 @@ const removeEnvVariables = () => {
     delete process.env.MAX_BATCH_TX;
     delete process.env.LOG_LEVEL;
     delete process.env.POLLING_INTERNVAL;
+    delete process.env.BLOCK_OFFSET;
 }
 
 describe("Test Agent user configurations", () => {
@@ -120,6 +123,7 @@ describe("Test Agent user configurations", () => {
             expect(envObj.MAX_BATCH_TX).to.equal(config.MAX_BATCH_TX);
             expect(envObj.LOG_LEVEL).to.equal(config.LOG_LEVEL);
             expect(envObj.POLLING_INTERNVAL * 1000).to.equal(config.POLLING_INTERNVAL);
+            expect(envObj.BLOCK_OFFSET).to.equal(config.BLOCK_OFFSET);
             removeEnvVariables();
         } catch(err) {
             exitWithError(err);

@@ -39,7 +39,8 @@ const bootNode = async (delayParam = 0) => {
     }
 }
 
-const stopSentinel = async (force = false) => {
+
+const closeNode = async (force = false) => {
     if(app !== undefined)
         return app.shutdown(force);
 }
@@ -95,11 +96,8 @@ describe("Integration scripts tests", () => {
     beforeEach(async () => {
     });
 
-   afterEach(async () => {
+    afterEach(async () => {
         try {
-            const result = await stopSentinel();
-            console.log("HERE")
-            console.log(result);
             snapId = await ganache.helper.revertToSnapShot(snapId.result);
         } catch(err) {
             exitWithError(err);
@@ -107,12 +105,10 @@ describe("Integration scripts tests", () => {
     });
 
     after(async () => {
-        //await stopSentinel();
-        //console.log(ganache.close);
-        ganache.close();
+        closeNode(true);
     });
 
-    it.only("Create one stream", async () => {
+    it("Create one stream", async () => {
         try {
             const data = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,
@@ -121,7 +117,7 @@ describe("Integration scripts tests", () => {
                 "0x"
             ).encodeABI();
             await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
-            await bootNode();
+            await bootNode(-900);
             const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
@@ -139,7 +135,7 @@ describe("Integration scripts tests", () => {
                 "0x"
             ).encodeABI();
             await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
-            await bootNode();
+            await bootNode(-900);
             await ganache.helper.timeTravelOnce(60);
             const dataUpdate = protocolVars.cfa.methods.updateFlow(
                 protocolVars.superToken._address,
@@ -169,7 +165,7 @@ describe("Integration scripts tests", () => {
                 protocolVars.cfa._address,
                 sendingFlowData,
                 "0x").send({from: accounts[0], gas: 1000000});
-            await bootNode();
+            await bootNode(-900);
             await ganache.helper.timeTravelOnce(60);
             const receivingFlowData = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,
@@ -199,7 +195,7 @@ describe("Integration scripts tests", () => {
                 "0x"
             ).encodeABI();
             await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData, "0x").send({from: accounts[0], gas: 1000000});
-            await bootNode();
+            await bootNode(-900);
             await ganache.helper.timeTravelOnce(3600, app, true);
             const flowData2 = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,
@@ -217,7 +213,7 @@ describe("Integration scripts tests", () => {
         }
     });
 
-    it.skip("Create a stream with big flow rate, then update the stream with smaller flow rate", async () => {
+    it("Create a stream with big flow rate, then update the stream with smaller flow rate", async () => {
         try {
             const flowData = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,
@@ -227,7 +223,7 @@ describe("Integration scripts tests", () => {
             ).encodeABI();
             await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData, "0x").send({from: accounts[5], gas: 1000000});
             await ganache.helper.timeTravelOnce(60);
-            await bootNode();
+            await bootNode(-900);
             //await ganache.helper.timeTravelOnce(60);
             const firstEstimation = await app.db.queries.getAddressEstimation(accounts[5]);
             //await ganache.helper.timeTravelUntil(1, 20);

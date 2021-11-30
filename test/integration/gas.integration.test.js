@@ -15,7 +15,6 @@ const exitWithError = (error) => {
 
 const bootNode = async (delayParam = 0) => {
     app = new App({
-        ws_rpc_node: "ws://127.0.0.1:8545",
         http_rpc_node: "http://127.0.0.1:8545",
         mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
         mnemonic_index: 100,
@@ -31,7 +30,8 @@ const bootNode = async (delayParam = 0) => {
         number_retries: 3,
         test_resolver: resolverAddress,
         additional_liquidation_delay: delayParam,
-        liquidation_run_every: 5000
+        block_offset: 1,
+        liquidation_run_every: 1000
     });
     app.start();
     while(!app.isInitialized()) {
@@ -77,11 +77,6 @@ const expectLiquidation = (event, node, account) => {
     expect(event.returnValues.penaltyAccount).to.equal(account);
 }
 
-const expectBailout = (event, node, account) => {
-    expect(event.returnValues.liquidatorAccount).to.equal(node);
-    expect(event.returnValues.bailoutAmount).not.equal("0");
-    expect(event.returnValues.penaltyAccount).to.equal(account);
-}
 describe("GAS Integration tests", () => {
 
     before(async function() {
@@ -106,10 +101,8 @@ describe("GAS Integration tests", () => {
         closeNode(true);
     });
 
-    it("Scale gas on timeout", async () => {
+    it.only("Scale gas on timeout", async () => {
         try {
-            await bootNode();
-            app.setTestFlag("TIMEOUT_ON_LOW_GAS_PRICE", { minimumGas: 2000000000});
             const data = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,
                 accounts[2],
@@ -118,25 +111,8 @@ describe("GAS Integration tests", () => {
             ).encodeABI();
             await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
             const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
-            const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
-            expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
-        } catch(err) {
-            exitWithError(err);
-        }
-    });
-
-    it("Should hit gas limit and and only 1 wei", async () => {
-        try {
-            await bootNode();
+            await bootNode(-900);
             app.setTestFlag("TIMEOUT_ON_LOW_GAS_PRICE", { minimumGas: 2000000000});
-            const data = protocolVars.cfa.methods.createFlow(
-                protocolVars.superToken._address,
-                accounts[2],
-                "10000000000000000",
-                "0x"
-            ).encodeABI();
-            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
-            const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
             expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
         } catch(err) {

@@ -77,11 +77,6 @@ const expectLiquidation = (event, node, account) => {
     expect(event.returnValues.penaltyAccount).to.equal(account);
 }
 
-const expectBailout = (event, node, account) => {
-    expect(event.returnValues.liquidatorAccount).to.equal(node);
-    expect(event.returnValues.bailoutAmount).not.equal("0");
-    expect(event.returnValues.penaltyAccount).to.equal(account);
-}
 describe("IDA integration tests", () => {
 
     before(async function() {
@@ -116,7 +111,7 @@ describe("IDA integration tests", () => {
             ).encodeABI();
             await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, cfaData, "0x").send({from: accounts[0], gas: 1000000});
             await ganache.helper.timeTravelOnce(60);
-            await bootNode();
+            await bootNode(-900);
             const data = protocolVars.ida.methods.createIndex(
                 protocolVars.superToken._address, 6, "0x"
             ).encodeABI();
@@ -135,7 +130,7 @@ describe("IDA integration tests", () => {
             const distData =  protocolVars.ida.methods.distribute(
                 protocolVars.superToken._address,
                 6,
-                availableBalance.sub(web3.utils.toBN("100")).toString(),
+                availableBalance.sub(web3.utils.toBN("1000000000000")).toString(),
                 "0x"
             ).encodeABI();
             const tx = await protocolVars.host.methods.callAgreement(protocolVars.ida._address, distData, "0x").send({from: accounts[0], gas: 1000000});

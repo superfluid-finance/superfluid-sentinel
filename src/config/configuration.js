@@ -26,7 +26,8 @@ class Config {
             this.RETRY_GAS_MULTIPLIER = config.retry_gas_multiplier || 1.15;
             this.POLLING_INTERNVAL = config.polling_interval*1000 || 10000;
             this.PIC = config.pic;
-            this.BLOCK_OFFSET = config.BLOCK_OFFSET || 0;
+            this.MAX_BATCH_TX = config.max_batch_tx || 20;
+            this.BLOCK_OFFSET = config.block_offset || 0;
 
             this.EPOCH_BLOCK = config.epoch_block;
             this.BATCH_CONTRACT = config.batch_contract;
@@ -48,6 +49,8 @@ class Config {
             this.MAX_QUERY_BLOCK_RANGE = process.env.MAX_QUERY_BLOCK_RANGE || 2000;
             if(process.env.TOKENS !== undefined && process.env.TOKENS !== "") {
                 this.TOKENS = process.env.TOKENS.split(",");
+            } else {
+                this.TOKENS = undefined
             }
             this.DB = (process.env.DB_PATH !== undefined && process.env.DB_PATH !== "") ? process.env.DB_PATH : "./db.sqlite";
             this.ADDITIONAL_LIQUIDATION_DELAY = process.env.ADDITIONAL_LIQUIDATION_DELAY || 0;
@@ -93,7 +96,6 @@ class Config {
     getConfigurationInfo() {
         return {
             HTTP_RPC_NODE: this.HTTP_RPC_NODE,
-            WS_RPC_NODE: this.WS_RPC_NODE,
             MAX_QUERY_BLOCK_RANGE: this.MAX_QUERY_BLOCK_RANGE,
             TOKENS: this.TOKENS,
             DB_PATH: this.DB,

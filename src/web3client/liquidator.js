@@ -20,11 +20,13 @@ class Liquidator {
 
     constructor(app) {
         this.app = app;
+        this._isShutdown = false;
     }
 
     async start() {
         try {
             if (this.app._isShutdown) {
+                this._isShutdown = true;
                 this.app.logger.info(`app.shutdown() - closing liquidation`);
                 return;
             }
@@ -39,7 +41,7 @@ class Liquidator {
             if (haveBatchWork.length > 0) {
                 await this.multiTermination(haveBatchWork, checkDate);
             } else {
-                const work = await this.app.db.queries.getLiquidations(checkDate, this.app.config.TOKENS);
+                const work = await this.app.db.queries.getLiquidations(checkDate, this.app.config.TOKENS, this.app.config.MAX_TX_NUMBER);
                 await this.singleTerminations(work);
             }
         } catch (err) {
@@ -101,7 +103,8 @@ class Liquidator {
             let receivers = new Array();
             const streams = await this.app.db.queries.getLiquidations(
                 checkDate,
-                batch.superToken
+                batch.superToken,
+                this.app.config.MAX_TX_NUMBER
             );
 
             for (const flow of streams) {

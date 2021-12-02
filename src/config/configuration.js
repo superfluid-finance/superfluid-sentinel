@@ -28,6 +28,7 @@ class Config {
             this.PIC = config.pic;
             this.MAX_BATCH_TX = config.max_batch_tx || 20;
             this.BLOCK_OFFSET = config.block_offset || 0;
+            this.MAX_TX_NUMBER = config.max_tx_number || 100;
 
             this.EPOCH_BLOCK = config.epoch_block;
             this.BATCH_CONTRACT = config.batch_contract;
@@ -74,9 +75,10 @@ class Config {
             this.LOG_LEVEL = process.env.LOG_LEVEL || "info"
             this.POLLING_INTERVAL = process.env.POLLING_INTERVAL*1000 || 30000;
             this.BLOCK_OFFSET = process.env.BLOCK_OFFSET || 12;
+            this.MAX_TX_NUMBER = process.env.MAX_TX_NUMBER || 100;
         }
 
-        //token filter also affectes ONLY_LISTED_TOKENS
+        //token filter also affects ONLY_LISTED_TOKENS
         if(this.TOKENS !== undefined) {
             this.ONLY_LISTED_TOKENS = false;
         }
@@ -122,6 +124,7 @@ class Config {
             LOG_LEVEL: this.LOG_LEVEL,
             POLLING_INTERVAL: this.POLLING_INTERVAL,
             BLOCK_OFFSET: this.BLOCK_OFFSET,
+            MAX_TX_NUMBER: this.MAX_TX_NUMBER,
         }
     }
 }

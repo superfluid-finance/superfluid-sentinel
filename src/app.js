@@ -100,13 +100,12 @@ class App {
             this.logger.info(`app.shutdown() - closing client`);
             this.client.disconnect();
             this.time.resetTime();
-            this.logger.info(`app.shutdown() - closing database`);
-            await this.db.close();
-            let counter = 5;
+            //this.logger.info(`app.shutdown() - closing database`);
+            //await this.db.close();
+            let counter = 10;
             while(counter > 0) {
                 await this.timer.delay(3000);
-                console.log(this.liquidator._closed)
-                if(this.liquidator._closed) {
+                if(this.liquidator._isShutdown) {
                     return
                 }
                 counter--;

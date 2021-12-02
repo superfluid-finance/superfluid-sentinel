@@ -248,6 +248,16 @@ class Liquidator {
                 return { error: err.message, tx: undefined };
             }
 
+            if (err.message.toLowerCase() === "returned error: exceeds block gas limit") {
+                this.app.logger.warn(`exceeds block gas limit`);
+                this.app.config.MAX_BATCH_TX = Math.ceil(parseInt(this.app.config.MAX_BATCH_TX / 2));
+                this.app.logger.warn(`reducing batch size to ${this.app.config.MAX_BATCH_TX}`);
+                if(this.app.config.MAX_BATCH_TX < 1) {
+                    this.app.logger.warn(`can't reduce batch size more...`);
+                    process.exit(1);
+                }
+                return { error: err.message, tx: undefined };
+            }
             //log remaining errors
             this.app.logger.error(`liquidator.sendWithRetry() - no logic to catch error : ${err}`);
         }

@@ -145,6 +145,32 @@ describe("Integration scripts tests", () => {
             await ganache.helper.timeTravelOnce(1000, app, true);
             const result1 = await waitForEventAtSameBlock("AgreementLiquidatedBy", 3, tx.blockNumber);
             const result2 = await waitForEventAtSameBlock("AgreementLiquidatedBy", 2, result1);
+            await closeNode();
+            expect(result1).gt(tx.blockNumber);
+            expect(result2).gt(result1);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
+
+    it("Go over the gasLimit, reduce batch size", async () => {
+        try {
+            for(let i = 1; i <= 5; i++) {
+                for(let j = 6; j <= 7; j++) {
+                    console.log(`Sending from i=${i} , j=${j} , ${accounts[i]} -> ${accounts[j]}`);
+                    const flow = protocolVars.cfa.methods.createFlow(protocolVars.superToken._address,accounts[j],"1000000000000000","0x").encodeABI();
+                    await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flow, "0x").send({from: accounts[i], gas: 1000000});
+                }
+            }
+            const tx = await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[1], gas: 1000000});
+            await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[2], gas: 1000000});
+            await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[3], gas: 1000000});
+            await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[4], gas: 1000000});
+            await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[5], gas: 1000000});
+            await bootNode(-900, 10);
+            await ganache.helper.timeTravelOnce(1000, app, true);
+            const result1 = await waitForEventAtSameBlock("AgreementLiquidatedBy", 5, tx.blockNumber);
+            const result2 = await waitForEventAtSameBlock("AgreementLiquidatedBy", 5, result1 + 1);
             expect(result1).gt(tx.blockNumber);
             expect(result2).gt(result1);
         } catch(err) {

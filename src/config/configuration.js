@@ -26,7 +26,7 @@ class Config {
             this.RETRY_GAS_MULTIPLIER = config.retry_gas_multiplier || 1.15;
             this.POLLING_INTERVAL = config.polling_interval*1000 || 10000;
             this.PIC = config.pic;
-            this.MAX_BATCH_TX = config.max_batch_tx || 20;
+            this.MAX_BATCH_TX = config.max_batch_tx || 10;
             this.BLOCK_OFFSET = config.block_offset || 0;
             this.MAX_TX_NUMBER = config.max_tx_number || 100;
 
@@ -70,7 +70,7 @@ class Config {
             this.METRICS = process.env.METRICS || true;
             this.METRICS_PORT = process.env.METRICS_PORT || 3000;
             this.LIQUIDATION_JOB_AWAITS = process.env.LIQUIDATION_JOB_AWAITS*1000 || 30000;
-            this.MAX_BATCH_TX = process.env.MAX_BATCH_TX || 20;
+            this.MAX_BATCH_TX = process.env.MAX_BATCH_TX || 10;
             this.RESOLVER = process.env.RESOLVER;
             this.LOG_LEVEL = process.env.LOG_LEVEL || "info"
             this.POLLING_INTERVAL = process.env.POLLING_INTERVAL*1000 || 30000;

@@ -11,7 +11,8 @@ class EventTracker {
     constructor(app) {
         this.app = app;
         this.blockTracker;
-        this.oldSeenBlock
+        this.oldSeenBlock;
+        this.lastTimeNewBlocks = 0;
     }
 
     updateBlockNumber(oldSeenBlock) {
@@ -60,6 +61,7 @@ class EventTracker {
         const self = this;
         try {
             this.blockTracker.on('sync', ({ newBlock }) => {
+                self.lastTimeNewBlocks = new Date();
                 const _newBlock = Number(newBlock);
                 const _oldBlock = Number(self.oldSeenBlock);
                 const newBlockWithOffset = _newBlock - self.app.config.BLOCK_OFFSET;

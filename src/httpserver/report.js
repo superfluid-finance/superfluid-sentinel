@@ -14,7 +14,6 @@ class Report {
     }
 
     async fullReport() {
-
         const rpcIsSyncing = await  this.app.client.web3.eth.isSyncing();
         const databaseOk = await this.checkDatabase();
         //const sentinelBalance = await this.app.client.getAccountBalance() ?
@@ -25,6 +24,9 @@ class Report {
         //circular buffer:
             //how many tries until inclusing of tx
             //gas price
+        const lastTimeNewBlocks = this.app.eventTracker.lastTimeNewBlocks;
+        const waitingForNewBlocksAt = Math.floor(Math.abs(new Date() - lastTimeNewBlocks) / 1000);
+        const RPCStuck = waitingForNewBlocksAt * 1000 > this.app.config.POLLING_INTERNVAL * 2;
         const overallHealthy = rpcIsSyncing === false && databaseOk;
 
         // TODO: add DB stats - size, nr table entries
@@ -41,7 +43,9 @@ class Report {
                 chainId: await this.app.client.getChainId(),
                 rpc: {
                     totalRequests: this.app.client.getTotalRequests(),
-                    isSyncing: rpcIsSyncing
+                    isSyncing: rpcIsSyncing,
+                    lastTimeNewBlocks : lastTimeNewBlocks,
+                    waitingForNewBlocksAt : waitingForNewBlocksAt
                 }
             },
             account: {

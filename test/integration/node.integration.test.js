@@ -125,6 +125,28 @@ describe("Agent configurations tests", () => {
         }
     });
 
+    it.only("Change state if not getting new blocks", async () => {
+        try {
+            const data = protocolVars.cfa.methods.createFlow(
+                protocolVars.superToken._address,
+                accounts[2],
+                "100000000000",
+                "0x"
+            ).encodeABI();
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
+            await bootNode();
+            let statusReboot;
+            while(true) {
+                await delay(9000);
+                const report = await app.healthReport.fullReport();
+                statusReboot = report.status.reboot;
+                if(statusReboot) break;
+            }
+            expect(statusReboot).eq(true);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
     it("Start node, subscribe to new Token and perform estimation", async () => {
         try {
             await bootNode();

@@ -16,14 +16,8 @@ class Report {
     async fullReport() {
         const rpcIsSyncing = await  this.app.client.web3.eth.isSyncing();
         const databaseOk = await this.checkDatabase();
-        //const sentinelBalance = await this.app.client.getAccountBalance() ?
-        //const hit gas limit
-        //size of queues
         const estimationQueueSize = this.app.queues.getEstimationQueueLength();
         const agreementQueueSize = this.app.queues.getAgreementQueueLength();
-        //circular buffer:
-            //how many tries until inclusing of tx
-            //gas price
         const lastTimeNewBlocks = this.app.eventTracker.lastTimeNewBlocks;
         const waitingForNewBlocksAt = Math.floor(Math.abs(new Date() - lastTimeNewBlocks) / 1000);
         const RPCStuck = waitingForNewBlocksAt * 1000 > this.app.config.POLLING_INTERNVAL * 2;
@@ -55,6 +49,11 @@ class Report {
             queues: {
                 agreementQueue : agreementQueueSize,
                 estimationQueue : estimationQueueSize
+            },
+            superfluid: {
+                cfa: this.app.client.CFAv1._address,
+                ida: this.app.client.IDAv1._address,
+                supertokens: Object.values(this.app.client.superTokenNames)
             }
         };
     }

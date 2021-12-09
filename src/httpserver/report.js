@@ -15,8 +15,8 @@ class Report {
 
     async fullReport() {
 
-        const isSyncing = await  this.app.client.web3.eth.isSyncing();
-        const checkDatabase = await this.checkDatabase();
+        const rpcIsSyncing = await  this.app.client.web3.eth.isSyncing();
+        const databaseOk = await this.checkDatabase();
         //const sentinelBalance = await this.app.client.getAccountBalance() ?
         //const hit gas limit
         //size of queues
@@ -25,34 +25,33 @@ class Report {
         //circular buffer:
             //how many tries until inclusing of tx
             //gas price
-        const status = isSyncing !== false && !checkDatabase;
+        const overallHealthy = rpcIsSyncing === false && databaseOk;
 
+        // TODO: add DB stats - size, nr table entries
+        // TODO: add liquidation stats: past and future 1h, 24h, 30d
+        // TODO add PIC status
         return {
+            timestamp: Date.now(),
+            healthy: overallHealthy,
             process: {
                 uptime: process.uptime(),
                 pid: process.pid
             },
             network: {
-                chainId: await this.app.client.getChainId()
+                chainId: await this.app.client.getChainId(),
+                rpc: {
+                    totalRequests: this.app.client.getTotalRequests(),
+                    isSyncing: rpcIsSyncing
+                }
             },
-            status : {
-                reboot: status
+            account: {
+                address: this.app.client.getAccountAddress(),
+                balance: await this.app.client.getAccountBalance()
             },
-            internal: {
+            queues: {
                 agreementQueue : agreementQueueSize,
                 estimationQueue : estimationQueueSize
-            },
-            rpc: {
-                totalRequests: this.app.client.getTotalRequests(),
-                isSyncing : isSyncing
-            },
-            db: {
-                healthCheck: checkDatabase
-            },
-            agent_account: {
-                address: this.app.client.getAccountAddress(),
-                balance: await this.app.client.getAccountBalance(),
-            },
+            }
         };
     }
 }

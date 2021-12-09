@@ -13,12 +13,7 @@ class HTTPServer {
 
     start() {
         this.server.get('/', async (req, res) => {
-            const healthcheck = {
-                statusCode: 200,
-                message: 'OK',
-                timestamp: Date.now(),
-                detailReport: await this.healthReport.fullReport()
-            };
+            const healthcheck = await this.healthReport.fullReport();
             try {
                 res.send(healthcheck);
             } catch (e) {

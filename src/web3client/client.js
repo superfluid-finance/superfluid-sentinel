@@ -111,8 +111,8 @@ class Client {
         try {
             this.app.logger.debug(`_loadSuperfluidContracts()`);
             let resolverAddress;
-            if(this.app.config.TEST_RESOLVER !== undefined) {
-                resolverAddress = this.app.config.TEST_RESOLVER;
+            if(this.app.config.RESOLVER !== undefined) {
+                resolverAddress = this.app.config.RESOLVER;
             } else {
                 resolverAddress = SDKConfig(await this.getChainId()).resolverAddress;
             }

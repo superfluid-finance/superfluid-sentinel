@@ -28,7 +28,7 @@ const bootNode = async (delayParam = 0) => {
         cold_boot: 1,
         only_listed_tokens: 1,
         number_retries: 3,
-        test_resolver: resolverAddress,
+        resolver: resolverAddress,
         additional_liquidation_delay: delayParam,
         block_offset: 1,
         liquidation_run_every: 1000

@@ -16,7 +16,7 @@ async function setup(provider, agentAccount) {
                 console.log(error);
         },  [":", "fTUSD"], { web3: web3 }
     );
-    resolverAddress = process.env.TEST_RESOLVER_ADDRESS;
+    resolverAddress = process.env.RESOLVER_ADDRESS;
     const superfluidIdent = `Superfluid.test`;
     const resolver = new web3.eth.Contract(IResolver.abi,resolverAddress);
     const superfluidAddress = await resolver.methods.get(superfluidIdent).call();

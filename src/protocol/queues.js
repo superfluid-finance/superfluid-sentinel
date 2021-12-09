@@ -39,7 +39,7 @@ class Queues {
                         const estimationOutput = new Date(estimationData.estimation).getTime() > 0 ? estimationData.estimation : "no estimation found";
                         task.self.app.logger.debug(`[${task.token}]: ${task.account} - ${estimationOutput}`);
                     } else {
-                        console.log(`reject account: ${task.account} supertoken: ${task.token} not subscribed`);
+                        task.self.app.logger.debug(`reject account: ${task.account} supertoken: ${task.token} not subscribed`);
                     }
                     break;
                 } catch (err) {
@@ -93,7 +93,7 @@ class Queues {
                     if(allFlowUpdatedEvents.length === 0) {
                         task.self.app.logger.debug(`Didn't find FlowUpdated for sender: ${task.account} in blockNumber: ${task.blockNumber} / blockHash ${task.blockHash}`);
                     } else {
-                        console.log(allFlowUpdatedEvents)
+                        task.self.app.logger.debug(allFlowUpdatedEvents);
                     }
                     for (let event of allFlowUpdatedEvents) {
                         await AgreementModel.upsert({

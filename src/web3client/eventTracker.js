@@ -63,7 +63,7 @@ class EventTracker {
                 const _newBlock = Number(newBlock);
                 const _oldBlock = Number(self.oldSeenBlock);
                 const newBlockOffset = _newBlock - self.app.config.BLOCK_OFFSET;
-                console.log(`[${self.app.config.BLOCK_OFFSET}] oldBlock: ${_oldBlock}, newBlock ${_newBlock} = ${newBlockOffset}`)
+                self.app.logger.debug(`[${self.app.config.BLOCK_OFFSET}] oldBlock: ${_oldBlock}, newBlock ${_newBlock} = ${newBlockOffset}`);
                 if(_newBlock - _oldBlock >= self.app.config.BLOCK_OFFSET && (_oldBlock + 1) <= newBlockOffset) {
                     if (_oldBlock) {
                         self.app.logger.debug(`sync #${_oldBlock + 1} -> #${newBlockOffset}`);
@@ -95,7 +95,7 @@ class EventTracker {
             }
             switch(event.eventName) {
                 case "AgreementStateUpdated" : {
-                    console.log(`${event.eventName} [${event.address}] -  ${event.account}`);
+                    this.app.logger.debug(`${event.eventName} [${event.address}] -  ${event.account}`);
                     this.app.queues.agreementUpdateQueue.push({
                         self: this,
                         account: event.account,
@@ -107,7 +107,7 @@ class EventTracker {
                     break;
                 }
                 case "Transfer" : {
-                    console.log(`${event.eventName} [${event.address}] - sender ${event.from} receiver ${event.to}`);
+                    this.app.logger.debug(`${event.eventName} [${event.address}] - sender ${event.from} receiver ${event.to}`);
                     this.app.queues.estimationQueue.push([
                         {
                             self: this,
@@ -147,7 +147,7 @@ class EventTracker {
     async processAgreementEvent(event) {
         try {
             if(!this.app.client.isSuperTokenRegister(event.token)) {
-                this.app.logger.warn(`found a new token at ${event.token}`);
+                this.app.logger.debug(`found a new token at ${event.token}`);
                 //TODO: if subscribe to all tokens add this one
             }
         } catch(err) {
@@ -161,7 +161,7 @@ class EventTracker {
             if(this.app.client.isSuperTokenRegister(event.token)) {
                 switch(event.eventName) {
                     case "IndexUpdated" : {
-                        console.log(`[IndexUpdated] - ${event.eventName} [${event.token}] - publisher ${event.publisher}`);
+                        this.app.logger.debug(`[IndexUpdated] - ${event.eventName} [${event.token}] - publisher ${event.publisher}`);
                         this.app.queues.estimationQueue.push([
                             {
                                 self: this,

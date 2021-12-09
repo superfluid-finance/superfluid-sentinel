@@ -56,7 +56,7 @@ class EventTracker {
             this.oldSeenBlock = oldBlock;
         }
         const provider = this.app.client.web3.eth.currentProvider;
-        this.blockTracker = new PollingBlockTracker({provider, pollingInterval: this.app.config.POLLING_INTERNVAL})
+        this.blockTracker = new PollingBlockTracker({provider, pollingInterval: this.app.config.POLLING_INTERVAL})
         const self = this;
         try {
             this.blockTracker.on('sync', ({ newBlock }) => {

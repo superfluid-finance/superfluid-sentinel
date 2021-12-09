@@ -34,7 +34,7 @@ const populateEnvVariables= () => {
     process.env.LIQUIDATION_JOB_AWAITS=55;
     process.env.MAX_BATCH_TX=5;
     process.env.LOG_LEVEL="debug";
-    process.env.POLLING_INTERNVAL=10;
+    process.env.POLLING_INTERVAL=10;
     process.env.BLOCK_OFFSET = 2;
     return {
         HTTP_RPC_NODE:process.env.HTTP_RPC_NODE,
@@ -60,7 +60,7 @@ const populateEnvVariables= () => {
         LIQUIDATION_JOB_AWAITS:process.env.LIQUIDATION_JOB_AWAITS,
         MAX_BATCH_TX:process.env.MAX_BATCH_TX,
         LOG_LEVEL:process.env.LOG_LEVEL,
-        POLLING_INTERNVAL:process.env.POLLING_INTERNVAL,
+        POLLING_INTERVAL:process.env.POLLING_INTERVAL,
         BLOCK_OFFSET:process.env.BLOCK_OFFSET
     }
 }
@@ -89,7 +89,7 @@ const removeEnvVariables = () => {
     delete process.env.LIQUIDATION_JOB_AWAITS;
     delete process.env.MAX_BATCH_TX;
     delete process.env.LOG_LEVEL;
-    delete process.env.POLLING_INTERNVAL;
+    delete process.env.POLLING_INTERVAL;
     delete process.env.BLOCK_OFFSET;
 }
 
@@ -122,7 +122,7 @@ describe("Test Agent user configurations", () => {
             expect(envObj.LIQUIDATION_JOB_AWAITS*1000).to.equal(config.LIQUIDATION_JOB_AWAITS);
             expect(envObj.MAX_BATCH_TX).to.equal(config.MAX_BATCH_TX);
             expect(envObj.LOG_LEVEL).to.equal(config.LOG_LEVEL);
-            expect(envObj.POLLING_INTERNVAL * 1000).to.equal(config.POLLING_INTERNVAL);
+            expect(envObj.POLLING_INTERVAL * 1000).to.equal(config.POLLING_INTERVAL);
             expect(envObj.BLOCK_OFFSET).to.equal(config.BLOCK_OFFSET);
             removeEnvVariables();
         } catch(err) {

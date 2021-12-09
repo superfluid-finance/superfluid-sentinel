@@ -24,7 +24,7 @@ class Config {
             this.PROTOCOL_RELEASE_VERSION = config.protocol_release_version || "v1";
             this.MAX_GAS_PRICE = config.max_gas_price || 500000000000;
             this.RETRY_GAS_MULTIPLIER = config.retry_gas_multiplier || 1.15;
-            this.POLLING_INTERNVAL = config.polling_interval*1000 || 10000;
+            this.POLLING_INTERVAL = config.polling_interval*1000 || 10000;
             this.PIC = config.pic;
             this.MAX_BATCH_TX = config.max_batch_tx || 20;
             this.BLOCK_OFFSET = config.block_offset || 0;
@@ -72,8 +72,8 @@ class Config {
             this.LIQUIDATION_JOB_AWAITS = process.env.LIQUIDATION_JOB_AWAITS*1000 || 30000;
             this.MAX_BATCH_TX = process.env.MAX_BATCH_TX || 20;
             this.LOG_LEVEL = process.env.LOG_LEVEL || "info"
-            this.POLLING_INTERNVAL = process.env.POLLING_INTERNVAL*1000 || 10000;
-            this.BLOCK_OFFSET = process.env.BLOCK_OFFSET || 6;
+            this.POLLING_INTERVAL = process.env.POLLING_INTERVAL*1000 || 30000;
+            this.BLOCK_OFFSET = process.env.BLOCK_OFFSET || 12;
         }
 
         if (this.HTTP_RPC_NODE === undefined) {
@@ -115,7 +115,7 @@ class Config {
             LIQUIDATION_JOB_AWAITS: this.LIQUIDATION_JOB_AWAITS,
             MAX_BATCH_TX: this.MAX_BATCH_TX,
             LOG_LEVEL: this.LOG_LEVEL,
-            POLLING_INTERNVAL: this.POLLING_INTERNVAL,
+            POLLING_INTERVAL: this.POLLING_INTERVAL,
             BLOCK_OFFSET: this.BLOCK_OFFSET,
         }
     }

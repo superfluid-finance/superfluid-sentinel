@@ -59,7 +59,6 @@ class Config {
             this.MAX_GAS_PRICE = process.env.MAX_GAS_PRICE || 500000000000;
             this.RETRY_GAS_MULTIPLIER = process.env.RETRY_GAS_MULTIPLIER || 1.15;
             this.PIC = process.env.PIC;
-            this.RESOLVER = process.env.RESOLVER;
 
             //extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
             this.CONCURRENCY = process.env.CONCURRENCY || 1;
@@ -71,6 +70,7 @@ class Config {
             this.METRICS_PORT = process.env.METRICS_PORT || 3000;
             this.LIQUIDATION_JOB_AWAITS = process.env.LIQUIDATION_JOB_AWAITS*1000 || 30000;
             this.MAX_BATCH_TX = process.env.MAX_BATCH_TX || 20;
+            this.RESOLVER = process.env.RESOLVER;
             this.LOG_LEVEL = process.env.LOG_LEVEL || "info"
             this.POLLING_INTERVAL = process.env.POLLING_INTERVAL*1000 || 30000;
             this.BLOCK_OFFSET = process.env.BLOCK_OFFSET || 12;

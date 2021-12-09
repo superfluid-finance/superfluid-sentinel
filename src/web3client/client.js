@@ -220,7 +220,7 @@ class Client {
         });
     }
 
-    isSuperTokenRegister(token) {
+    isSuperTokenRegistered(token) {
         const result = this.superTokens[token.toLowerCase()];
         return result !== undefined;
     }

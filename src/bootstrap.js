@@ -27,7 +27,7 @@ class Bootstrap {
                     let keepTrying = 1;
                     while(true) {
                         try {
-                            if(task.self.app.client.isSuperTokenRegister(task.token)) {
+                            if(task.self.app.client.isSuperTokenRegistered(task.token)) {
                                 const estimationData = await task.self.app.protocol.liquidationData(task.token, task.account);
                                 await EstimationModel.upsert({
                                     address: task.account,

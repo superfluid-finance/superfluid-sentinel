@@ -146,7 +146,7 @@ class EventTracker {
 
     async processAgreementEvent(event) {
         try {
-            if(!this.app.client.isSuperTokenRegister(event.token)) {
+            if(!this.app.client.isSuperTokenRegistered(event.token)) {
                 this.app.logger.debug(`found a new token at ${event.token}`);
                 //TODO: if subscribe to all tokens add this one
             }
@@ -158,7 +158,7 @@ class EventTracker {
 
     async processIDAEvent(event) {
         try {
-            if(this.app.client.isSuperTokenRegister(event.token)) {
+            if(this.app.client.isSuperTokenRegistered(event.token)) {
                 switch(event.eventName) {
                     case "IndexUpdated" : {
                         this.app.logger.debug(`[IndexUpdated] - ${event.eventName} [${event.token}] - publisher ${event.publisher}`);
@@ -187,7 +187,7 @@ class EventTracker {
 
     async processTOGAEvent(event) {
         try {
-            if(this.app.client.isSuperTokenRegister(event.token)) {
+            if(this.app.client.isSuperTokenRegistered(event.token)) {
                 switch(event.eventName) {
                     case "NewPIC" : {
                         console.log(`${event.eventName} [${event.token}] new pic ${event.pic}`);

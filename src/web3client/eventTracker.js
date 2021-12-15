@@ -62,18 +62,16 @@ class EventTracker {
             this.blockTracker.on('sync', ({ newBlock }) => {
                 const _newBlock = Number(newBlock);
                 const _oldBlock = Number(self.oldSeenBlock);
-                const newBlockOffset = _newBlock - self.app.config.BLOCK_OFFSET;
-                self.app.logger.debug(`[${self.app.config.BLOCK_OFFSET}] oldBlock: ${_oldBlock}, newBlock ${_newBlock} = ${newBlockOffset}`);
-                if(_newBlock - _oldBlock >= self.app.config.BLOCK_OFFSET && (_oldBlock + 1) <= newBlockOffset) {
+                const newBlockWithOffset = _newBlock - self.app.config.BLOCK_OFFSET;
+                self.app.logger.debug(`[${self.app.config.BLOCK_OFFSET}] oldBlock:${_oldBlock} newBlock:${_newBlock} withOffset: ${newBlockWithOffset}`);
+                if(_newBlock - _oldBlock + 1 >= self.app.config.BLOCK_OFFSET) {
                     if (_oldBlock) {
-                        self.app.logger.debug(`sync #${_oldBlock + 1} -> #${newBlockOffset}`);
-                        self.app.db.queries.updateBlockNumber(newBlockOffset);
-                        self.getPastBlockAndParseEvents(_oldBlock + 1, newBlockOffset);
-                        self.updateBlockNumber(newBlockOffset);
+                        self.app.db.queries.updateBlockNumber(newBlockWithOffset);
+                        self.getPastBlockAndParseEvents(_oldBlock + 1, newBlockWithOffset);
+                        self.updateBlockNumber(newBlockWithOffset);
                     } else if(self.oldSeenBlock) {
-                        self.app.logger.debug(`first sync #${_oldBlock + 1} -> #${newBlockOffset}`);
-                        self.getPastBlockAndParseEvents(_oldBlock, newBlockOffset);
-                        self.updateBlockNumber(newBlockOffset);
+                        self.getPastBlockAndParseEvents(_oldBlock, newBlockWithOffset);
+                        self.updateBlockNumber(newBlockWithOffset);
                     }
                 } else {
                     self.app.logger.warn(`skip getting new blocks: new block ${_newBlock}, old block ${_oldBlock}`);

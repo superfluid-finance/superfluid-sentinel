@@ -83,10 +83,6 @@ class Queues {
                         return a.blockNumber > b.blockNumber;
                     }).forEach(e => {
                         e.agreementId = task.self.app.protocol.generateId(e.sender, e.receiver);
-                        e.sender = e.sender;
-                        e.receiver = e.receiver;
-                        e.superToken = e.token;
-                        e.blockNumber = e.blockNumber;
                     });
 
 
@@ -98,7 +94,7 @@ class Queues {
                     for (let event of allFlowUpdatedEvents) {
                         await AgreementModel.upsert({
                             agreementId: event.agreementId,
-                            superToken: event.superToken,
+                            superToken: event.token,
                             sender: event.sender,
                             receiver: event.receiver,
                             flowRate: event.flowRate,
@@ -107,7 +103,7 @@ class Queues {
                         task.self.app.queues.estimationQueue.push([{
                             self: task.self,
                             account: event.sender,
-                            token: event.superToken,
+                            token: event.token,
                             blockNumber: event.blockNumber,
                             blockHash: event.blockHash,
                             transactionHash: event.transactionHash,
@@ -115,7 +111,7 @@ class Queues {
                         }, {
                             self: task.self,
                             account: event.receiver,
-                            token: event.superToken,
+                            token: event.token,
                             blockNumber: event.blockNumber,
                             blockHash: event.blockHash,
                             transactionHash: event.transactionHash,

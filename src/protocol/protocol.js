@@ -7,23 +7,6 @@ class Protocol {
         this.app = app;
     }
 
-    async getAccountRealtimeBalance(token, address, timestamp) {
-        try {
-            this.app.client.addTotalRequest();
-            if (timestamp === undefined) {
-                timestamp = Math.floor(new Date().getTime() / 1000);
-            }
-
-            return this.app.client.superTokens[token.toLowerCase()].methods.realtimeBalanceOf(
-                address,
-                timestamp
-            ).call();
-        } catch (err) {
-            console.error(err)
-            throw Error(`account balance (${token}): ${err}`)
-        }
-    }
-
     async getAccountRealtimeBalanceOfNow(token, address) {
         try {
             this.app.client.addTotalRequest();
@@ -33,23 +16,6 @@ class Protocol {
         } catch (err) {
             console.error(err)
             throw Error(`account balance (${token}): ${err}`)
-        }
-    }
-
-    async getAccountAgreementRealtimeBalance(token, account, timestamp) {
-        try {
-            this.app.client.addTotalRequest();
-            if (timestamp === undefined) {
-                timestamp = Math.floor(new Date().getTime() / 1000);
-            }
-            return this.app.client.CFAv1.methods.realtimeBalanceOf(
-                token,
-                account,
-                timestamp
-            ).call();
-        } catch (err) {
-            console.error(err)
-            throw Error({ msg: `account realtime balance: ${err}`, code: -1 })
         }
     }
 
@@ -113,11 +79,8 @@ class Protocol {
     async liquidationData(token, account) {
         try {
             this.app.client.addTotalRequest(2);
-            //const now = Math.floor(new Date().getTime() / 1000);
-            //now is the resp of balanceOfNow query
             let arrPromise = [
                 this.getUserNetFlow(token, account),
-                //this.getAccountRealtimeBalance(token, account, now),
                 this.getAccountRealtimeBalanceOfNow(token, account)
             ];
             arrPromise = await Promise.all(arrPromise);

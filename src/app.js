@@ -186,22 +186,24 @@ class App {
         //check important change of configurations
         const res = await this.db.queries.getConfiguration();
         if (res !== null) {
-            let needResync = false;
             const dbuserConfig = JSON.parse(res.config);
-            if (dbuserConfig.TOKENS === undefined && userConfig.TOKENS !== undefined) {
-                needResync = true;
-            } else if (userConfig.TOKENS) {
+            //if user was filtering tokens and now is not, then should resync
+            if (dbuserConfig.TOKENS !== undefined && userConfig.TOKENS === undefined) {
+                return true;
+            }
+            //if user is filering tokens should match
+            if (dbuserConfig.TOKENS !== undefined && userConfig.TOKENS !== undefined) {
                 const sortedDBTokens = dbuserConfig.TOKENS.sort(this.utils.sortString);
                 const sortedConfigTokens = userConfig.TOKENS.sort(this.utils.sortString);
                 const match = sortedDBTokens.filter(x => sortedConfigTokens.includes(x));
                 if (match.length < sortedConfigTokens.length) {
-                    needResync = true;
+                    return true;
                 }
             }
-            if (dbuserConfig.ONLY_LISTED_TOKENS !== userConfig.ONLY_LISTED_TOKENS && userConfig.ONLY_LISTED_TOKENS == false) {
+            //if user is not filtering and change mode to be more open
+            if (!userConfig.TOKENS && (dbuserConfig.ONLY_LISTED_TOKENS !== userConfig.ONLY_LISTED_TOKENS && userConfig.ONLY_LISTED_TOKENS == false)) {
                 needResync = true;
             }
-            return needResync;
         }
         return false;
     }

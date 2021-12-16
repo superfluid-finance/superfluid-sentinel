@@ -76,6 +76,11 @@ class Config {
             this.BLOCK_OFFSET = process.env.BLOCK_OFFSET || 12;
         }
 
+        //token filter also affectes ONLY_LISTED_TOKENS
+        if(this.TOKENS !== undefined) {
+            this.ONLY_LISTED_TOKENS = "false";
+        }
+
         if (this.HTTP_RPC_NODE === undefined) {
             throw Error('required configuration item missing: HTTP_RPC_NODE');
         }

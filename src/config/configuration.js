@@ -78,7 +78,7 @@ class Config {
 
         //token filter also affectes ONLY_LISTED_TOKENS
         if(this.TOKENS !== undefined) {
-            this.ONLY_LISTED_TOKENS = "false";
+            this.ONLY_LISTED_TOKENS = false;
         }
 
         if (this.HTTP_RPC_NODE === undefined) {

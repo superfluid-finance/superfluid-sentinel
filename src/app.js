@@ -90,7 +90,7 @@ class App {
         this.logger.info(`app.shutdown() - agent shutting down`);
         this.time.resetTime();
         if(force) {
-            this.logger.error(`app.shutdown() - force shutdown`);
+            // don't use this.logger.error() here as it would recurse endlessly
             process.exit(0);
         }
 

@@ -191,7 +191,7 @@ class App {
             if (dbuserConfig.TOKENS !== undefined && userConfig.TOKENS === undefined) {
                 return true;
             }
-            //if user is filering tokens should match
+            //if user changes the set of filtered tokens, check if it's a subset of the previous ones
             if (dbuserConfig.TOKENS !== undefined && userConfig.TOKENS !== undefined) {
                 const sortedDBTokens = dbuserConfig.TOKENS.sort(this.utils.sortString);
                 const sortedConfigTokens = userConfig.TOKENS.sort(this.utils.sortString);
@@ -200,9 +200,9 @@ class App {
                     return true;
                 }
             }
-            //if user is not filtering and change mode to be more open
-            if (!userConfig.TOKENS && (dbuserConfig.ONLY_LISTED_TOKENS !== userConfig.ONLY_LISTED_TOKENS && userConfig.ONLY_LISTED_TOKENS == false)) {
-                needResync = true;
+            //if there's no filter and the user switched from listed-only to all tokens, resync is needed
+            if (userConfig.TOKENS === undefined && dbuserConfig.ONLY_LISTED_TOKENS === true && userConfig.ONLY_LISTED_TOKENS === false) {
+                return true;
             }
         }
         return false;

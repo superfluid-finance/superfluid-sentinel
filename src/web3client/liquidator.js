@@ -57,7 +57,6 @@ class Liquidator {
     }
 
     async singleTerminations(work) {
-
         const wallet = this.app.client.getAccount();
         const chainId = await this.app.client.getChainId();
         let networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
@@ -116,7 +115,7 @@ class Liquidator {
                 }
 
                 if (senders.length === this.app.config.MAX_BATCH_TX) {
-                    if (senders.length == parseInt(this.app.config.MAX_BATCH_TX)) {
+                    if (senders.length === parseInt(this.app.config.MAX_BATCH_TX)) {
                         this.app.logger.debug(`sending a full batch work: load ${senders.length}`);
                         await this.sendBatch(batch.superToken, senders, receivers);
                         senders = new Array();

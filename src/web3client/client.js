@@ -151,7 +151,7 @@ class Client {
                 attributes: ['address']
             };
 
-            if(this.app.config.ONLY_LISTED_TOKENS == true) {
+            if(this.app.config.ONLY_LISTED_TOKENS === true) {
                 filter = {
                     attributes: ['address'],
                     where: {listed: 1}
@@ -197,7 +197,7 @@ class Client {
         ).call();
 
         let isListed = superTokenAddress === newSuperToken;
-        if(this.app.config.ONLY_LISTED_TOKENS == true && isListed) {
+        if (this.app.config.ONLY_LISTED_TOKENS === true && isListed) {
             const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${superTokenAddress}`;
             this.app.logger.info(tokenInfo);
             this.superTokenNames[newSuperToken.toLowerCase()] = tokenInfo;

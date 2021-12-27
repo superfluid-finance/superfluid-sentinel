@@ -29,7 +29,7 @@ const bootNode = async (delayParam = 0) => {
         cold_boot: 1,
         only_listed_tokens: 1,
         number_retries: 3,
-        test_resolver: resolverAddress,
+        resolver: resolverAddress,
         additional_liquidation_delay: delayParam,
         liquidation_run_every: 1000
     });
@@ -106,7 +106,7 @@ describe("Agent configurations tests", () => {
         closeNode(true);
     });
 
-    it("Should use delay paramater when sending liquidation", async () => {
+    it.only("Should use delay paramater when sending liquidation", async () => {
         try {
             const data = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,
@@ -115,7 +115,7 @@ describe("Agent configurations tests", () => {
                 "0x"
             ).encodeABI();
             await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
-            await bootNode(3600);
+            await bootNode(2700);
             const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
             await ganache.helper.timeTravelOnce(3580, app, true);
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);

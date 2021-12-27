@@ -1,5 +1,6 @@
 const traveler = require("ganache-time-traveler");
 
+const delay = ms => new Promise(res => setTimeout(res, ms));
 async function timeTravelOnce(time, app, setAppTime = false) {
     const block1 = await web3.eth.getBlock("latest");
     console.log("current block time", block1.timestamp);
@@ -10,6 +11,14 @@ async function timeTravelOnce(time, app, setAppTime = false) {
     if(setAppTime)
         app.setTime(block2.timestamp * 1000);
     return block2.timestamp;
+}
+
+async function timeTravelUntil(time, ticks, app, setAppTime) {
+  while(ticks > 0) {
+    await delay(1000);
+    await timeTravelOnce(time, app, setAppTime);
+    ticks--;
+  }
 }
 
 async function takeEvmSnapshot() {
@@ -45,6 +54,7 @@ async function revertToSnapShot(evmSnapshotId) {
 
 module.exports = {
     timeTravelOnce,
+    timeTravelUntil,
     takeEvmSnapshot,
     revertToSnapShot
 }

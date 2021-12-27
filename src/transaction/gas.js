@@ -6,7 +6,7 @@ class Gas {
 
     async getGasLimit(wallet, txObject) {
         try {
-            let result = await this.app.client.web3HTTP.eth.estimateGas({
+            let result = await this.app.client.web3.eth.estimateGas({
                 from: wallet.address,
                 to: txObject.target,
                 data: txObject.tx
@@ -14,17 +14,15 @@ class Gas {
                 result += Math.ceil(parseInt(result) * 1.2);
             return { error: undefined, gasLimit : result };
         } catch(err) {
-            console.error(err);
             return { error: err, gasLimit : undefined };
         }
     }
 
     async getGasPrice() {
         try {
-            const price = await this.app.client.web3HTTP.eth.getGasPrice();
+            const price = await this.app.client.web3.eth.getGasPrice();
             return { gasPrice: price, error: undefined };
         } catch(err) {
-            console.error(err);
             return { gasPrice : undefined, error: err };
         }
     }

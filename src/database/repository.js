@@ -1,6 +1,7 @@
 const { QueryTypes, Op } = require("sequelize");
 const EstimationModel = require("../database/models/accountEstimationModel");
 const UserConfig = require("../database/models/userConfiguration");
+const SystemModel = require("../database/models/systemModel");
 
 class Repository {
 
@@ -55,18 +56,6 @@ class Repository {
 
   }
 
-  async getIDASubscribers(superToken, publisher) {
-    const sqlquery = `SELECT DISTINCT subscriber from idaevents IDA
-    INNER JOIN agreements AGR on IDA.subscriber = AGR.sender AND IDA.superToken = AGR.superToken
-    WHERE eventName = "SubscriptionApproved"
-    AND publisher = :pb
-    AND IDA.superToken = :st`;
-    return this.app.db.query(sqlquery, {
-      replacements: [{ pb: publisher }, {st: superToken}],
-      type: QueryTypes.SELECT
-    });
-  }
-
   async getAddressEstimation(address) {
     return EstimationModel.findAll({
       attributes: ['address', 'superToken', 'zestimation'],
@@ -80,15 +69,7 @@ class Repository {
   async getEstimations() {
     return EstimationModel.findAll({
       attributes: ['address', 'superToken', 'zestimation'],
-      where:
-      {
-          [Op.or]: [
-              { now : true},
-              {
-                  zestimation: { [Op.gt]: 0 }
-              }
-          ]
-      }
+      where: { zestimation: { [Op.gt]: 0 } }
   });
   }
 
@@ -102,9 +83,10 @@ class Repository {
       inSnippedLimit = `LIMIT ${limitRows}`;
     }
 
-    const sqlquery = `SELECT agr.superToken, agr.sender, agr.receiver, est.zestimation, est.zestimationHuman FROM agreements agr
+    const sqlquery = `SELECT agr.superToken, agr.sender, agr.receiver, est.zestimation, est.zestimationHuman, (est.zestimation + (st.delay * 1000)) as computedEstimation FROM agreements agr
+    INNER JOIN supertokens st on agr.superToken == st.address
     INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.zestimation <> 0
-    WHERE agr.flowRate <> 0 and est.zestimation <= :dt ${inSnipped}
+    WHERE agr.flowRate <> 0 and (est.zestimation + (st.delay * 1000)) <= :dt ${inSnipped}
     ORDER BY agr.superToken, agr.sender, agr.flowRate DESC ${inSnippedLimit}`;
 
     if(inSnipped !== "") {
@@ -121,8 +103,9 @@ class Repository {
 
   async getNumberOfBatchCalls(checkDate) {
     const sqlquery = `SELECT agr.superToken, count(*) as numberTxs  FROM agreements agr
+    INNER JOIN supertokens st on agr.superToken == st.address
     INNER JOIN estimations est on agr.sender = est.address and agr.superToken = est.superToken and est.zestimation <> 0
-    where agr.flowRate <> 0 and est.zestimation <= :dt
+    where agr.flowRate <> 0 and (est.zestimation + (st.delay * 1000))  <= :dt
     group by agr.superToken
     having count(*) > 1
     order by count(*) desc`;
@@ -137,6 +120,14 @@ class Repository {
     return this.app.db.query("SELECT 1", {
       type: QueryTypes.SELECT
     });
+  }
+  async updateBlockNumber(newBlockNumber) {
+    const systemInfo = await SystemModel.findOne();
+    if(systemInfo !== null && systemInfo.blockNumber < newBlockNumber) {
+      systemInfo.blockNumber = Number(newBlockNumber);
+      systemInfo.superTokenBlockNumber = Number(newBlockNumber);
+    }
+      return systemInfo.save();
   }
 
   async getConfiguration() {

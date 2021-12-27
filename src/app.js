@@ -1,7 +1,9 @@
 const Config = require("./config/configuration");
 const Logger = require("./logger/logger");
 const Client = require("./web3client/client");
-const Protocol = require("./web3client/protocol");
+const EventTracker = require("./web3client/eventTracker");
+const Queues = require("./protocol/queues");
+const Protocol = require("./protocol/protocol");
 const LoadEvents = require("./loadEvents");
 const Liquidator = require("./web3client/liquidator");
 const Gas = require("./transaction/gas");
@@ -28,11 +30,12 @@ class App {
 
         //Helpers global functions
         const delay = ms => new Promise(res => setTimeout(res, ms))
-
+        this.eventTracker = new EventTracker(this);
         this.config = new Config(config);
         this.logger = new Logger(this);
         this.client = new Client(this);
         this.protocol = new Protocol(this);
+        this.queues = new Queues(this);
         this.gasEstimator = new Gas(this);
         this.loadEvents = new LoadEvents(this);
         const models = {
@@ -48,16 +51,19 @@ class App {
         this.db = DB;
         this.db.queries = new Repository(this);
         this.server = new HTTPServer(this);
-        this._isShutdown = false;
         this.timer = {
             delay: delay
         }
+
+        this._isShutdown = false;
+        this._needResync = false;
     }
 
     async run(fn, time) {
-
-        if(this._isShutdown)
+        if(this._isShutdown) {
+            this.logger.info(`app.shutdown() - closing app runner`);
             return;
+        }
 
         const result = await trigger(fn, time);
         if(result.error !== undefined) {
@@ -67,10 +73,12 @@ class App {
 
         await this.run(fn, time);
     }
+
     //return if client module is initialized
     isInitialized() {
         return this.client.isInitialized;
     }
+
     //return estimations saved on database
     async getEstimations() {
         return this.db.queries.getEstimations();
@@ -82,16 +90,27 @@ class App {
         this.logger.info(`app.shutdown() - agent shutting down`);
         this.time.resetTime();
         if(force) {
-            this.logger.error(`app.shutdown() - force shutdown`);
+            // don't use this.logger.error() here as it would recurse endlessly
             process.exit(0);
         }
 
         try {
-            await this.protocol.unsubscribeTokens();
-            await this.protocol.unsubscribeAgreements();
+            this.logger.info(`app.shutdown() - closing event tracker`);
+            this.eventTracker._disconnect();
+            this.logger.info(`app.shutdown() - closing client`);
             this.client.disconnect();
-            await this.db.close();
             this.time.resetTime();
+            this.logger.info(`app.shutdown() - closing database`);
+            await this.db.close();
+            let counter = 5;
+            while(counter > 0) {
+                await this.timer.delay(3000);
+                console.log(this.liquidator._closed)
+                if(this.liquidator._closed) {
+                    return
+                }
+                counter--;
+            }
             return;
         } catch(err) {
             this.logger.error(`app.shutdown() - ${err}`);
@@ -113,10 +132,11 @@ class App {
 
     async start() {
         try {
+            this.logger.debug(`booting sentinel`);
             this._isShutdown = false;
             if (this.config.COLD_BOOT) {
                 //drop existing database to force a full boot
-                this.logger.debug(`resync all database data`);
+                this.logger.debug(`resyncing database data`);
                 await this.db.sync({ force: true });
             } else {
                 await this.db.sync();
@@ -134,29 +154,28 @@ class App {
             await this.client.init();
             //if we are running tests don't try to load network information
             if(!this.config.RUN_TEST_ENV)
-                this.config.loadNetworkInfo(await this.client.getNetworkId());
+                this.config.loadNetworkInfo(await this.client.getChainId());
             if(this.config.BATCH_CONTRACT !== undefined) {
                 await this.client.loadBatchContract();
             }
-            //Collect events to detect superTokens and accounts
-            await this.loadEvents.start();
+            if(this.config.TOGA_CONTRACT !== undefined) {
+                await this.client.loadTogaContract();
+            }
+            //collect events to detect superTokens and accounts
+            const currentBlock = await this.loadEvents.start();
             //query balances to make liquidations estimations
             await this.bootstrap.start();
-            //cold boot take some time, we missed some blocks in the boot phase, run again to be near real.time
-            if(this.config.COLD_BOOT == 1) {
-                await this.loadEvents.start();
-                await this.bootstrap.start();
-            }
-
-            setTimeout(() => this.protocol.subscribeAllTokensEvents(), 1000);
-            setTimeout(() => this.protocol.subscribeAgreementEvents(), 1000);
-            setTimeout(() => this.protocol.subscribeIDAAgreementEvents(), 1000);
+            this.queues.init();
+            setTimeout(() => this.queues.start(), 1000);
+            setTimeout(() => this.eventTracker.start(currentBlock), 1000);
             //start http server to serve node health reports and dashboard
             if(this.config.METRICS == true) {
                 setTimeout(() => this.server.start(), 1000);
             }
-            //await x milliseconds before running next liquidation job
-            this.run(this.liquidator, this.config.LIQUIDATION_JOB_AWAITS);
+            if(true) {
+                //await x milliseconds before running next liquidation job
+                this.run(this.liquidator, this.config.LIQUIDATION_JOB_AWAITS);
+            }
         } catch(err) {
             this.logger.error(`app.start() - ${err}`);
             process.exit(1);
@@ -167,22 +186,24 @@ class App {
         //check important change of configurations
         const res = await this.db.queries.getConfiguration();
         if (res !== null) {
-            let needResync = false;
             const dbuserConfig = JSON.parse(res.config);
-            if (dbuserConfig.TOKENS === undefined && userConfig.TOKENS !== undefined) {
-                needResync = true;
-            } else if (userConfig.TOKENS) {
+            //if user was filtering tokens and now is not, then should resync
+            if (dbuserConfig.TOKENS !== undefined && userConfig.TOKENS === undefined) {
+                return true;
+            }
+            //if user changes the set of filtered tokens, check if it's a subset of the previous ones
+            if (dbuserConfig.TOKENS !== undefined && userConfig.TOKENS !== undefined) {
                 const sortedDBTokens = dbuserConfig.TOKENS.sort(this.utils.sortString);
                 const sortedConfigTokens = userConfig.TOKENS.sort(this.utils.sortString);
                 const match = sortedDBTokens.filter(x => sortedConfigTokens.includes(x));
                 if (match.length < sortedConfigTokens.length) {
-                    needResync = true;
+                    return true;
                 }
             }
-            if (dbuserConfig.ONLY_LISTED_TOKENS !== userConfig.ONLY_LISTED_TOKENS && userConfig.ONLY_LISTED_TOKENS == false) {
-                needResync = true;
+            //if there's no filter and the user switched from listed-only to all tokens, resync is needed
+            if (userConfig.TOKENS === undefined && dbuserConfig.ONLY_LISTED_TOKENS === true && userConfig.ONLY_LISTED_TOKENS === false) {
+                return true;
             }
-            return needResync;
         }
         return false;
     }

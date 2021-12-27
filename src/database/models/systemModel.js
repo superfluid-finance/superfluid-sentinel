@@ -6,7 +6,7 @@ const SystemModel = db.define("system", {
         type: Sequelize.INTEGER,
         allowNull: false,
     },
-    networkId: {
+    chainId: {
         type: Sequelize.INTEGER,
         allowNull: false,
     },

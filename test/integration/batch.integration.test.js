@@ -32,25 +32,24 @@ const deployBatchContract = async () => {
 
 const bootNode = async (delayParam = 0) => {
     app = new App({
-        ws_rpc_node: "ws://127.0.0.1:8545",
         http_rpc_node: "http://127.0.0.1:8545",
         mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
         mnemonic_index: 100,
         epoch_block: 0,
         DB: "TestDatabase.sqlite",
         protocol_release_version: "test",
-        tx_timeout: 300000,
+        tx_timeout: 20,
         max_query_block_range: 500000,
         max_gas_price:4000000000,
         concurrency: 1,
         cold_boot: 1,
-        only_listed_tokens:1,
+        only_listed_tokens: 1,
         number_retries: 3,
-        test_resolver: resolverAddress,
+        resolver: resolverAddress,
         additional_liquidation_delay: delayParam,
-        liquidation_run_every: 1000,
-        batch_contract: batchContract._address,
-        clo_addr: AGENT_ACCOUNT // any address is good to not have 15min delay
+        block_offset: 1,
+        liquidation_run_every: 30000,
+        batch_contract: batchContract._address
     });
     app.start();
     while(!app.isInitialized()) {
@@ -113,13 +112,12 @@ describe("Integration scripts tests", () => {
             await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData1, "0x").send({from: accounts[3], gas: 1000000});
             await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData1, "0x").send({from: accounts[4], gas: 1000000});
             await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData1, "0x").send({from: accounts[5], gas: 1000000});
-            await ganache.helper.timeTravelOnce(1);
             const tx = await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[1], gas: 1000000});
             await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[2], gas: 1000000});
             await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[3], gas: 1000000});
             await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[4], gas: 1000000});
             await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[5], gas: 1000000});
-            await bootNode();
+            await bootNode(-900);
             await ganache.helper.timeTravelOnce(1000, app, true);
             let result = await waitForEventAtSameBlock("AgreementLiquidatedBy", 5, tx.blockNumber);
             expect(result).to.equal(true);

@@ -15,6 +15,13 @@ const SuperTokensModel = db.define("supertokens", {
         type: Sequelize.STRING,
         allowNull: false,
     },
+    pic: {
+        type: Sequelize.STRING,
+    },
+    delay: {
+        type:Sequelize.INTEGER,
+        defaultValue: 900
+    },
     listed: {
         type: Sequelize.BOOLEAN,
         allowNull: false,

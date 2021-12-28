@@ -36,6 +36,7 @@ const populateEnvVariables= () => {
     process.env.LOG_LEVEL="debug";
     process.env.POLLING_INTERVAL=10;
     process.env.BLOCK_OFFSET = 2;
+    process.env.MAX_TX_NUMBER = 50;
     return {
         HTTP_RPC_NODE:process.env.HTTP_RPC_NODE,
         MNEMONIC:process.env.MNEMONIC,
@@ -61,7 +62,8 @@ const populateEnvVariables= () => {
         MAX_BATCH_TX:process.env.MAX_BATCH_TX,
         LOG_LEVEL:process.env.LOG_LEVEL,
         POLLING_INTERVAL:process.env.POLLING_INTERVAL,
-        BLOCK_OFFSET:process.env.BLOCK_OFFSET
+        BLOCK_OFFSET:process.env.BLOCK_OFFSET,
+        MAX_TX_NUMBER: process.env.MAX_TX_NUMBER
     }
 }
 
@@ -91,6 +93,7 @@ const removeEnvVariables = () => {
     delete process.env.LOG_LEVEL;
     delete process.env.POLLING_INTERVAL;
     delete process.env.BLOCK_OFFSET;
+    delete process.env.MAX_TX_NUMBER;
 }
 
 describe("Test Agent user configurations", () => {
@@ -124,6 +127,7 @@ describe("Test Agent user configurations", () => {
             expect(envObj.LOG_LEVEL).to.equal(config.LOG_LEVEL);
             expect(envObj.POLLING_INTERVAL * 1000).to.equal(config.POLLING_INTERVAL);
             expect(envObj.BLOCK_OFFSET).to.equal(config.BLOCK_OFFSET);
+            expect(envObj.MAX_TX_NUMBER).to.equal(config.MAX_TX_NUMBER);
             removeEnvVariables();
         } catch(err) {
             exitWithError(err);

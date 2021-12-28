@@ -30,7 +30,7 @@ const deployBatchContract = async () => {
     }
 }
 
-const bootNode = async (delayParam = 0) => {
+const bootNode = async (delayParam = 0, max_tx_number) => {
     app = new App({
         http_rpc_node: "http://127.0.0.1:8545",
         mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
@@ -49,7 +49,8 @@ const bootNode = async (delayParam = 0) => {
         additional_liquidation_delay: delayParam,
         block_offset: 1,
         liquidation_run_every: 30000,
-        batch_contract: batchContract._address
+        batch_contract: batchContract._address,
+        max_tx_number: max_tx_number
     });
     app.start();
     while(!app.isInitialized()) {
@@ -68,10 +69,10 @@ const waitForEventAtSameBlock = async (eventName, numberOfEvents, blockNumber) =
             console.log(`checking block: ${blockNumber}`);
             const events = await protocolVars.superToken.getPastEvents(eventName, {fromBlock: blockNumber, toBlock: blockNumber});
             if(events.length ===  numberOfEvents) {
-                return true;
+                return Number(events[0].blockNumber);
             }
             await delay(1000);
-            const r = await ganache.helper.timeTravelOnce(1, app, true);
+            await ganache.helper.timeTravelOnce(1, app, true);
             blockNumber += 1;
         } catch(err) {
             exitWithError(err);
@@ -120,7 +121,58 @@ describe("Integration scripts tests", () => {
             await bootNode(-900);
             await ganache.helper.timeTravelOnce(1000, app, true);
             let result = await waitForEventAtSameBlock("AgreementLiquidatedBy", 5, tx.blockNumber);
-            expect(result).to.equal(true);
+            await closeNode();
+            expect(result).gt(tx.blockNumber);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
+
+    it("Don't go over limit of tx per liquidation job", async () => {
+        try {
+            const flowData1 = protocolVars.cfa.methods.createFlow(protocolVars.superToken._address,accounts[0],"1000000000000000","0x").encodeABI();
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData1, "0x").send({from: accounts[1], gas: 1000000});
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData1, "0x").send({from: accounts[2], gas: 1000000});
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData1, "0x").send({from: accounts[3], gas: 1000000});
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData1, "0x").send({from: accounts[4], gas: 1000000});
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData1, "0x").send({from: accounts[5], gas: 1000000});
+            const tx = await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[1], gas: 1000000});
+            await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[2], gas: 1000000});
+            await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[3], gas: 1000000});
+            await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[4], gas: 1000000});
+            await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[5], gas: 1000000});
+            await bootNode(-900, 3);
+            await ganache.helper.timeTravelOnce(1000, app, true);
+            const result1 = await waitForEventAtSameBlock("AgreementLiquidatedBy", 3, tx.blockNumber);
+            const result2 = await waitForEventAtSameBlock("AgreementLiquidatedBy", 2, result1);
+            await closeNode();
+            expect(result1).gt(tx.blockNumber);
+            expect(result2).gt(result1);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
+
+    it("Go over the gasLimit, reduce batch size", async () => {
+        try {
+            for(let i = 1; i <= 5; i++) {
+                for(let j = 6; j <= 7; j++) {
+                    console.log(`Sending from i=${i} , j=${j} , ${accounts[i]} -> ${accounts[j]}`);
+                    const flow = protocolVars.cfa.methods.createFlow(protocolVars.superToken._address,accounts[j],"1000000000000000","0x").encodeABI();
+                    await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flow, "0x").send({from: accounts[i], gas: 1000000});
+                }
+            }
+            const tx = await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[1], gas: 1000000});
+            await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[2], gas: 1000000});
+            await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[3], gas: 1000000});
+            await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[4], gas: 1000000});
+            await protocolVars.superToken.methods.transferAll(accounts[9]).send({from: accounts[5], gas: 1000000});
+            await bootNode(-900, 10);
+            await ganache.helper.timeTravelOnce(1000, app, true);
+            const result1 = await waitForEventAtSameBlock("AgreementLiquidatedBy", 5, tx.blockNumber);
+            const result2 = await waitForEventAtSameBlock("AgreementLiquidatedBy", 5, result1 + 1);
+            expect(result1).gt(tx.blockNumber);
+            expect(result2).gt(result1);
         } catch(err) {
             exitWithError(err);
         }

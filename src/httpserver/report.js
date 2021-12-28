@@ -20,9 +20,8 @@ class Report {
         const agreementQueueSize = this.app.queues.getAgreementQueueLength();
         const lastTimeNewBlocks = this.app.eventTracker.lastTimeNewBlocks;
         const waitingForNewBlocksAt = Math.floor(Math.abs(new Date() - lastTimeNewBlocks) / 1000);
-        const RPCStuck = waitingForNewBlocksAt * 1000 > this.app.config.POLLING_INTERNVAL * 2;
-        const overallHealthy = rpcIsSyncing === false && databaseOk;
-
+        const RPCStuck = waitingForNewBlocksAt * 1000 > this.app.config.POLLING_INTERVAL * 2;
+        const overallHealthy = rpcIsSyncing === false && databaseOk && !RPCStuck;
         // TODO: add DB stats - size, nr table entries
         // TODO: add liquidation stats: past and future 1h, 24h, 30d
         // TODO add PIC status

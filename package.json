@@ -51,26 +51,22 @@
     "3": {
       "name": "Ropsten",
       "epoch": 9400000,
-      "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "toga": ""
+      "batch": "0x6b878902A8648815e1E896515e25D985715bE485"
     },
     "4": {
       "name": "Rinkeby",
       "epoch": 7400000,
-      "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "toga": ""
+      "batch": "0x6b878902A8648815e1E896515e25D985715bE485"
     },
     "5": {
       "name": "Goerli",
       "epoch": 3500000,
-      "batch": "0x48B6934B354666Daa1d9A4ccEE114873312acF55",
-      "toga": ""
+      "batch": "0x48B6934B354666Daa1d9A4ccEE114873312acF55"
     },
     "42": {
       "name": "Kovan",
       "epoch": 23709362,
-      "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "toga": ""
+      "batch": "0x6b878902A8648815e1E896515e25D985715bE485"
     },
     "100": {
       "name": "xDAI",

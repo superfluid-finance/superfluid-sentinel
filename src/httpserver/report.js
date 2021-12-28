@@ -19,8 +19,8 @@ class Report {
         const estimationQueueSize = this.app.queues.getEstimationQueueLength();
         const agreementQueueSize = this.app.queues.getAgreementQueueLength();
         const lastTimeNewBlocks = this.app.eventTracker.lastTimeNewBlocks;
-        const waitingForNewBlocksAt = Math.floor(Math.abs(new Date() - lastTimeNewBlocks) / 1000);
-        const RPCStuck = waitingForNewBlocksAt * 1000 > this.app.config.POLLING_INTERVAL * 2;
+        const waitingForNewBlocksSince = Math.floor(Math.abs(new Date() - lastTimeNewBlocks) / 1000);
+        const RPCStuck = waitingForNewBlocksSince * 1000 > this.app.config.POLLING_INTERVAL * 2;
         const overallHealthy = rpcIsSyncing === false && databaseOk && !RPCStuck;
         // TODO: add DB stats - size, nr table entries
         // TODO: add liquidation stats: past and future 1h, 24h, 30d
@@ -29,7 +29,7 @@ class Report {
             timestamp: Date.now(),
             healthy: overallHealthy,
             process: {
-                uptime: process.uptime(),
+                uptime: Math.floor(process.uptime()),
                 pid: process.pid
             },
             network: {
@@ -38,7 +38,7 @@ class Report {
                     totalRequests: this.app.client.getTotalRequests(),
                     isSyncing: rpcIsSyncing,
                     lastTimeNewBlocks : lastTimeNewBlocks,
-                    waitingForNewBlocksAt : waitingForNewBlocksAt
+                    waitingForNewBlocksSince : waitingForNewBlocksSince
                 }
             },
             account: {
@@ -49,7 +49,7 @@ class Report {
                 agreementQueue : agreementQueueSize,
                 estimationQueue : estimationQueueSize
             },
-            superfluid: {
+            protocol: {
                 cfa: this.app.client.CFAv1._address,
                 ida: this.app.client.IDAv1._address,
                 supertokens: Object.values(this.app.client.superTokenNames)

@@ -101,7 +101,7 @@ describe("GAS Integration tests", () => {
         closeNode(true);
     });
 
-    it.only("Scale gas on timeout", async () => {
+    it("Scale gas on timeout", async () => {
         try {
             const data = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,

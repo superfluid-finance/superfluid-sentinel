@@ -106,7 +106,7 @@ describe("Agent configurations tests", () => {
         closeNode(true);
     });
 
-    it.only("Should use delay paramater when sending liquidation", async () => {
+    it("Should use delay paramater when sending liquidation", async () => {
         try {
             const data = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,
@@ -125,7 +125,7 @@ describe("Agent configurations tests", () => {
         }
     });
 
-    it.only("Change state if not getting new blocks", async () => {
+    it("Change state if not getting new blocks", async () => {
         try {
             const data = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,
@@ -135,19 +135,19 @@ describe("Agent configurations tests", () => {
             ).encodeABI();
             await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
             await bootNode();
-            let statusReboot;
+            let healthy;
             while(true) {
                 await delay(9000);
                 const report = await app.healthReport.fullReport();
-                statusReboot = report.status.reboot;
-                if(statusReboot) break;
+                healthy = report.healthy;
+                if(!healthy) break;
             }
-            expect(statusReboot).eq(true);
+            expect(healthy).eq(false);
         } catch(err) {
             exitWithError(err);
         }
     });
-    it("Start node, subscribe to new Token and perform estimation", async () => {
+    it.skip("Start node, subscribe to new Token and perform estimation", async () => {
         try {
             await bootNode();
             const data = protocolVars.cfa.methods.createFlow(
@@ -173,8 +173,7 @@ describe("Agent configurations tests", () => {
             exitWithError(err);
         }
     });
-
-    it("When token is listed afterwards, and there is already existing negative accounts, liquidations should still be performed", async () => {
+    it.skip("When token is listed afterwards, and there is already existing negative accounts, liquidations should still be performed", async () => {
         try {
             const data = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,

@@ -1,6 +1,7 @@
 # Superfluid Sentinel
 
-The sentinel monitors the state of Superfluid agreements on the configured network and liquidates [critical agreements](https://docs.superfluid.finance/superfluid/docs/constant-flow-agreement#liquidation-and-solvency).
+The sentinel monitors the state of Superfluid agreements on the configured network and liquidates [critical agreements](https://docs.superfluid.finance/superfluid/docs/constant-flow-agreement#liquidation-and-solvency).  
+It also allows you to configure a related PIC account in order to automatically time liquidations according to its state in the [TOGA](https://docs.superfluid.finance/superfluid/docs/liquidations-and-toga) system. 
 
 ## Quickstart
 
@@ -33,11 +34,13 @@ cp .env-example .env
 ```
 The following configuration items are required and don't have default values:
 * HTTP_RPC_NODE (cmdline argument: -H)
-* WS_RPC_NODE (cmdline argument: -W)
+* PRIVATE_KEY (cmdline argument: -k) or MNEMONIC (cmdline argument: -m)
 
-Check the example file for additional configuration items and their documentatoin.
+In order to associate a sentinel instance with a PIC account, set the PIC env variable (cmdline argument: --pic).
 
-The configuration can be provided via cmdline args, via env variables and via `.env` file (with this order of precedence).
+Check the example file for additional configuration items and their documentation.
+
+The configuration can be provided via cmdline args, via env variables and/or via `.env` file (with this order of precedence).
 
 For persistent operation in the background, you can use the provided systemd unit template.
 ```
@@ -90,7 +93,8 @@ docker-compose up
 ```
 
 #### Upload Docker image to ECR (optional)
-This assumes you have created a repository named ```<REPOSITORY>``` in your AWS account.
+If you're using AWS and want to upload the image to ECR (this assumes you have created a repository named ```<REPOSITORY>``` in your AWS account):
+
 ```
 aws ecr get-login-password --region <REGION> | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com
 docker images

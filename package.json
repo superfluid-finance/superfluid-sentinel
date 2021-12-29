@@ -18,18 +18,19 @@
   "license": "MIT",
   "dependencies": {
     "@decentral.ee/web3-helpers": "^0.5.3",
-    "@superfluid-finance/ethereum-contracts": "dev",
-    "@superfluid-finance/js-sdk": "dev",
-    "@truffle/contract": "^4.3.36",
+    "@superfluid-finance/ethereum-contracts": "^1.0.0-rc.8",
+    "@superfluid-finance/js-sdk": "^0.5.8",
     "async": "^3.2.1",
     "bip39": "^3.0.4",
-    "commander": "^8.2.0",
+    "commander": "^8.3.0",
     "dotenv": "^10.0.0",
-    "ethereumjs-wallet": "^1.0.1",
+    "eth-block-tracker": "^5.0.1",
+    "ethereumjs-wallet": "^1.0.2",
+    "ethjs-abi": "^0.2.1",
     "express": "^4.17.1",
-    "sequelize": "^6.6.5",
+    "sequelize": "^6.8.0",
     "sqlite3": "^5.0.2",
-    "web3": "1.5.3",
+    "web3": "1.6.0",
     "winston": "^3.3.3"
   },
   "devDependencies": {
@@ -38,8 +39,8 @@
     "ganache": "^6.4.5",
     "ganache-core": "^2.13.2",
     "ganache-time-traveler": "^1.0.16",
-    "husky": "^7.0.2",
-    "mocha": "^9.1.2"
+    "husky": "^7.0.4",
+    "mocha": "^9.1.3"
   },
   "husky": {
     "hooks": {
@@ -68,19 +69,22 @@
       "batch": "0x6b878902A8648815e1E896515e25D985715bE485"
     },
     "100": {
-      "name": "xDAI",
+      "name": "Gnosis Chain",
       "epoch": 14845091,
-      "batch": "0x7Ac49B1539C2580972D9B43b41a4ec93A4290cdF"
+      "batch": "0x7Ac49B1539C2580972D9B43b41a4ec93A4290cdF",
+      "toga": "0xb7DE52F4281a7a276E18C40F94cd93159C4A2d22"
     },
     "137": {
       "name": "Polygon",
       "epoch": 11000000,
-      "batch": "0xAB4075f621100563f4551C0Ca50944809b03E948"
+      "batch": "0xAB4075f621100563f4551C0Ca50944809b03E948",
+      "toga": "0x6AEAeE5Fd4D05A741723D752D30EE4D72690A8f7"
     },
     "80001": {
       "name": "Mumbai (Polygon)",
       "epoch": 7295264,
-      "batch": "0xf8A70a8589c579D3C169812b050C2B4475784EA9"
+      "batch": "0xf8A70a8589c579D3C169812b050C2B4475784EA9",
+      "toga": "0xc301D28088d537E24c41A7AAd03896E7E16074f4"
     }
   }
 }

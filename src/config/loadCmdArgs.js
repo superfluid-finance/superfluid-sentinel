@@ -13,7 +13,6 @@ program.version(package.version, '-v, --version');
 program
     .description("Superfluid Sentinel")
     .option("-H, --http-rpc-node [value]", "HTTP RPC Node URL")
-    .option("-W, --ws-rpc-node [value]", "WebSocket RPC Node URL")
     .option("-k, --private-key [value]","Private Key")
     .option("-m, --mnemonic [value]","Mnemonic")
     .option("--max-query-block-range [value]", "Max query block range (default: 2000)")
@@ -24,13 +23,10 @@ program
     .option("--protocol-release-version [value]", "Superfluid Protocol Release Version (default: v1)")
     .option("--max-gas-price [value]", "Max gas price (wei) for liquidation transactions (default: 500000000000)")
     .option("-r, --retry-gas-multiplier [value]", "Gas price multiplier applied to pending transactions at every timeout until reaching the max gas price (default: 1.15")
-    .option("-c, --clo-address [value]", "CLO Address (default: not set)")
+    .option("--pic [value]", "PIC Address (default: not set)")
     .action(function (args) {
         if(args.httpRpcNode !== undefined) {
             process.env.HTTP_RPC_NODE = args.httpRpcNode;
-        }
-        if(args.wsRpcNode !== undefined) {
-            process.env.WS_RPC_NODE = args.wsRpcNode;
         }
         if(args.mnemonic !== undefined) {
             process.env.MNEMONIC = args.mnemonic;
@@ -62,8 +58,8 @@ program
         if(args.retryGasMultiplier !== undefined) {
             process.env.RETRY_GAS_MULTIPLIER = args.retryGasMultiplier;
         }
-        if(args.cloAddress !== undefined) {
-            process.env.CLO_ADDR = args.cloAddress;
+        if(args.pic !== undefined) {
+            process.env.PIC = args.pic;
         }
     });
 program.parse(process.argv);

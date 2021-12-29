@@ -1,5 +1,4 @@
 const express = require("express");
-const Report = require("./report");
 
 class HTTPServer {
 
@@ -8,17 +7,11 @@ class HTTPServer {
         this.server = express();
         this.runningInstance;
         this.port = this.app.config.METRICS_PORT;
-        this.healthReport = new Report(app);
     }
 
     start() {
         this.server.get('/', async (req, res) => {
-            const healthcheck = {
-                statusCode: 200,
-                message: 'OK',
-                timestamp: Date.now(),
-                detailReport: await this.healthReport.fullReport()
-            };
+            const healthcheck = await this.app.healthReport.fullReport();
             try {
                 res.send(healthcheck);
             } catch (e) {
@@ -26,7 +19,6 @@ class HTTPServer {
                 res.status(503).send();
             }
         });
-
 
         this.server.get('/nextliquidations', async (req, res) => {
             try {
@@ -41,7 +33,7 @@ class HTTPServer {
         });
 
         this.runningInstance = this.server.listen(this.port, () => {
-            this.app.logger.info(`listening at http://localhost:${this.port}`)
+            this.app.logger.info(`Metrics: listening via http on port ${this.port}`);
         });
     }
 
@@ -53,6 +45,3 @@ class HTTPServer {
 }
 
 module.exports = HTTPServer
-
-
-

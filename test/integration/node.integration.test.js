@@ -29,7 +29,7 @@ const bootNode = async (delayParam = 0) => {
         cold_boot: 1,
         only_listed_tokens: 1,
         number_retries: 3,
-        test_resolver: resolverAddress,
+        resolver: resolverAddress,
         additional_liquidation_delay: delayParam,
         liquidation_run_every: 1000
     });
@@ -115,7 +115,7 @@ describe("Agent configurations tests", () => {
                 "0x"
             ).encodeABI();
             await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
-            await bootNode(3600);
+            await bootNode(2700);
             const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({from: accounts[0], gas: 1000000});
             await ganache.helper.timeTravelOnce(3580, app, true);
             const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
@@ -125,7 +125,29 @@ describe("Agent configurations tests", () => {
         }
     });
 
-    it("Start node, subscribe to new Token and perform estimation", async () => {
+    it("Change state if not getting new blocks", async () => {
+        try {
+            const data = protocolVars.cfa.methods.createFlow(
+                protocolVars.superToken._address,
+                accounts[2],
+                "100000000000",
+                "0x"
+            ).encodeABI();
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({from: accounts[0], gas: 1000000});
+            await bootNode();
+            let healthy;
+            while(true) {
+                await delay(9000);
+                const report = await app.healthReport.fullReport();
+                healthy = report.healthy;
+                if(!healthy) break;
+            }
+            expect(healthy).eq(false);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
+    it.skip("Start node, subscribe to new Token and perform estimation", async () => {
         try {
             await bootNode();
             const data = protocolVars.cfa.methods.createFlow(
@@ -151,8 +173,7 @@ describe("Agent configurations tests", () => {
             exitWithError(err);
         }
     });
-
-    it("When token is listed afterwards, and there is already existing negative accounts, liquidations should still be performed", async () => {
+    it.skip("When token is listed afterwards, and there is already existing negative accounts, liquidations should still be performed", async () => {
         try {
             const data = protocolVars.cfa.methods.createFlow(
                 protocolVars.superToken._address,

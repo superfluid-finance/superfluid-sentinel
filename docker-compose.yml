@@ -7,6 +7,9 @@ services:
     env_file: .env
     environment:
       - NODE_ENV=production
+      - DB_PATH=data/db.sqlite
+    volumes:
+      - data:/app/data
     deploy:
       resources:
         limits:
@@ -14,3 +17,6 @@ services:
           memory: 300M
         reservations:
           memory: 50M
+
+volumes:
+  data:

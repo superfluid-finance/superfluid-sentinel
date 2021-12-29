@@ -1,12 +1,10 @@
 const SystemModel = require("./database/models/systemModel");
 const FlowUpdatedModel = require("./database/models/flowUpdatedModel");
-const IDAModel = require("./database/models/IDAModel");
 const async = require("async");
 class LoadEvents {
 
     constructor(app) {
         this.app = app;
-        this.concurrency = this.app.config.CONCURRENCY;
         this.numRetries = this.app.config.NUM_RETRIES;
     }
 
@@ -19,46 +17,42 @@ class LoadEvents {
             });
             let blockNumber = lastEventBlockNumber === null
                 ? parseInt(this.app.config.EPOCH_BLOCK) : lastEventBlockNumber.blockNumber;
-            if(systemInfo !== null) {
-                if(systemInfo.superTokenBlockNumber > blockNumber) {
+            if (systemInfo !== null) {
+                if (systemInfo.superTokenBlockNumber > blockNumber) {
                     blockNumber = systemInfo.superTokenBlockNumber;
                 }
-                if((await this.app.client.getNetworkId()) !== systemInfo.networkId) {
+                if ((await this.app.client.getChainId()) !== systemInfo.chainId) {
                     throw new Error("different network than from the saved data");
                 }
             }
             let pullCounter = blockNumber;
-            let currentBlockNumber = await this.app.client.getCurrentBlockNumber();
-            this.app.logger.info(`scanning blocks from ${pullCounter} to ${currentBlockNumber}`);
-            var queue = async.queue(async function(task) {
+            let currentBlockNumber = await this.app.client.getCurrentBlockNumber(this.app.config.BLOCK_OFFSET);
+            let testBlockNumber = await this.app.client.getCurrentBlockNumber(0);
+            this.app.logger.info(`scanning blocks from ${pullCounter} to ${currentBlockNumber} - real ${testBlockNumber}`);
+            var queue = async.queue(async function (task) {
                 let keepTrying = 1;
-                while(true) {
+                while (true) {
                     try {
                         task.self.app.logger.info(`getting blocks: trying #${keepTrying} - from:${task.fromBlock} to:${task.toBlock}`);
-                        let result = await task.self.app.protocol.getAgreementEvents(
-                            "FlowUpdated", {
+                        let query = {
+                            fromBlock: task.fromBlock,
+                            toBlock: task.toBlock
+                        };
+                        if(task.self.app.config.TOKENS) {
+                            query = {
+                                filter : {
+                                    token: task.self.app.config.TOKENS
+                                },
                                 fromBlock: task.fromBlock,
                                 toBlock: task.toBlock
-                            },
-                            keepTrying > 5
-                        );
-
-                        let resultIDA = await task.self.app.protocol.getIDAAgreementEvents(
-                            "SubscriptionApproved", {
-                                fromBlock: task.fromBlock,
-                                toBlock: task.toBlock
-                            },
-                            keepTrying > 5
-                        );
-
+                            };
+                        }
+                        let result = await task.self.app.protocol.getAgreementEvents("FlowUpdated", query);
                         result = result.map(task.self.app.models.event.transformWeb3Event);
-                        resultIDA = resultIDA.map(task.self.app.models.event.transformWeb3Event)
-                            .filter(i => i.eventName !== undefined);
-
-                        for(let event of result) {
+                        for (let event of result) {
                             const agreementId = task.self.app.protocol.generateId(event.sender, event.receiver);
                             const hashId = task.self.app.protocol.generateId(event.token, agreementId);
-                            await FlowUpdatedModel.upsert({
+                            await FlowUpdatedModel.create({
                                 address: event.address,
                                 blockNumber: event.blockNumber,
                                 superToken: event.token,
@@ -69,29 +63,18 @@ class LoadEvents {
                                 hashId: hashId
                             });
                         }
-                        for(let event of resultIDA) {
-                            await IDAModel.upsert({
-                                eventName: event.eventName,
-                                address: event.address,
-                                blockNumber: event.blockNumber,
-                                superToken: event.token,
-                                publisher: event.publisher,
-                                subscriber: event.subscriber,
-                                indexId: event.indexId,
-                            });
-                        }
                         break;
-                    } catch(err) {
+                    } catch (err) {
                         keepTrying++;
                         task.self.app.logger.error(err);
-                        if(keepTrying > task.self.numRetries) {
+                        if (keepTrying > task.self.numRetries) {
                             process.exit(1);
                         }
                     }
                 }
             }, this.concurency);
 
-            while(pullCounter <= currentBlockNumber) {
+            while (pullCounter <= currentBlockNumber) {
                 let end = (pullCounter + parseInt(this.app.config.MAX_QUERY_BLOCK_RANGE));
                 queue.push({
                     self: this,
@@ -101,24 +84,57 @@ class LoadEvents {
                 pullCounter = end + 1;
             }
             await queue.drain();
-            const tokens  = await FlowUpdatedModel.findAll({
+            const tokens = await FlowUpdatedModel.findAll({
                 attributes: ['superToken'],
                 group: ['superToken']
             });
             //fresh database
-            if(systemInfo === null) {
+            if (systemInfo === null) {
                 await SystemModel.create({
                     blockNumber: blockNumber,
-                    networkId :await this.app.client.getNetworkId(),
-                    superTokenBlockNumber : currentBlockNumber
+                    chainId: await this.app.client.getChainId(),
+                    superTokenBlockNumber: currentBlockNumber
                 });
             } else {
                 systemInfo.superTokenBlockNumber = currentBlockNumber;
                 await systemInfo.save();
             }
-            await this.app.client.loadSuperTokens(tokens.map(({superToken}) => superToken));
+            //Load supertokens
+            await this.app.client.loadSuperTokens(tokens.map(({ superToken }) => superToken));
+
+            this.app.logger.info("start getting delays PIC system");
+            //we need to query each supertoken to check pic address
+            var DelayChecker = async.queue(async function (task) {
+                let keepTrying = 10;
+                while (true) {
+                    try {
+                        await task.self.app.protocol.calculateAndSaveTokenDelay(task.token);
+                        break;
+                    } catch (err) {
+                        keepTrying++;
+                        task.self.app.logger.error(err);
+                        if (keepTrying > task.self.numRetries) {
+                            task.self.app.logger.error(`exhausted number of retries`);
+                            process.exit(1);
+                        }
+                    }
+                }
+            }, this.concurency);
+            const superTokens = this.app.client.superTokensAddresses;
+            for (const st of superTokens) {
+                DelayChecker.push({
+                    self: this,
+                    token: st
+                });
+            }
+
+            if(superTokens.length > 0) {
+                await DelayChecker.drain();
+            }
+            this.app.logger.info("finish getting delays PIC system");
             this.app.logger.info("finish past event to find SuperTokens");
-        } catch(err) {
+            return currentBlockNumber;
+        } catch (err) {
             this.app.logger.error(err);
             process.exit(1);
         }

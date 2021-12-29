@@ -5,8 +5,10 @@ const ICFA = require("@superfluid-finance/ethereum-contracts/build/contracts/ICo
 const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IInstantDistributionAgreementV1.json");
 const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
+const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
 const SuperTokenModel = require("./../database/models/superTokenModel");
 const BatchContract = require("../inc/BatchLiquidator.json");
+const TogaContract = require("../inc/TOGA.json");
 const {wad4human} = require("@decentral.ee/web3-helpers");
 /*
  *   Web3 and superfluid client:
@@ -18,49 +20,29 @@ class Client {
     constructor(app) {
         this.app = app;
         this.CFAv1;
-        this.CFAv1WS;
         this.IDAv1;
-        this.IDAv1WS;
         this.sf;
+        this.gov;
         this.superTokenNames = new Map();
         this.superTokens = new Map();
-        this.superTokensHTTP = new Map();
-        this.superTokensCount = 0;
+        this.superTokensAddresses = new Array();
         this.web3;
-        this.web3HTTP;
         this.version = this.app.config.PROTOCOL_RELEASE_VERSION;
         this.batch;
         this.isInitialized = false;
         this._testMode;
+        this.totalRequests = 0;
+        this.totalSkippedBlockRequests = 0;
     }
 
     async initialize() {
         try {
-            const web3 = new Web3.providers.WebsocketProvider(this.app.config.WS_RPC_NODE, {
-                timeout: 10000,
-                clientConfig: {
-                    maxReceivedFrameSize: 100000000,
-                    maxReceivedMessageSize: 100000000,
-                },
-                // Enable auto reconnection
-                reconnect: {
-                    auto: true,
-                    delay: 50000,
-                    onTimeout: false
-                }
-            }).on("reconnect", function() {
-                //this.app.logger(`client.initialize() - reconnect #${this.reconnectAttempts}`);
-                console.log("\nWeb3Client: reconnect #" + this.reconnectAttempts);
-            })
-            this.web3 = new Web3(web3);
             const web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_RPC_NODE, {
                 keepAlive: true
             });
-            this.web3HTTP = new Web3(web3Provider);
-            const httpChainId = await this.web3HTTP.eth.net.getId();
-            const wsChainId = await this.web3.eth.net.getId();
-            if(httpChainId.toString() !== wsChainId.toString()) {
-                throw Error("WS and HTTP point to different networks");
+            this.web3 = new Web3(web3Provider);
+            this.web3.eth.currentProvider.sendAsync = function (payload, callback) {
+                return this.send(payload, callback);
             }
             this.isInitialized = true;
         } catch(err) {
@@ -92,9 +74,6 @@ class Client {
             }
             // Node HTTP
             this.app.logger.info("Connecting to Node: HTTP");
-            this.web3HTTP.eth.transactionConfirmationBlocks = 3;
-            // Node Websocket
-            this.app.logger.info("Connecting to Node: WS");
             this.web3.eth.transactionConfirmationBlocks = 3;
         } catch(err) {
             this.app.logger.error(err);
@@ -106,6 +85,8 @@ class Client {
         try {
             if(this.app.config.BATCH_CONTRACT !== undefined) {
                 this.batch = new this.web3.eth.Contract(BatchContract, this.app.config.BATCH_CONTRACT);
+            } else {
+                this.app.logger.info("Batch Contract not found")
             }
         } catch(err) {
             this.app.logger.error(err);
@@ -113,38 +94,51 @@ class Client {
         }
     }
 
+    async loadTogaContract() {
+        try {
+            if(this.app.config.TOGA_CONTRACT !== undefined) {
+                this.toga = new this.web3.eth.Contract(TogaContract, this.app.config.TOGA_CONTRACT);
+            } else {
+                this.app.logger.info("TOGA Contract not found")
+            }
+        } catch(err) {
+            this.app.logger.error(err);
+            throw Error(`client.loadTogaContract() : ${err}`)
+        }
+    }
+
     async _loadSuperfluidContracts() {
         try {
             this.app.logger.debug(`_loadSuperfluidContracts()`);
             let resolverAddress;
-            if(this.app.config.TEST_RESOVER !== undefined) {
-                resolverAddress = this.app.config.TEST_RESOVER;
+            if(this.app.config.RESOLVER !== undefined) {
+                resolverAddress = this.app.config.RESOLVER;
             } else {
-                resolverAddress = SDKConfig(await this.getNetworkId()).resolverAddress;
+                resolverAddress = SDKConfig(await this.getChainId()).resolverAddress;
             }
-            //const resolverAddress = "0x9b911F3fbd6A0Adf402f3f5C1d915E9334FED065";
             const superfluidIdent = `Superfluid.${this.version}`;
             console.debug("resolver: ", resolverAddress);
-            this.resolver = new this.web3HTTP.eth.Contract(
+            this.resolver = new this.web3.eth.Contract(
                 IResolver.abi,
                 resolverAddress
             );
             const superfluidAddress = await this.resolver.methods.get(superfluidIdent).call();
             console.debug("superfluid: ", superfluidAddress);
-            this.sf = new this.web3HTTP.eth.Contract(
+            this.sf = new this.web3.eth.Contract(
                 ISuperfluid.abi,
                 superfluidAddress
             );
-            const cfaIdent = this.web3HTTP.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
-            const idaIdent = this.web3HTTP.utils.sha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
+            const govAddress = await this.sf.methods.getGovernance().call();
+            this.gov = new this.web3.eth.Contract(SuperfluidGovernance.abi, govAddress)
+            const cfaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
+            const idaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
             const cfaAddress = await this.sf.methods.getAgreementClass(cfaIdent).call();
             const idaAddress = await this.sf.methods.getAgreementClass(idaIdent).call();
+            this.app.logger.info(`SuperfluidGovernance: ${govAddress}`);
             this.app.logger.info(`CFA address: ${cfaAddress}`);
-            this.app.logger.info(`IDA address: ${cfaAddress}`);
-            this.CFAv1 = new this.web3HTTP.eth.Contract(ICFA.abi, cfaAddress);
-            this.CFAv1WS = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
-            this.IDAv1 = new this.web3HTTP.eth.Contract(IIDA.abi, idaAddress);
-            this.IDAv1WS = new this.web3.eth.Contract(IIDA.abi, idaAddress);
+            this.app.logger.info(`IDA address: ${idaAddress}`);
+            this.CFAv1 = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
+            this.IDAv1 = new this.web3.eth.Contract(IIDA.abi, idaAddress);
         } catch (err) {
             this.app.logger.error(err);
             throw Error(`load superfluid contract : ${err}`)
@@ -154,10 +148,10 @@ class Client {
     async _loadSuperTokensFromDB() {
         try {
             let filter = {
-                attributes: ['address'],
+                attributes: ['address']
             };
 
-            if(this.app.config.ONLY_LISTED_TOKENS == true) {
+            if(this.app.config.ONLY_LISTED_TOKENS === true) {
                 filter = {
                     attributes: ['address'],
                     where: {listed: 1}
@@ -188,36 +182,34 @@ class Client {
     }
 
     async loadSuperToken(newSuperToken) {
-        if (this.superTokens[newSuperToken] !== undefined) {
+        if (this.superTokens[newSuperToken.toLowerCase()] !== undefined) {
             return;
         }
-        const superTokenWS = new this.web3.eth.Contract(ISuperToken.abi, newSuperToken);
-        const superTokenHTTP = new this.web3HTTP.eth.Contract(ISuperToken.abi, newSuperToken);
+        const superTokenHTTP = new this.web3.eth.Contract(ISuperToken.abi, newSuperToken);
         const [tokenName, tokenSymbol] = await Promise.all(
             [
-                superTokenWS.methods.name().call(),
-                superTokenWS.methods.symbol().call()
+                superTokenHTTP.methods.name().call(),
+                superTokenHTTP.methods.symbol().call()
             ]
         );
         const superTokenAddress = await this.resolver.methods.get(
             `supertokens.${this.version}.${tokenSymbol}`
         ).call();
-        let isListed = 0;
-        if(this.app.config.ONLY_LISTED_TOKENS == true && superTokenAddress === superTokenWS._address) {
+
+        let isListed = superTokenAddress === newSuperToken;
+        if (this.app.config.ONLY_LISTED_TOKENS === true && isListed) {
             const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${superTokenAddress}`;
             this.app.logger.info(tokenInfo);
-            this.superTokenNames[newSuperToken] = tokenInfo;
-            this.superTokens[superTokenAddress] = superTokenWS;
-            this.superTokensHTTP[superTokenAddress] = superTokenHTTP;
-            this.superTokensCount++;
+            this.superTokenNames[newSuperToken.toLowerCase()] = tokenInfo;
+            this.superTokens[superTokenAddress.toLowerCase()] = superTokenHTTP;
+            this.superTokensAddresses.push(superTokenAddress.toLowerCase());
             isListed = 1;
         } else {
-            const tokenInfo = `SuperToken (${tokenSymbol} - ${tokenName}): ${newSuperToken}`;
+            const tokenInfo = `(${tokenSymbol} - ${tokenName}): ${newSuperToken}`;
             this.app.logger.info(tokenInfo);
-            this.superTokenNames[newSuperToken] = tokenInfo;
-            this.superTokens[superTokenWS._address] = superTokenWS;
-            this.superTokensHTTP[superTokenHTTP._address] = superTokenHTTP;
-            this.superTokensCount++;
+            this.superTokenNames[newSuperToken.toLowerCase()] = tokenInfo;
+            this.superTokens[newSuperToken.toLowerCase()] = superTokenHTTP;
+            this.superTokensAddresses.push(newSuperToken.toLowerCase());
         }
         //persistence database
         await SuperTokenModel.upsert({
@@ -228,15 +220,16 @@ class Client {
         });
     }
 
-    isSuperTokenRegister(token) {
-        return this.superTokens[token] !== undefined;
+    isSuperTokenRegistered(token) {
+        const result = this.superTokens[token.toLowerCase()];
+        return result !== undefined;
     }
 
-    async getNetworkId() {
-        if(this.networkId === undefined) {
-            this.networkId = await this.web3HTTP.eth.net.getId();
+    async getChainId() {
+        if(this.chainId === undefined) {
+            this.chainId = await this.web3.eth.getChainId();
         }
-        return this.networkId;
+        return this.chainId;
     }
 
     getAccountAddress() {
@@ -256,15 +249,16 @@ class Client {
     }
 
     getSuperfluidInstance(address) {
-        return new this.web3HTTP.eth.Contract(ISuperfluid, address);
+        return new this.web3.eth.Contract(ISuperfluid, address);
     }
 
-    async getCurrentBlockNumber() {
-        return await new this.web3HTTP.eth.getBlockNumber();
+    async getCurrentBlockNumber(offset) {
+        return (await new this.web3.eth.getBlockNumber()) - offset;
     }
+
     //Add parameter
     async estimateGasPrice() {
-        return this.web3HTTP.eth.getGasPrice();
+        return this.web3.eth.getGasPrice();
     }
 
     async estimateTxGasCost(tx) {
@@ -275,7 +269,7 @@ class Client {
                 from : this.getAccount().address,
                 data : tx.abi,
             };
-            return await this.web3HTTP.eth.estimateGas(unsignedTx);
+            return await this.web3.eth.estimateGas(unsignedTx);
         } catch(err) {
             this.app.logger.error("estimating tx");
             return 0;
@@ -285,7 +279,6 @@ class Client {
 
     async disconnect() {
         this.web3.currentProvider.disconnect();
-        this.web3HTTP.currentProvider.disconnect();
     }
 
     async sendSignedTransaction(signed) {
@@ -294,15 +287,15 @@ class Client {
                 const delay = ms => new Promise(res => setTimeout(res, ms));
                 await delay(signed.tx.timeout * 2);
             } else {
-                return this.web3HTTP.eth.sendSignedTransaction(signed.tx.rawTransaction);
+                return this.web3.eth.sendSignedTransaction(signed.tx.rawTransaction);
             }
         } else {
-            return this.web3HTTP.eth.sendSignedTransaction(signed.tx.rawTransaction);
+            return this.web3.eth.sendSignedTransaction(signed.tx.rawTransaction);
         }
     }
 
     async signTransaction(unsignedTx, pk) {
-        return this.web3HTTP.eth.accounts.signTransaction(
+        return this.web3.eth.accounts.signTransaction(
             unsignedTx,
             pk
         );
@@ -315,6 +308,23 @@ class Client {
         }
 
         return this.sendSignedTransaction(tx);
+    }
+
+    getSFAddresses() {
+        const togaAddress = this.toga !== undefined ? this.toga._address : undefined;
+        return [...this.superTokensAddresses,this.IDAv1._address, this.CFAv1._address, togaAddress].filter(n=>n);
+    }
+
+    getTotalRequests() {
+        return this.totalRequests;
+    }
+
+    addTotalRequest(numReqs = 1) {
+        this.totalRequests = this.totalRequests + numReqs;
+    }
+
+    addSkipBlockRequest(numReqs = 1) {
+        this.totalSkippedBlockRequests = this.totalSkippedBlockRequests + numReqs;
     }
 
     setTestFlag(flag, options) {

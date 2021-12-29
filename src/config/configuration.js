@@ -32,7 +32,6 @@ class Config {
           
             this.EPOCH_BLOCK = config.epoch_block;
             this.BATCH_CONTRACT = config.batch_contract;
-            this.TOGA = config.toga;
 
             this.CONCURRENCY = config.concurrency;
             this.COLD_BOOT = config.cold_boot;

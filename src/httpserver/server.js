@@ -33,7 +33,7 @@ class HTTPServer {
         });
 
         this.runningInstance = this.server.listen(this.port, () => {
-            this.app.logger.info(`listening at http://localhost:${this.port}`);
+            this.app.logger.info(`Metrics: listening via http on port ${this.port}`);
         });
     }
 

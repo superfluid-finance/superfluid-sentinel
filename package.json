@@ -69,22 +69,22 @@
       "batch": "0x6b878902A8648815e1E896515e25D985715bE485"
     },
     "100": {
-      "name": "xDAI",
+      "name": "Gnosis Chain",
       "epoch": 14845091,
       "batch": "0x7Ac49B1539C2580972D9B43b41a4ec93A4290cdF",
-      "toga": "0x0942570634A80bcd096873afC9b112A900492fd7"
+      "toga": "0xb7DE52F4281a7a276E18C40F94cd93159C4A2d22"
     },
     "137": {
       "name": "Polygon",
       "epoch": 11000000,
       "batch": "0xAB4075f621100563f4551C0Ca50944809b03E948",
-      "toga": "0x1b18770E5198983AF04B3735d01E09A57d27bD43"
+      "toga": "0x6AEAeE5Fd4D05A741723D752D30EE4D72690A8f7"
     },
     "80001": {
       "name": "Mumbai (Polygon)",
       "epoch": 7295264,
       "batch": "0xf8A70a8589c579D3C169812b050C2B4475784EA9",
-      "toga": "0xA862f128b3ffE9719948869cc1C7CBC21860Cd9a"
+      "toga": "0xc301D28088d537E24c41A7AAd03896E7E16074f4"
     }
   }
 }

@@ -1,6 +1,7 @@
 # Superfluid Sentinel
 
-The sentinel monitors the state of Superfluid agreements on the configured network and liquidates [critical agreements](https://docs.superfluid.finance/superfluid/docs/constant-flow-agreement#liquidation-and-solvency).
+The sentinel monitors the state of Superfluid agreements on the configured network and liquidates [critical agreements](https://docs.superfluid.finance/superfluid/docs/constant-flow-agreement#liquidation-and-solvency).  
+It also allows you to configure a related PIC account in order to automatically time liquidations according to its state in the [TOGA](https://docs.superfluid.finance/superfluid/docs/liquidations-and-toga) system. 
 
 ## Quickstart
 
@@ -10,7 +11,19 @@ Currently supported setups:
 
 ### Prerequisites
 
-An account funded with native coins.
+First, prepare an account funded with native coins for transaction fees.  
+Then prepare a file `.env` with your configuration.
+You can start with the provided example:
+```
+cp .env-example .env
+```
+The following configuration items are required and don't have default values:
+* `HTTP_RPC_NODE` (cmdline argument: `-H`)
+* `PRIVATE_KEY` (cmdline argument: `-k`) or MNEMONIC (cmdline argument: `-m`)
+
+In order to associate a sentinel instance with a PIC account, set the `PIC` env variable (cmdline argument: `--pic`).
+
+Check `.env.example` for additional configuration items and their documentation.
 
 ### Native Setup
 
@@ -24,20 +37,11 @@ cd superfluid-sentinel
 
 Then install dependencies with:
 ```
-npm ci
+NODE_ENV=production npm ci
 ```
-Then prepare a file `.env` with your configuration.
-You can start with the provided example:
-```
-cp .env-example .env
-```
-The following configuration items are required and don't have default values:
-* HTTP_RPC_NODE (cmdline argument: -H)
-* WS_RPC_NODE (cmdline argument: -W)
 
-Check the example file for additional configuration items and their documentatoin.
-
-The configuration can be provided via cmdline args, via env variables and via `.env` file (with this order of precedence).
+Before starting the instance, make sure it's configured according to your needs.
+The configuration can be provided via `.env` file, via env variables and/or via cmdline args, with the latter taking higher precedence than the former.
 
 For persistent operation in the background, you can use the provided systemd unit template.
 ```
@@ -75,28 +79,32 @@ For example: `npm start xdai`will start an instance configured according to the 
 If you use systemd, create instance specific copies of the service file, e.g. `superfluid-sentinel-xdai.service`, and add the network name to the start command, e.g. `ExecStart=/usr/bin/npm start xdai`.
 
 ### Docker Setup
+ 
+This part of the guide assumes you have a recent version of Docker and docker-compose installed.  
+You also need to have an `.env` file with the wanted configuration in the project root directory. 
 
-This part of the guide assumes you have a recent version of Docker and docker-compose installed.
-
-#### Build Docker image
+Build Docker image:
 ```
 COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose build
 ```
 
-#### Run Docker container
-Ensure your ```.env``` file is configured correctly, then run:
+Run Docker container:
 ```
 docker-compose up
 ```
 
-#### Upload Docker image to ECR (optional)
-This assumes you have created a repository named ```<REPOSITORY>``` in your AWS account.
+This starts a sentinel in a container based on the image just built.  
+The sqlite DB is stored in a Docker volume named `superfluid-sentinel_data` (can differ based on the name of your local directory).  
+
+In order to run in the background (incl. auto-restart on crash and on reboot), start with
 ```
-aws ecr get-login-password --region <REGION> | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com
-docker images
-docker tag <IMAGE_ID> <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/<REPOSITORY>:<TAG>
-docker push <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/<REPOSITORY>:<TAG>
-```
+docker-compose up -d
+``` 
+Use `docker-compose logs` in order to see the logs in this case (add `-f` to follow the live log).
+
+If you need to or want to rebuild the sentinel database from scratch, delete the volume:  
+First, destroy the container with `docker-compose rm`.  
+Then delete the volume with `docker volume rm superfluid-sentinel_data` (adapt the name if it differs on your system).
 
 ## Control flow
 

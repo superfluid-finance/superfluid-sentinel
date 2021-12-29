@@ -14,6 +14,7 @@ const DB = require("./database/db");
 const Repository = require("./database/repository");
 const utils = require("./utils/utils.js");
 const HTTPServer = require("./httpserver/server");
+const Report = require("./httpserver/report");
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -50,6 +51,7 @@ class App {
         this.utils = utils;
         this.db = DB;
         this.db.queries = new Repository(this);
+        this.healthReport = new Report(this);
         this.server = new HTTPServer(this);
         this.timer = {
             delay: delay

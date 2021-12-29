@@ -87,7 +87,7 @@ class Repository {
     INNER JOIN supertokens st on agr.superToken == st.address
     INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.zestimation <> 0
     WHERE agr.flowRate <> 0 and (est.zestimation + (st.delay * 1000)) <= :dt ${inSnipped}
-    ORDER BY agr.superToken, agr.sender, agr.flowRate DESC ${inSnippedLimit}`;
+    ORDER BY est.zestimation ASC ${inSnippedLimit}`;
 
     if(inSnipped !== "") {
       return this.app.db.query(sqlquery, {

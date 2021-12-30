@@ -5,6 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "node main.js $1",
+    "toga-status": "node scripts/printTOGAstatus.js",
     "test-node": "node_modules/.bin/mocha -t 1000000 test/integration/node.integration.test.js",
     "test-gas": "node_modules/.bin/mocha -t 1000000 test/integration/gas.integration.test.js",
     "test-ida": "node_modules/.bin/mocha -t 1000000 test/integration/ida.integration.test.js",
@@ -21,6 +22,7 @@
     "@superfluid-finance/ethereum-contracts": "^1.0.0-rc.8",
     "@superfluid-finance/js-sdk": "^0.5.8",
     "async": "^3.2.1",
+    "axios": "^0.24.0",
     "bip39": "^3.0.4",
     "commander": "^8.3.0",
     "dotenv": "^10.0.0",

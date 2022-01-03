@@ -201,7 +201,7 @@ class Liquidator {
     if (signed.error !== undefined) {
       if (signed.error === "Returned error: replacement transaction underpriced") {
         this.app.logger.warn(`replacement transaction underpriced`);
-        txObject.retry = txObject.retry + 1;
+        txObject.retry++;
         return this.sendWithRetry(wallet, txObject, ms);
       }
 

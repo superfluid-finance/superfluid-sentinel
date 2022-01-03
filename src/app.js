@@ -45,7 +45,6 @@ class App {
     this.liquidator = new Liquidator(this);
     this.bootstrap = new Bootstrap(this);
     this.time = new Time();
-    this.getTimeUnix = utils.getTimeUnix;
     this.genAccounts = utils.generateAccounts;
     this.utils = utils;
     this.db = DB;
@@ -90,7 +89,6 @@ class App {
     this.logger.info(`app.shutdown() - agent shutting down`);
     this.time.resetTime();
     if (force) {
-      // don't use this.logger.error() here as it would recurse endlessly
       process.exit(0);
     }
 

@@ -11,3 +11,5 @@ database.sqlite
 datadir/
 
 *.sqlite
+
+.idea/

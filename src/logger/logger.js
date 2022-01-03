@@ -14,7 +14,7 @@ class Logger {
       return `${timestamp} - ${level}: ${message}`;
     });
     this.logger = createLogger({
-      format: combine(label({ label: this.level }), timestamp(), logFormat),
+      format: combine(label({ label: this.app.config.LOG_LEVEL }), timestamp(), logFormat),
       transports: [new transports.Console({
         level: this.app.config.LOG_LEVEL,
         handleExceptions: true,

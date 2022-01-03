@@ -39,8 +39,8 @@ class Client {
       };
       this.isInitialized = true;
     } catch (err) {
-      this.app.logger.error(`client.initialize() - ${err}`);
-      throw new Error(`Web3Client: ${err}`);
+      this.app.logger.error(err);
+      throw new Error(`Client.initialize(): ${err}`);
     }
   }
 
@@ -68,12 +68,11 @@ class Client {
       if (accBalance === "0") {
         this.app.logger.warn("!!!ACCOUNT NOT FUNDED!!!  Will fail to execute liquidations!");
       }
-      // Node HTTP
       this.app.logger.info("Connecting to Node: HTTP");
       this.web3.eth.transactionConfirmationBlocks = 3;
     } catch (err) {
       this.app.logger.error(err);
-      throw err;
+      throw Error(`Client.init(): ${err}`);
     }
   }
 
@@ -86,7 +85,7 @@ class Client {
       }
     } catch (err) {
       this.app.logger.error(err);
-      throw Error(`client.loadBatchContract() : ${err}`);
+      throw Error(`Client.loadBatchContract() : ${err}`);
     }
   }
 
@@ -99,13 +98,12 @@ class Client {
       }
     } catch (err) {
       this.app.logger.error(err);
-      throw Error(`client.loadTogaContract() : ${err}`);
+      throw Error(`Client.loadTogaContract() : ${err}`);
     }
   }
 
   async _loadSuperfluidContracts () {
     try {
-      this.app.logger.debug(`_loadSuperfluidContracts()`);
       let resolverAddress;
       if (this.app.config.RESOLVER !== undefined) {
         resolverAddress = this.app.config.RESOLVER;
@@ -113,13 +111,13 @@ class Client {
         resolverAddress = SDKConfig(await this.getChainId()).resolverAddress;
       }
       const superfluidIdent = `Superfluid.${this.version}`;
-      console.debug("resolver: ", resolverAddress);
+
       this.resolver = new this.web3.eth.Contract(
         IResolver.abi,
         resolverAddress
       );
       const superfluidAddress = await this.resolver.methods.get(superfluidIdent).call();
-      console.debug("superfluid: ", superfluidAddress);
+
       this.sf = new this.web3.eth.Contract(
         ISuperfluid.abi,
         superfluidAddress
@@ -128,16 +126,17 @@ class Client {
       this.gov = new this.web3.eth.Contract(SuperfluidGovernance.abi, govAddress);
       const cfaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
       const idaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
-      const cfaAddress = await this.sf.methods.getAgreementClass(cfaIdent).call();
-      const idaAddress = await this.sf.methods.getAgreementClass(idaIdent).call();
-      this.app.logger.info(`SuperfluidGovernance: ${govAddress}`);
-      this.app.logger.info(`CFA address: ${cfaAddress}`);
-      this.app.logger.info(`IDA address: ${idaAddress}`);
+      const [cfaAddress, idaAddress] = await Promise.all([this.sf.methods.getAgreementClass(cfaIdent).call(), this.sf.methods.getAgreementClass(idaIdent).call()]);
       this.CFAv1 = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
       this.IDAv1 = new this.web3.eth.Contract(IIDA.abi, idaAddress);
+      this.app.logger.info(`Resolver: ${resolverAddress}`);
+      this.app.logger.info(`Superfluid: ${superfluidAddress}`);
+      this.app.logger.info(`Superfluid Governance: ${govAddress}`);
+      this.app.logger.info(`CFA address: ${cfaAddress}`);
+      this.app.logger.info(`IDA address: ${idaAddress}`);
     } catch (err) {
       this.app.logger.error(err);
-      throw Error(`load superfluid contract : ${err}`);
+      throw Error(`Client._loadSuperfluidContracts(): ${err}`);
     }
   }
 
@@ -160,7 +159,7 @@ class Client {
       await Promise.all(promises);
     } catch (err) {
       this.app.logger.error(err);
-      throw new Error(`load DB SuperTokens: ${err}`);
+      throw new Error(`Client._loadSuperTokensFromDB(): ${err}`);
     }
   }
 
@@ -173,7 +172,7 @@ class Client {
       await Promise.all(promises);
     } catch (err) {
       this.app.logger.error(err);
-      throw new Error(`Load SuperTokens ${err}`);
+      throw new Error(`Client.loadSuperTokens(): ${err}`);
     }
   }
 
@@ -217,8 +216,7 @@ class Client {
   }
 
   isSuperTokenRegistered (token) {
-    const result = this.superTokens[token.toLowerCase()];
-    return result !== undefined;
+    return this.superTokens[token.toLowerCase()] !== undefined;
   }
 
   async getChainId () {

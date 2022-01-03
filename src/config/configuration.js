@@ -78,13 +78,13 @@ class Config {
     }
 
     if (this.HTTP_RPC_NODE === undefined) {
-      throw Error("required configuration item missing: HTTP_RPC_NODE");
+      throw Error("Config.constructor(): required configuration item missing: HTTP_RPC_NODE");
     }
 
     if (this.TOKENS !== undefined &&
       Array.from(new Set(this.TOKENS.map(x => x.toLowerCase()))).length !== this.TOKENS.length
     ) {
-      throw Error("duplicate tokens set from configuration: TOKENS");
+      throw Error("Config.constructor(): duplicate tokens set from configuration: TOKENS");
     }
   }
 

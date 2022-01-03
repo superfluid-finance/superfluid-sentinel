@@ -7,7 +7,7 @@ class Report {
     try {
       return (await this.app.db.queries.healthCheck()) !== undefined;
     } catch (err) {
-      console.log(err);
+      this.app.logger.error(`Report.checkDatabase(): ${err}`);
       return false;
     }
   }

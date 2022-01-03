@@ -242,10 +242,6 @@ class Client {
     return (await this.web3.eth.getBlockNumber()) - offset;
   }
 
-  async estimateGasPrice () {
-    return this.web3.eth.getGasPrice();
-  }
-
   async disconnect () {
     this.web3.currentProvider.disconnect();
   }

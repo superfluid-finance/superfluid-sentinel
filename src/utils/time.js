@@ -1,16 +1,4 @@
 class Time {
-  construtor (app) {
-    this.app = app;
-  }
-
-  getTime () {
-    if (this.baseTime === undefined) {
-      return new Date();
-    }
-
-    return new Date(this.baseTime);
-  }
-
   getTimeWithDelay (delaySeconds) {
     if (this.baseTime === undefined) {
       const date = new Date();

@@ -109,7 +109,7 @@ class App {
         counter--;
       }
     } catch (err) {
-      this.logger.error(`app.shutdown() - ${err}`);
+      this.logger.error(`App.shutdown(): ${err}`);
       process.exit(1);
     }
   }
@@ -172,7 +172,7 @@ class App {
       // await x milliseconds before running next liquidation job
       this.run(this.liquidator, this.config.LIQUIDATION_JOB_AWAITS);
     } catch (err) {
-      this.logger.error(`app.start() - ${err}`);
+      this.logger.error(`App.start(): ${err}`);
       process.exit(1);
     }
   }

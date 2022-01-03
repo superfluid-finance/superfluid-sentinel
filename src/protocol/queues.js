@@ -45,7 +45,7 @@ class Queues {
           keepTrying++;
           task.self.app.logger.error(err);
           if (keepTrying > task.self.app.config.NUM_RETRIES) {
-            task.self.app.logger.error(`exhausted number of retries`);
+            task.self.app.logger.error("Queues.estimationQueue(): exhausted number of retries");
             process.exit(1);
           }
         }
@@ -121,7 +121,7 @@ class Queues {
           keepTrying++;
           task.self.app.logger.error(err);
           if (keepTrying > task.self.app.config.NUM_RETRIES) {
-            task.self.app.logger.error(`exhausted number of retries`);
+            task.self.app.logger.error("Queues.agreementUpdateQueue(): exhausted number of retries");
             process.exit(1);
           }
         }
@@ -148,15 +148,6 @@ class Queues {
       self: this,
       account: account,
       token: token,
-      parentCaller: parentCaller
-    });
-  }
-
-  async addQueuedAgreement (account, blockNumber, parentCaller) {
-    this.agreementUpdateQueue.push({
-      self: this,
-      account: account,
-      blockNumber: blockNumber,
       parentCaller: parentCaller
     });
   }

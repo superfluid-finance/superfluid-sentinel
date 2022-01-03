@@ -42,8 +42,9 @@ class Bootstrap {
               break;
             } catch (err) {
               keepTrying++;
-              console.error(err);
+              task.self.app.logger.error(err);
               if (keepTrying > task.self.numRetries) {
+                task.self.app.logger.error("exhausted number of retries");
                 process.exit(1);
               }
             }
@@ -76,7 +77,7 @@ class Bootstrap {
             });
           } catch (err) {
             console.error(err);
-            throw Error(`saving AgreementModel: ${err}`);
+            throw Error(`Bootstrap.start(): ${err}`);
           }
         }
 

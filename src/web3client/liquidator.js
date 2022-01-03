@@ -281,7 +281,7 @@ class Liquidator {
         };
       }
       // log remaining errors
-      this.app.logger.error(`liquidator.sendWithRetry() - no logic to catch error : ${err}`);
+      this.app.logger.error(`Liquidator.sendWithRetry() - no logic to catch error : ${err}`);
     }
   }
 

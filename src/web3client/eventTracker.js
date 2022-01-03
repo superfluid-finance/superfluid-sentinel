@@ -139,8 +139,8 @@ class EventTracker {
         }
       }
     } catch (err) {
-      console.error(`subscription ${err}`);
-      throw Error(`subscription ${err}`);
+      this.app.logger.error(err);
+      throw Error(`EventTracker.processSuperTokenEvent(): ${err}`);
     }
   }
 
@@ -152,7 +152,7 @@ class EventTracker {
       }
     } catch (err) {
       this.app.logger.error(err);
-      throw Error(`agreement subscription ${err}`);
+      throw Error(`EventTracker.processAgreementEvent(): ${err}`);
     }
   }
 
@@ -176,7 +176,7 @@ class EventTracker {
       }
     } catch (err) {
       this.app.logger.error(err);
-      throw Error(`ida events ${err}`);
+      throw Error(`EventTracker.processIDAEvent(): ${err}`);
     }
   }
 
@@ -190,7 +190,7 @@ class EventTracker {
       }
     } catch (err) {
       this.app.logger.error(err);
-      throw Error(`toga events ${err}`);
+      throw Error(`EventTracker.processTOGAEvent(): ${err}`);
     }
   }
 

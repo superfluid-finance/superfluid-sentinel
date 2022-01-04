@@ -15,7 +15,26 @@ class Queues {
   }
 
   init () {
-    this.estimationQueue = async.queue(async function (task) {
+    this.estimationQueue = this.newEstimationQueue();
+    this.agreementUpdateQueue = this.newAgreementQueue();
+  }
+
+  async run (fn, time) {
+    if (this.app._isShutdown) {
+      this.app.logger.info(`app.shutdown() - closing queues`);
+      return;
+    }
+    await trigger(fn, time);
+    await this.run(fn, time);
+  }
+
+  async start () {
+    this.run(this.estimationQueue, 5000);
+    this.run(this.agreementUpdateQueue, 5000);
+  }
+
+  newEstimationQueue () {
+    return async.queue(async function (task) {
       let keepTrying = 1;
       if (task.account === "0x0000000000000000000000000000000000000000") {
         return;
@@ -23,8 +42,7 @@ class Queues {
       while (true) {
         try {
           if (task.self.app.client.isSuperTokenRegistered(task.token)) {
-            task.self.app.logger.debug(`Parent Caller ${task.parentCaller}`);
-            task.self.app.logger.debug(`EstimationQueue - BlockHash: ${task.blockHash} TransactionHash: ${task.transactionHash}`);
+            task.self.app.logger.debug(`EstimationQueue - Parent Caller ${task.parentCaller} TransactionHash: ${task.transactionHash}`);
             const estimationData = await task.self.app.protocol.liquidationData(task.token, task.account);
             await EstimationModel.upsert({
               address: task.account,
@@ -50,17 +68,21 @@ class Queues {
           }
         }
       }
-    }, 1);
+    }, this.app.config.CONCURRENCY);
+  }
 
-    this.agreementUpdateQueue = async.queue(async function (task) {
+  newAgreementQueue () {
+    if (this.estimationQueue === undefined) {
+      throw Error("Queues.newAgreementQueue(): Need EstimationQueue to be set first");
+    }
+    return async.queue(async function (task) {
       let keepTrying = 1;
       if (task.account === "0x0000000000000000000000000000000000000000") {
         return;
       }
       while (true) {
         try {
-          task.self.app.logger.debug(`Parent Caller ${task.parentCaller}`);
-          task.self.app.logger.debug(`AgreementUpdateQueue - BlockHash: ${task.blockHash} TransactionHash: ${task.transactionHash}`);
+          task.self.app.logger.debug(`EstimationQueue - Parent Caller ${task.parentCaller} TransactionHash: ${task.transactionHash}`);
           const senderFilter = {
             filter: {
               sender: task.account
@@ -126,24 +148,13 @@ class Queues {
           }
         }
       }
-    }, 1);
-  }
-
-  async run (fn, time) {
-    if (this.app._isShutdown) {
-      this.app.logger.info(`app.shutdown() - closing queues`);
-      return;
-    }
-    await trigger(fn, time);
-    await this.run(fn, time);
-  }
-
-  async start () {
-    this.run(this.estimationQueue, 5000);
-    this.run(this.agreementUpdateQueue, 5000);
+    }, this.app.config.CONCURRENCY);
   }
 
   async addQueuedEstimation (token, account, parentCaller) {
+    if (this.estimationQueue === undefined) {
+      throw Error("Queues.addQueuedEstimation(): Need EstimationQueue to be set first");
+    }
     this.estimationQueue.push({
       self: this,
       account: account,

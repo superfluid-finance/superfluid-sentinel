@@ -10,7 +10,6 @@ const async = require("async");
 class Bootstrap {
   constructor (app) {
     this.app = app;
-    this.numRetries = this.app.config.NUM_RETRIES;
   }
 
   async start () {
@@ -23,40 +22,15 @@ class Bootstrap {
     const currentBlockNumber = await this.app.client.getCurrentBlockNumber(this.app.config.BLOCK_OFFSET);
     if (blockNumber < currentBlockNumber) {
       try {
-        const queue = async.queue(async function (task) {
-          let keepTrying = 1;
-          while (true) {
-            try {
-              if (task.self.app.client.isSuperTokenRegistered(task.token)) {
-                const estimationData = await task.self.app.protocol.liquidationData(task.token, task.account);
-                await EstimationModel.upsert({
-                  address: task.account,
-                  superToken: task.token,
-                  totalNetFlowRate: estimationData.totalNetFlowRate,
-                  totalBalance: estimationData.totalBalance,
-                  zestimation: new Date(estimationData.estimation).getTime(),
-                  zestimationHuman: estimationData.estimation,
-                  blockNumber: task.blockNumber
-                });
-              }
-              break;
-            } catch (err) {
-              keepTrying++;
-              task.self.app.logger.error(err);
-              if (keepTrying > task.self.numRetries) {
-                task.self.app.logger.error("exhausted number of retries");
-                process.exit(1);
-              }
-            }
-          }
-        }, this.app.config.CONCURRENCY);
+        const queue = this.app.queues.newEstimationQueue();
         const users = await this.app.db.queries.getAccounts(blockNumber);
         for (const user of users) {
           queue.push({
             self: this,
             account: user.account,
             token: user.superToken,
-            blockNumber: currentBlockNumber
+            blockNumber: currentBlockNumber,
+            parentCaller: "Bootstrap.start()"
           });
         }
 
@@ -76,11 +50,11 @@ class Bootstrap {
               blockNumber: blockNumber
             });
           } catch (err) {
-            console.error(err);
+            this.app.logger.error(err);
             throw Error(`Bootstrap.start(): ${err}`);
           }
         }
-
+        // From all existing estimations, delete what don't have agreements
         const estimationsNow = await EstimationModel.findAll({
           attributes: ["address", "superToken"]
         });
@@ -90,10 +64,10 @@ class Bootstrap {
             where: {
               [Op.and]: [
                 {
-                  sender: est.address
+                  superToken: est.superToken
                 },
                 {
-                  superToken: est.superToken
+                  sender: est.address
                 }
               ]
             }

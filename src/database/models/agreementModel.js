@@ -26,6 +26,12 @@ const AgreementModel = db.define("agreements", {
     type: Sequelize.INTEGER,
     allowNull: false
   }
-});
+}, {
+  indexes: [{
+    unique: false,
+    fields: ["superToken", "sender"]
+  }]
+}
+);
 
 module.exports = AgreementModel;

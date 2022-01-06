@@ -159,6 +159,7 @@ describe("Agent configurations tests", () => {
       exitWithError(err);
     }
   });
+  // not yet supported
   it.skip("Start node, subscribe to new Token and perform estimation", async () => {
     try {
       await bootNode();
@@ -191,6 +192,7 @@ describe("Agent configurations tests", () => {
       exitWithError(err);
     }
   });
+  // not yet supported
   it.skip("When token is listed afterwards, and there is already existing negative accounts, liquidations should still be performed", async () => {
     try {
       const data = protocolVars.cfa.methods.createFlow(

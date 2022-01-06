@@ -14,7 +14,7 @@ class Protocol {
       ).call();
     } catch (err) {
       console.error(err);
-      throw Error(`Protocol.getUserNetFlow(): (${token}): ${err}`);
+      throw Error(`Protocol.getAccountRealtimeBalanceOfNow(): (${token}): ${err}`);
     }
   }
 

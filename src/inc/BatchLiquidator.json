@@ -1,35 +1,35 @@
 [
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "host",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "cfa",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "superToken",
-          "type": "address"
-        },
-        {
-          "internalType": "address[]",
-          "name": "senders",
-          "type": "address[]"
-        },
-        {
-          "internalType": "address[]",
-          "name": "receivers",
-          "type": "address[]"
-        }
-      ],
-      "name": "deleteFlows",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    }
-  ]
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "host",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "cfa",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "superToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address[]",
+        "name": "senders",
+        "type": "address[]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "receivers",
+        "type": "address[]"
+      }
+    ],
+    "name": "deleteFlows",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

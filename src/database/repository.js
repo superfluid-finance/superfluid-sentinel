@@ -1,16 +1,17 @@
-const { QueryTypes, Op } = require("sequelize");
+const {
+  QueryTypes,
+  Op
+} = require("sequelize");
 const EstimationModel = require("../database/models/accountEstimationModel");
 const UserConfig = require("../database/models/userConfiguration");
 const SystemModel = require("../database/models/systemModel");
 
 class Repository {
-
-  constructor(app) {
+  constructor (app) {
     this.app = app;
   }
 
-  async getAccounts(fromBlock = 0) {
-
+  async getAccounts (fromBlock = 0) {
     const sqlquery = `SELECT DISTINCT superToken, account FROM (
       SELECT * FROM (
           SELECT  superToken, sender as account, flowRate from flowupdateds
@@ -32,15 +33,13 @@ class Repository {
       ) AS Z
       ORDER BY superToken`;
 
-
     return this.app.db.query(sqlquery, {
       replacements: { bn: fromBlock },
       type: QueryTypes.SELECT
     });
   }
 
-  async getLastFlows(fromBlock = 0) {
-
+  async getLastFlows (fromBlock = 0) {
     const sqlquery = `SELECT * FROM (
     SELECT  agreementId, superToken, sender, receiver, flowRate from flowupdateds
     WHERE blockNumber > :bn
@@ -53,33 +52,32 @@ class Repository {
       replacements: { bn: fromBlock },
       type: QueryTypes.SELECT
     });
-
   }
 
-  async getAddressEstimation(address) {
+  async getAddressEstimation (address) {
     return EstimationModel.findAll({
-      attributes: ['address', 'superToken', 'zestimation'],
+      attributes: ["address", "superToken", "zestimation"],
       where:
-      {
-          address:  address
-      }
-  });
+        {
+          address: address
+        }
+    });
   }
 
-  async getEstimations() {
+  async getEstimations () {
     return EstimationModel.findAll({
-      attributes: ['address', 'superToken', 'zestimation'],
+      attributes: ["address", "superToken", "zestimation"],
       where: { zestimation: { [Op.gt]: 0 } }
-  });
+    });
   }
 
-  async getLiquidations(checkDate, onlyTokens, limitRows) {
+  async getLiquidations (checkDate, onlyTokens, limitRows) {
     let inSnipped = "";
     let inSnippedLimit = "";
     if (onlyTokens !== undefined) {
       inSnipped = "and agr.superToken in (:tokens)";
     }
-    if(limitRows !== undefined && limitRows > 0 && limitRows < 101) {
+    if (limitRows !== undefined && limitRows > 0 && limitRows < 101) {
       inSnippedLimit = `LIMIT ${limitRows}`;
     }
 
@@ -89,9 +87,12 @@ class Repository {
     WHERE agr.flowRate <> 0 and (est.zestimation + (st.delay * 1000)) <= :dt ${inSnipped}
     ORDER BY est.zestimation ASC ${inSnippedLimit}`;
 
-    if(inSnipped !== "") {
+    if (inSnipped !== "") {
       return this.app.db.query(sqlquery, {
-        replacements: { dt: checkDate, tokens: onlyTokens},
+        replacements: {
+          dt: checkDate,
+          tokens: onlyTokens
+        },
         type: QueryTypes.SELECT
       });
     }
@@ -101,7 +102,7 @@ class Repository {
     });
   }
 
-  async getNumberOfBatchCalls(checkDate) {
+  async getNumberOfBatchCalls (checkDate) {
     const sqlquery = `SELECT agr.superToken, count(*) as numberTxs  FROM agreements agr
     INNER JOIN supertokens st on agr.superToken == st.address
     INNER JOIN estimations est on agr.sender = est.address and agr.superToken = est.superToken and est.zestimation <> 0
@@ -116,27 +117,28 @@ class Repository {
     });
   }
 
-  async healthCheck() {
+  async healthCheck () {
     return this.app.db.query("SELECT 1", {
       type: QueryTypes.SELECT
     });
   }
-  async updateBlockNumber(newBlockNumber) {
+
+  async updateBlockNumber (newBlockNumber) {
     const systemInfo = await SystemModel.findOne();
-    if(systemInfo !== null && systemInfo.blockNumber < newBlockNumber) {
+    if (systemInfo !== null && systemInfo.blockNumber < newBlockNumber) {
       systemInfo.blockNumber = Number(newBlockNumber);
       systemInfo.superTokenBlockNumber = Number(newBlockNumber);
     }
-      return systemInfo.save();
+    return systemInfo.save();
   }
 
-  async getConfiguration() {
+  async getConfiguration () {
     return UserConfig.findOne();
   }
 
-  async saveConfiguration(configString) {
+  async saveConfiguration (configString) {
     const fromDB = await UserConfig.findOne();
-    if(fromDB !== null) {
+    if (fromDB !== null) {
       fromDB.config = configString;
       return fromDB.save();
     }

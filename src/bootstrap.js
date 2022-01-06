@@ -2,7 +2,6 @@ const SystemModel = require("./database/models/systemModel");
 const EstimationModel = require("./database/models/accountEstimationModel");
 const AgreementModel = require("./database/models/agreementModel");
 const { Op } = require("sequelize");
-const async = require("async");
 
 /*
  * @dev Bootstrap the app from fresh or persisted state

@@ -98,5 +98,7 @@ module.exports = {
   TxUnderpricedError,
   TxAlreadyKnownError,
   AccountFundsError,
-  AccountNonceError
+  AccountNonceError,
+  SmartContractError,
+  BaseError
 }

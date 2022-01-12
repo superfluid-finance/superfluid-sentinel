@@ -17,7 +17,7 @@ class Gas {
       };
     } catch (err) {
       return {
-        error: err,
+        error: this.app.Errors.EVMErrorParser(err),
         gasLimit: undefined
       };
     }
@@ -27,13 +27,14 @@ class Gas {
     try {
       const price = await this.app.client.web3.eth.getGasPrice();
       return {
-        gasPrice: price,
-        error: undefined
+        error: undefined,
+        gasPrice: price
+
       };
     } catch (err) {
       return {
-        gasPrice: undefined,
-        error: err
+        error: this.app.Errors.EVMErrorParser(err),
+        gasPrice: undefined
       };
     }
   }

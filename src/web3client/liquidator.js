@@ -1,18 +1,3 @@
-function promiseTimeout (promise, ms) {
-  const timeout = new Promise((resolve, reject) => {
-    const id = setTimeout(() => {
-      clearTimeout(id);
-      reject(new Error("timeout rejection"));
-    }, ms);
-  });
-
-  // Returns a race between timeout and promise
-  return Promise.race([
-    promise,
-    timeout
-  ]);
-}
-
 class Liquidator {
   constructor (app) {
     this.app = app;
@@ -55,7 +40,7 @@ class Liquidator {
   }
 
   async isPossibleToClose (superToken, sender, receiver) {
-    // Note: Is flow does not exist on the network, we are going to remove from DB
+    // Note: If flow does not exist on the network, we are going to remove from DB
     return (await this.app.protocol.checkFlow(superToken, sender, receiver)) !== undefined &&
       (await this.app.protocol.isAccountCriticalNow(superToken, sender));
   }
@@ -94,7 +79,7 @@ class Liquidator {
       } else {
         this.app.logger.debug(`address ${job.sender} is solvent at ${job.superToken}`);
         await this.app.queues.addQueuedEstimation(job.superToken, job.sender, "Liquidation job");
-        await this.app.timer.delay(500);
+        await this.app.timer.timeout(500);
       }
     }
   }
@@ -116,7 +101,7 @@ class Liquidator {
         } else {
           this.app.logger.debug(`address ${flow.sender} is solvent at ${flow.superToken}`);
           await this.app.queues.addQueuedEstimation(flow.superToken, flow.sender, "Liquidation job");
-          await this.app.timer.delay(500);
+          await this.app.timer.timeout(500);
         }
 
         if (senders.length === this.app.config.MAX_BATCH_TX) {
@@ -174,20 +159,12 @@ class Liquidator {
   }
 
   async sendWithRetry (wallet, txObject, ms) {
-    await this.app.timer.delay(1000);
+    await this.app.timer.timeout(1000);
     // When estimate gas we get a preview of what can happen when send the transaction. Depending on the error we should execute specific logic
     const gas = await this.app.gasEstimator.getGasLimit(wallet, txObject);
     if (gas.error !== undefined) {
-      if (gas.error.message === "Returned error: execution reverted: CFA: flow does not exist") {
+      if (gas.error instanceof this.app.Errors.ExecutionReverted) {
         await this.app.protocol.checkFlow(txObject.superToken, txObject.flowSender, txObject.flowReceiver);
-      }
-
-      if (gas.error.message === "Returned error: execution reverted") {
-        // TODO: Solve this EVM return error
-      }
-
-      if (gas.error.message === "Returned error: execution reverted: CallUtils: target reverted") {
-        // TODO: Solve this EVM return error
       }
 
       return {
@@ -199,19 +176,20 @@ class Liquidator {
     txObject.gasLimit = gas.gasLimit;
     const signed = await this.signTx(wallet, txObject);
     if (signed.error !== undefined) {
-      if (signed.error === "Returned error: replacement transaction underpriced") {
+      const error = this.app.Errors.EVMErrorParser(signed.error);
+      if(error instanceof this.app.Errors.TxUnderpricedError) {
         this.app.logger.warn(`replacement transaction underpriced`);
         txObject.retry++;
         return this.sendWithRetry(wallet, txObject, ms);
       }
-
-      if (signed.error === "Returned error: execution reverted: CFA: flow does not exist") {
-        this.app.logger.warn(`flow don't exist anymore`);
+    if(error instanceof this.app.Errors.ExecutionReverted) {
+        this.app.logger.warn(error.originalMessage);
         return {
-          error: signed.error,
+          error: error,
           tx: undefined
         };
       }
+
       return {
         error: signed.error,
         tx: undefined
@@ -223,7 +201,7 @@ class Liquidator {
       signed.tx.timeout = ms;
       this.app.logger.info(`waiting until timeout for ${ms / 1000} seconds for tx ${txObject.txHash}`);
       // Broadcast transaction
-      const tx = await promiseTimeout(
+      const tx = await this.app.timer.promiseTimeout(
         this.app.client.sendSignedTransaction(signed),
         ms
       );
@@ -233,41 +211,38 @@ class Liquidator {
         tx: tx
       };
     } catch (err) {
-      if (err.message === "timeout rejection") {
+      if(err instanceof this.app.Errors.TimeoutError) {
         this.app.logger.debug(`timeout of tx: ${signed.tx.transactionHash}`);
         txObject.retry++;
         return this.sendWithRetry(wallet, txObject, ms);
       }
-
-      if (err.message === "Returned error: replacement transaction underpriced") {
+      //get errors from EVM
+      const error = this.app.Errors.EVMErrorParser(err);
+      if(error instanceof this.app.Errors.TxUnderpricedError) {
         this.app.logger.debug(`replacing transaction underpriced`);
         txObject.retry++;
         return this.sendWithRetry(wallet, txObject, ms);
       }
-
-      if (err.message === "Returned error: nonce too low") {
+      if(error instanceof this.app.Errors.AccountNonceError) {
         this.app.logger.debug(`nonce too low, retry`);
         txObject.nonce++;
         return this.sendWithRetry(wallet, txObject, ms);
       }
-
-      if (err.message === "Returned error: already known") {
+      if(error instanceof this.app.Errors.TxAlreadyKnownError) {
         this.app.logger.debug(`submitted tx already known`);
         return {
-          error: err.message,
+          error: error.message,
           tx: undefined
         };
       }
-
-      if (err.message === "Returned error: insufficient funds for gas * price + value") {
+      if(error instanceof this.app.Errors.TxUnderpricedError) {
         this.app.logger.warn(`insufficient funds agent account`);
         return {
-          error: err.message,
+          error: error.message,
           tx: undefined
         };
       }
-
-      if (err.message.toLowerCase() === "returned error: exceeds block gas limit") {
+      if(error instanceof this.app.Errors.GasBlockLimitError) {
         this.app.logger.warn(`exceeds block gas limit`);
         this.app.config.MAX_BATCH_TX = Math.ceil(parseInt(this.app.config.MAX_BATCH_TX / 2));
         this.app.logger.warn(`reducing batch size to ${this.app.config.MAX_BATCH_TX}`);
@@ -276,12 +251,12 @@ class Liquidator {
           process.exit(1);
         }
         return {
-          error: err.message,
+          error: error.message,
           tx: undefined
         };
       }
       // log remaining errors
-      this.app.logger.error(`Liquidator.sendWithRetry() - no logic to catch error : ${err}`);
+      this.app.logger.error(`Liquidator.sendWithRetry() - no logic to catch error : ${error}`);
     }
   }
 

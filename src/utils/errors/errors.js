@@ -79,7 +79,10 @@ function EVMErrorParser(err) {
     if(err.message.toLowerCase().includes("already known")) {
       return new TxUnderpricedError("tx already known", err.message);
     }
-    if(err.message.toLowerCase().includes("execution reverted")) {
+
+    if(err.message.toLowerCase().includes("execution reverted") ||
+        err.message.toLowerCase().includes("reverted by the evm")
+    ) {
       return new SmartContractError("execution reverted", err.message);
     }
     //don't default to BaseError in the case on custom error

@@ -219,17 +219,17 @@ class Liquidator {
       //get errors from EVM
       const error = this.app.Errors.EVMErrorParser(err);
       if(error instanceof this.app.Errors.TxUnderpricedError) {
-        this.app.logger.debug(`replacing transaction underpriced`);
+        this.app.logger.warn(`replacing transaction underpriced`);
         txObject.retry++;
         return this.sendWithRetry(wallet, txObject, ms);
       }
       if(error instanceof this.app.Errors.AccountNonceError) {
-        this.app.logger.debug(`nonce too low, retry`);
+        this.app.logger.warn(`nonce too low, retry`);
         txObject.nonce++;
         return this.sendWithRetry(wallet, txObject, ms);
       }
       if(error instanceof this.app.Errors.TxAlreadyKnownError) {
-        this.app.logger.debug(`submitted tx already known`);
+        this.app.logger.warn(`submitted tx already known`);
         return {
           error: error.message,
           tx: undefined

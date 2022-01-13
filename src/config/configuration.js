@@ -36,6 +36,7 @@ class Config {
       this.SHUTDOWN_ON_ERROR = config.shutdown_on_error;
       this.LIQUIDATION_JOB_AWAITS = config.liquidation_job_awaits;
       this.ONLY_LISTED_TOKENS = config.only_listed_tokens === "true";
+      this.TOGA_CONTRACT = config.toga_contract;
     } else {
       this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
       this.MNEMONIC = process.env.MNEMONIC;

@@ -74,6 +74,11 @@ class App {
     return this.db.queries.getEstimations();
   }
 
+  // return PIC saved on database
+  async getPICInfo(onlyTokens) {
+    return this.db.queries.getPICInfo(onlyTokens);
+  }
+
   // close agent processes and exit
   async shutdown (force = false) {
     this._isShutdown = true;

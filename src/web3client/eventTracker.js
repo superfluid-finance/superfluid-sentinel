@@ -158,21 +158,23 @@ class EventTracker {
 
   async processIDAEvent (event) {
     try {
-      if (this.app.client.isSuperTokenRegistered(event.token) && event.eventName === "IndexUpdated") {
-        this.app.logger.debug(`[IndexUpdated] - ${event.eventName} [${event.token}] - publisher ${event.publisher}`);
-        this.app.queues.estimationQueue.push([
-          {
-            self: this,
-            account: event.publisher,
-            token: event.token,
-            blockNumber: event.blockNumber,
-            blockHash: event.blockHash,
-            transactionHash: event.transactionHash,
-            parentCaller: "processIDAEvent"
-          }
-        ]);
-      } else {
-        this.app.logger.debug(`[IDA]: token ${event.token} is not subscribed`);
+      if(event.eventName === "IndexUpdated") {
+        if (this.app.client.isSuperTokenRegistered(event.token)) {
+          this.app.logger.debug(`[IndexUpdated] - ${event.eventName} [${event.token}] - publisher ${event.publisher}`);
+          this.app.queues.estimationQueue.push([
+            {
+              self: this,
+              account: event.publisher,
+              token: event.token,
+              blockNumber: event.blockNumber,
+              blockHash: event.blockHash,
+              transactionHash: event.transactionHash,
+              parentCaller: "processIDAEvent"
+            }
+          ]);
+        } else {
+          this.app.logger.debug(`[IDA]: token ${event.token} is not subscribed`);
+        }
       }
     } catch (err) {
       this.app.logger.error(err);
@@ -182,11 +184,13 @@ class EventTracker {
 
   async processTOGAEvent (event) {
     try {
-      if (this.app.client.isSuperTokenRegistered(event.token) && event.eventName === "NewPic") {
-        this.app.logger.info(`[TOGA]: ${event.eventName} [${event.token}] new pic ${event.pic}`);
-        this.app.protocol.calculateAndSaveTokenDelay(event.token);
-      } else {
-        this.app.logger.debug(`[TOGA]: token ${event.token} is not subscribed`);
+      if(event.eventName === "NewPIC") {
+        if (this.app.client.isSuperTokenRegistered(event.token)) {
+          this.app.logger.info(`[TOGA]: ${event.eventName} [${event.token}] new pic ${event.pic}`);
+          this.app.protocol.calculateAndSaveTokenDelay(event.token);
+        } else {
+          this.app.logger.debug(`[TOGA]: token ${event.token} is not subscribed`);
+        }
       }
     } catch (err) {
       this.app.logger.error(err);

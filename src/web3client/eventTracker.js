@@ -182,7 +182,7 @@ class EventTracker {
 
   async processTOGAEvent (event) {
     try {
-      if (this.app.client.isSuperTokenRegistered(event.token) && event.eventName === "NewPic") {
+      if (this.app.client.isSuperTokenRegistered(event.token) && event.eventName === "NewPIC") {
         this.app.logger.info(`[TOGA]: ${event.eventName} [${event.token}] new pic ${event.pic}`);
         this.app.protocol.calculateAndSaveTokenDelay(event.token);
       } else {

@@ -16,6 +16,7 @@ describe("Custom errors", () => {
       expect(Errors.EVMErrorParser(new Error("transaction underpriced"))).to.be.an.instanceof(Errors.TxUnderpricedError);
       expect(Errors.EVMErrorParser(new Error("already known"))).to.be.an.instanceof(Errors.TxUnderpricedError);
       expect(Errors.EVMErrorParser(new Error("execution reverted"))).to.be.an.instanceof(Errors.SmartContractError);
+      expect(Errors.EVMErrorParser(new Error("reverted by the evm"))).to.be.an.instanceof(Errors.SmartContractError);
       expect(Errors.EVMErrorParser(new Error("should not match"))).to.be.an.instanceof(Errors.BaseError);
       expect(Errors.EVMErrorParser(new Errors.TimeoutError(false, "myTimeout"))).to.be.an.instanceof(Errors.TimeoutError);
     } catch (err) {

@@ -74,6 +74,10 @@
       "epoch": 23709362,
       "batch": "0x6b878902A8648815e1E896515e25D985715bE485"
     },
+    "69": {
+      "name": "Optimist (Kovan)",
+      "epoch": 308821
+    },
     "100": {
       "name": "Gnosis Chain",
       "epoch": 14845091,
@@ -86,11 +90,19 @@
       "batch": "0xAB4075f621100563f4551C0Ca50944809b03E948",
       "toga": "0x6AEAeE5Fd4D05A741723D752D30EE4D72690A8f7"
     },
+    "43113": {
+      "name": "Avalanche (Fuji)",
+      "epoch": 3220231
+    },
     "80001": {
       "name": "Mumbai (Polygon)",
       "epoch": 7295264,
       "batch": "0xf8A70a8589c579D3C169812b050C2B4475784EA9",
       "toga": "0xc301D28088d537E24c41A7AAd03896E7E16074f4"
+    },
+    "421611": {
+      "name": "Arbitrum (Rinkeby)",
+      "epoch": 7309284
     }
   }
 }

@@ -76,7 +76,8 @@
     },
     "69": {
       "name": "Optimist (Kovan)",
-      "epoch": 308821
+      "epoch": 308821,
+      "batch": "0x62C82F3b04705a8b54a60c6A9B782AFbe8081C40"
     },
     "100": {
       "name": "Gnosis Chain",
@@ -92,7 +93,8 @@
     },
     "43113": {
       "name": "Avalanche (Fuji)",
-      "epoch": 3220231
+      "epoch": 3220231,
+      "batch": "0xFabcf1239357D8051a8028222c28b0ffdc0F7398"
     },
     "80001": {
       "name": "Mumbai (Polygon)",
@@ -100,9 +102,11 @@
       "batch": "0xf8A70a8589c579D3C169812b050C2B4475784EA9",
       "toga": "0xc301D28088d537E24c41A7AAd03896E7E16074f4"
     },
+    },
     "421611": {
       "name": "Arbitrum (Rinkeby)",
-      "epoch": 7309284
+      "epoch": 7309284,
+      "batch": "0x00A1c6dB5287f09D9C3e99C2B74E03F4A7d2F545"
     }
   }
 }

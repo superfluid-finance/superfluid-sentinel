@@ -99,7 +99,7 @@ class Protocol {
 
   async calculateAndSaveTokenDelay (superToken) {
     try {
-      const tokenInfo = this.app.client.superTokenNames[superToken];
+      const tokenInfo = this.app.client.superTokenNames[superToken.toLowerCase()];
       const currentTokenPIC = await this.getCurrentPIC(superToken);
       const rewardAccount = await this.getRewardAddress(superToken);
       const token = await SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });

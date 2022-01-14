@@ -14,7 +14,11 @@
     "test-unit": "node_modules/.bin/mocha test/unit-tests/*.js",
     "test": "npm run test-unit && npm run test-node && npm run test-gas && npm run test-ida && npm run test-cfa && npm run test-batch"
   },
-  "keywords": ["superfluid", "sentinel", "liquidator", "solvency"],
+  "keywords": [
+    "superfluid",
+    "sentinel",
+    "solvency"
+  ],
   "author": "Superfluid",
   "license": "MIT",
   "dependencies": {

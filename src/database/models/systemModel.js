@@ -1,7 +1,5 @@
 const Sequelize = require("sequelize");
-const db = require("../db");
-
-const SystemModel = db.define("system", {
+module.exports = (db) => { return  db.define("system", {
   blockNumber: {
     type: Sequelize.INTEGER,
     allowNull: false
@@ -13,6 +11,5 @@ const SystemModel = db.define("system", {
   superTokenBlockNumber: {
     type: Sequelize.INTEGER
   }
-});
+})};
 
-module.exports = SystemModel;

@@ -1,6 +1,3 @@
-const SystemModel = require("./database/models/systemModel");
-const EstimationModel = require("./database/models/accountEstimationModel");
-const AgreementModel = require("./database/models/agreementModel");
 const { Op } = require("sequelize");
 
 /*
@@ -13,7 +10,7 @@ class Bootstrap {
 
   async start () {
     this.app.logger.info("starting bootstrap");
-    const systemInfo = await SystemModel.findOne();
+    const systemInfo = await this.app.db.models.SystemModel.findOne();
     let blockNumber = parseInt(this.app.config.EPOCH_BLOCK);
     if (systemInfo !== null) {
       blockNumber = systemInfo.blockNumber;
@@ -40,7 +37,7 @@ class Bootstrap {
         const flows = await this.app.db.queries.getLastFlows(blockNumber);
         for (const flow of flows) {
           try {
-            await AgreementModel.upsert({
+            await this.app.db.models.AgreementModel.upsert({
               agreementId: flow.agreementId,
               superToken: flow.superToken,
               sender: flow.sender,
@@ -54,12 +51,12 @@ class Bootstrap {
           }
         }
         // From all existing estimations, delete what don't have agreements
-        const estimationsNow = await EstimationModel.findAll({
+        const estimationsNow = await this.app.db.models.AccountEstimationModel.findAll({
           attributes: ["address", "superToken"]
         });
 
         for (const est of estimationsNow) {
-          const flows = await AgreementModel.findAll({
+          const flows = await this.app.db.models.AgreementModel.findAll({
             where: {
               [Op.and]: [
                 {

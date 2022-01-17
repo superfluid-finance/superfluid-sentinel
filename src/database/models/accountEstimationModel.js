@@ -1,7 +1,5 @@
 const Sequelize = require("sequelize");
-const db = require("../db");
-
-const AccountEstimationModel = db.define("estimations", {
+module.exports = (db) => { return db.define("estimations", {
   address: {
     type: Sequelize.STRING,
     primaryKey: true
@@ -10,7 +8,6 @@ const AccountEstimationModel = db.define("estimations", {
     type: Sequelize.STRING,
     primaryKey: true
   },
-
   totalNetFlowRate: {
     type: Sequelize.STRING
   },
@@ -28,6 +25,4 @@ const AccountEstimationModel = db.define("estimations", {
   blockNumber: {
     type: Sequelize.INTEGER
   }
-});
-
-module.exports = AccountEstimationModel;
+})};

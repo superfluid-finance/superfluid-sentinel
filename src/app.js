@@ -4,14 +4,14 @@ const Client = require("./web3client/client");
 const EventTracker = require("./web3client/eventTracker");
 const Queues = require("./protocol/queues");
 const Protocol = require("./protocol/protocol");
-const LoadEvents = require("./loadEvents");
+const LoadEvents = require("./boot/loadEvents");
 const Liquidator = require("./web3client/liquidator");
 const Gas = require("./transaction/gas");
 const Time = require("./utils/time");
 const Timer = require("./utils/timer");
 const EventModel = require("./models/EventModel");
-const Bootstrap = require("./bootstrap.js");
-const DB = require("./database/db");
+const Bootstrap = require("./boot/bootstrap.js");
+
 const Repository = require("./database/repository");
 const utils = require("./utils/utils.js");
 const HTTPServer = require("./httpserver/server");
@@ -24,13 +24,24 @@ class App {
     */
   constructor (config) {
     this.Errors = Errors;
-    this.eventTracker = new EventTracker(this);
     this.config = new Config(config);
     this.logger = new Logger(this);
+    this.db = require("./database/db")(this.config.DB);
+    this.db.models = {
+      AccountEstimationModel: require("./database/models/accountEstimationModel")(this.db),
+      AgreementModel: require("./database/models/agreementModel")(this.db),
+      FlowUpdatedModel: require("./database/models/flowUpdatedModel")(this.db),
+      SuperTokenModel: require("./database/models/superTokenModel")(this.db),
+      SystemModel: require("./database/models/systemModel")(this.db),
+      UserConfig: require("./database/models/userConfiguration")(this.db)
+    }
+    this.db.queries = new Repository(this);
+    this.eventTracker = new EventTracker(this);
     this.client = new Client(this);
     this.protocol = new Protocol(this);
     this.queues = new Queues(this);
     this.gasEstimator = new Gas(this);
+
     this.loadEvents = new LoadEvents(this);
     this.models = {
       event: new EventModel()
@@ -40,8 +51,7 @@ class App {
     this.time = new Time();
     this.genAccounts = utils.generateAccounts;
     this.utils = utils;
-    this.db = DB;
-    this.db.queries = new Repository(this);
+
     this.healthReport = new Report(this);
     this.server = new HTTPServer(this);
     this.timer = new Timer();

@@ -1,5 +1,4 @@
 const BN = require("bn.js");
-const SuperTokenModel = require("./../database/models/superTokenModel");
 
 class Protocol {
   constructor (app) {
@@ -102,7 +101,7 @@ class Protocol {
       const tokenInfo = this.app.client.superTokenNames[superToken.toLowerCase()];
       const currentTokenPIC = await this.getCurrentPIC(superToken);
       const rewardAccount = await this.getRewardAddress(superToken);
-      const token = await SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });
+      const token = await this.app.db.models.SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });
       token.pic = currentTokenPIC === undefined ? undefined : currentTokenPIC.pic;
       if (this.app.config.PIC === undefined) {
         // TOOD: When 3P is implement, change this to be in pirate mode

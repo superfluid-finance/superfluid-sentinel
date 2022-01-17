@@ -27,7 +27,7 @@ class Config {
       this.MAX_BATCH_TX = config.max_batch_tx || 10;
       this.BLOCK_OFFSET = config.block_offset || 0;
       this.MAX_TX_NUMBER = config.max_tx_number || 100;
-      this.EPOCH_BLOCK = config.epoch_block;
+      this.EPOCH_BLOCK = config.epoch_block || 0;
       this.BATCH_CONTRACT = config.batch_contract;
       this.CONCURRENCY = config.concurrency;
       this.COLD_BOOT = config.cold_boot;

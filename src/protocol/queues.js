@@ -1,6 +1,4 @@
 const async = require("async");
-const EstimationModel = require("../database/models/accountEstimationModel");
-const AgreementModel = require("../database/models/agreementModel");
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -44,7 +42,7 @@ class Queues {
           if (task.self.app.client.isSuperTokenRegistered(task.token)) {
             task.self.app.logger.debug(`EstimationQueue - Parent Caller ${task.parentCaller} TransactionHash: ${task.transactionHash}`);
             const estimationData = await task.self.app.protocol.liquidationData(task.token, task.account);
-            await EstimationModel.upsert({
+            await task.self.app.db.models.AccountEstimationModel.upsert({
               address: task.account,
               superToken: task.token,
               totalNetFlowRate: estimationData.totalNetFlowRate,
@@ -112,7 +110,7 @@ class Queues {
             task.self.app.logger.debug(allFlowUpdatedEvents);
           }
           for (const event of allFlowUpdatedEvents) {
-            await AgreementModel.upsert({
+            await task.self.app.db.models.AgreementModel.upsert({
               agreementId: event.agreementId,
               superToken: event.token,
               sender: event.sender,

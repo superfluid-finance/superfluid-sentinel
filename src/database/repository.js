@@ -2,9 +2,6 @@ const {
   QueryTypes,
   Op
 } = require("sequelize");
-const EstimationModel = require("../database/models/accountEstimationModel");
-const UserConfig = require("../database/models/userConfiguration");
-const SystemModel = require("../database/models/systemModel");
 
 class Repository {
   constructor (app) {
@@ -55,7 +52,7 @@ class Repository {
   }
 
   async getAddressEstimation (address) {
-    return EstimationModel.findAll({
+    return this.app.db.models.AccountEstimationModel.findAll({
       attributes: ["address", "superToken", "zestimation"],
       where:
         {
@@ -65,7 +62,7 @@ class Repository {
   }
 
   async getEstimations () {
-    return EstimationModel.findAll({
+    return this.app.db.models.AccountEstimationModel.findAll({
       attributes: ["address", "superToken", "zestimation"],
       where: { zestimation: { [Op.gt]: 0 } }
     });
@@ -124,7 +121,7 @@ class Repository {
   }
 
   async updateBlockNumber (newBlockNumber) {
-    const systemInfo = await SystemModel.findOne();
+    const systemInfo = await this.app.db.models.SystemModel.findOne();
     if (systemInfo !== null && systemInfo.blockNumber < newBlockNumber) {
       systemInfo.blockNumber = Number(newBlockNumber);
       systemInfo.superTokenBlockNumber = Number(newBlockNumber);
@@ -133,16 +130,16 @@ class Repository {
   }
 
   async getConfiguration () {
-    return UserConfig.findOne();
+    return this.app.db.models.UserConfig.findOne();
   }
 
   async saveConfiguration (configString) {
-    const fromDB = await UserConfig.findOne();
+    const fromDB = await this.app.db.models.UserConfig.findOne();
     if (fromDB !== null) {
       fromDB.config = configString;
       return fromDB.save();
     }
-    return UserConfig.create({ config: configString });
+    return this.app.db.models.UserConfig.create({ config: configString });
   }
 
   async getPICInfo(onlyTokens) {

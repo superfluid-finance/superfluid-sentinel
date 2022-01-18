@@ -1,6 +1,9 @@
 name: Publish Docker image
 
 on:
+  push:
+    branches: #remove this after testing, only release should push a new img
+      - '**'
   release:
     types: [published]
 

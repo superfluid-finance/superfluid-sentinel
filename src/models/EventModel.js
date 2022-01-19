@@ -13,7 +13,7 @@ class EventModel {
   // @dev transform one web3 event object to event model object
   transformWeb3Event (event) {
     try {
-      if (event != null && event !== undefined) {
+      if (event != null) {
         const obj = {
           eventName: event.event,
           logIndex: event.logIndex,

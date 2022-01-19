@@ -68,7 +68,6 @@ class EventTracker {
         self.app.logger.debug(`[${self.app.config.BLOCK_OFFSET}] oldBlock:${_oldBlock} newBlock:${_newBlock} withOffset: ${newBlockWithOffset}`);
         if (_newBlock - _oldBlock + 1 >= self.app.config.BLOCK_OFFSET) {
           if (_oldBlock) {
-            self.app.db.queries.updateBlockNumber(newBlockWithOffset);
             self.getPastBlockAndParseEvents(_oldBlock + 1, newBlockWithOffset);
             self.updateBlockNumber(newBlockWithOffset);
             self.app.db.queries.updateBlockNumber(newBlockWithOffset);

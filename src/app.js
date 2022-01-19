@@ -8,6 +8,7 @@ const LoadEvents = require("./loadEvents");
 const Liquidator = require("./web3client/liquidator");
 const Gas = require("./transaction/gas");
 const Time = require("./utils/time");
+const Timer = require("./utils/timer");
 const EventModel = require("./models/EventModel");
 const Bootstrap = require("./bootstrap.js");
 const DB = require("./database/db");
@@ -15,22 +16,14 @@ const Repository = require("./database/repository");
 const utils = require("./utils/utils.js");
 const HTTPServer = require("./httpserver/server");
 const Report = require("./httpserver/report");
-
-const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-async function trigger (fn, time = 15000) {
-  await timeout(time);
-  return fn.start();
-}
+const Errors = require( "./utils/errors/errors" );
 
 class App {
   /*
      * @dev Load all dependencies needed to run the agent
     */
   constructor (config) {
-    // Helpers global functions
-    // eslint-disable-next-line promise/param-names
-    const delay = ms => new Promise(res => setTimeout(res, ms));
+    this.Errors = Errors;
     this.eventTracker = new EventTracker(this);
     this.config = new Config(config);
     this.logger = new Logger(this);
@@ -51,9 +44,7 @@ class App {
     this.db.queries = new Repository(this);
     this.healthReport = new Report(this);
     this.server = new HTTPServer(this);
-    this.timer = {
-      delay: delay
-    };
+    this.timer = new Timer();
 
     this._isShutdown = false;
   }
@@ -64,10 +55,10 @@ class App {
       return;
     }
 
-    const result = await trigger(fn, time);
+    const result = await this.timer.triggerStart(fn, time);
     if (result.error !== undefined) {
       this.logger.error(result.error);
-      await this.timer.delay(5000);
+      await this.timer.timeout(5000);
     }
 
     await this.run(fn, time);
@@ -107,7 +98,7 @@ class App {
       // await this.db.close();
       let counter = 10;
       while (counter > 0) {
-        await this.timer.delay(3000);
+        await this.timer.timeout(3000);
         if (this.liquidator._isShutdown) {
           return;
         }
@@ -168,11 +159,12 @@ class App {
       // query balances to make liquidations estimations
       await this.bootstrap.start();
       this.queues.init();
-      setTimeout(() => this.queues.start(), 1000);
-      setTimeout(() => this.eventTracker.start(currentBlock), 1000);
+
+      this.timer.startAfter(this.queues);
+      this.timer.startAfter(this.eventTracker, currentBlock);
       // start http server to serve node health reports and dashboard
       if (this.config.METRICS === true) {
-        setTimeout(() => this.server.start(), 1000);
+        this.timer.startAfter(this.server);
       }
       // await x milliseconds before running next liquidation job
       this.run(this.liquidator, this.config.LIQUIDATION_JOB_AWAITS);

@@ -167,7 +167,12 @@ class App {
         this.timer.startAfter(this.server);
       }
       // await x milliseconds before running next liquidation job
-      this.run(this.liquidator, this.config.LIQUIDATION_JOB_AWAITS);
+      if(!this.config.OBSERVER) {
+        this.run(this.liquidator, this.config.LIQUIDATION_JOB_AWAITS);
+      } else {
+        this.logger.warn(`ATTENTION: Configuration is set to be Observer. Liquidations will not be send`);
+      }
+
     } catch (err) {
       this.logger.error(`App.start(): ${err}`);
       process.exit(1);

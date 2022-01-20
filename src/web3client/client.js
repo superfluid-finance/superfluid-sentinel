@@ -59,14 +59,18 @@ class Client {
       } else if (this.app.config.MNEMONIC !== undefined) {
         this.app.logger.info("using provided mnemonic");
         this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, this.app.config.MNEMONIC_INDEX);
+      } else if(this.app.config.OBSERVER) {
+        this.app.logger.warn(`Configuration is set to be Observer.`);
       } else {
         throw Error("No account configured. Either PRIVATE_KEY or MNEMONIC needs to be set.");
       }
-      this.app.logger.info(`account: ${this.agentAccounts.address}`);
-      const accBalance = await this.app.client.getAccountBalance();
-      this.app.logger.info(`balance: ${wad4human(accBalance)}`);
-      if (accBalance === "0") {
-        this.app.logger.warn("!!!ACCOUNT NOT FUNDED!!!  Will fail to execute liquidations!");
+      if(!this.app.config.OBSERVER) {
+        this.app.logger.info(`account: ${this.agentAccounts.address}`);
+        const accBalance = await this.app.client.getAccountBalance();
+        this.app.logger.info(`balance: ${wad4human(accBalance)}`);
+        if (accBalance === "0") {
+          this.app.logger.warn("!!!ACCOUNT NOT FUNDED!!!  Will fail to execute liquidations!");
+        }
       }
       this.app.logger.info("Connecting to Node: HTTP");
       this.web3.eth.transactionConfirmationBlocks = 3;
@@ -227,11 +231,17 @@ class Client {
   }
 
   getAccountAddress () {
-    return this.agentAccounts.address;
+    if(this.agentAccounts !== undefined) {
+      return this.agentAccounts.address;
+    }
+    return;
   }
 
   async getAccountBalance () {
-    return this.web3.eth.getBalance(this.agentAccounts.address);
+    if(this.agentAccounts !== undefined) {
+      return this.web3.eth.getBalance(this.agentAccounts.address);
+    }
+      return;
   }
 
   getAccount () {

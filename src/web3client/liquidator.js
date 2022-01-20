@@ -267,7 +267,10 @@ class Liquidator {
         from: wallet.address,
         data: txObject.tx,
         nonce: txObject.nonce,
-        gasPrice: txObject.gasPrice,
+        type: "0x2",
+        maxFeePerGas: this.app.config.MAX_GAS_PRICE,
+        maxPriorityFeePerGas: 3.14e9,
+        //gasPrice: txObject.gasPrice,
         gasLimit: txObject.gasLimit
       };
       const signed = await this.app.client.signTransaction(

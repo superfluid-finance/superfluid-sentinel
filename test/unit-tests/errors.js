@@ -13,6 +13,7 @@ describe("Custom errors", () => {
       expect(Errors.EVMErrorParser(new Error("block gas limit"))).to.be.an.instanceof(Errors.GasBlockLimitError);
       expect(Errors.EVMErrorParser(new Error("insufficient funds"))).to.be.an.instanceof(Errors.AccountFundsError);
       expect(Errors.EVMErrorParser(new Error("nonce too low"))).to.be.an.instanceof(Errors.AccountNonceError);
+      expect(Errors.EVMErrorParser(new Error("transaction nonce"))).to.be.an.instanceof(Errors.AccountNonceError);
       expect(Errors.EVMErrorParser(new Error("transaction underpriced"))).to.be.an.instanceof(Errors.TxUnderpricedError);
       expect(Errors.EVMErrorParser(new Error("already known"))).to.be.an.instanceof(Errors.TxUnderpricedError);
       expect(Errors.EVMErrorParser(new Error("execution reverted"))).to.be.an.instanceof(Errors.SmartContractError);

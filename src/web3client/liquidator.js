@@ -104,13 +104,11 @@ class Liquidator {
           await this.app.timer.timeout(500);
         }
 
-        if (senders.length === this.app.config.MAX_BATCH_TX) {
-          if (senders.length === parseInt(this.app.config.MAX_BATCH_TX)) {
-            this.app.logger.debug(`sending a full batch work: load ${senders.length}`);
-            await this.sendBatch(batch.superToken, senders, receivers);
-            senders = [];
-            receivers = [];
-          }
+        if (senders.length === parseInt(this.app.config.MAX_BATCH_TX)) {
+          this.app.logger.debug(`sending a full batch work: load ${senders.length}`);
+          await this.sendBatch(batch.superToken, senders, receivers);
+          senders = [];
+          receivers = [];
         }
       }
 

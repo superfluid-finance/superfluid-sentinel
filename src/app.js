@@ -79,6 +79,11 @@ class App {
     return this.db.queries.getPICInfo(onlyTokens);
   }
 
+  // return configuration used
+  getConfigurationInfo() {
+    return this.config.getConfigurationInfo();
+  }
+
   // close agent processes and exit
   async shutdown (force = false) {
     this._isShutdown = true;

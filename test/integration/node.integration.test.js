@@ -16,7 +16,6 @@ const exitWithError = (error) => {
 
 const bootNode = async (delayParam = 0) => {
     app = new App({
-        ws_rpc_node: "ws://127.0.0.1:8545",
         http_rpc_node: "http://127.0.0.1:8545",
         mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
         mnemonic_index: 100,
@@ -97,18 +96,20 @@ describe("Agent configurations tests", () => {
     });
 
     beforeEach(async () => {
+
     });
 
     afterEach(async () => {
         try {
             snapId = await ganache.helper.revertToSnapShot(snapId.result);
+            await closeNode();
         } catch (err) {
             exitWithError(err);
         }
     });
 
     after(async () => {
-        closeNode(true);
+        await closeNode(true);
     });
 
     it("Should use delay paramater when sending liquidation", async () => {
@@ -202,6 +203,33 @@ describe("Agent configurations tests", () => {
             exitWithError(err);
         }
     });
+
+    it("When observer, no need for wallet / address", async () => {
+        try{
+            //start new sentinel as observer
+            const observer = new App({
+                http_rpc_node: "http://127.0.0.1:8545",
+                epoch_block: 0,
+                protocol_release_version: "test",
+                max_query_block_range: 500000,
+                concurrency: 1,
+                cold_boot: 1,
+                only_listed_tokens: 1,
+                number_retries: 3,
+                observer: "true"
+            });
+
+            observer.start();
+            while (!observer.isInitialized()) {
+                await delay(3000);
+            }
+            expect(observer.getConfigurationInfo().OBSERVER).to.be.true;
+            await observer.shutdown();
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
+
     // not yet supported
     it.skip("Start node, subscribe to new Token and perform estimation", async () => {
         try {

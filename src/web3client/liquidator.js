@@ -233,7 +233,7 @@ class Liquidator {
           tx: undefined
         };
       }
-      if(error instanceof this.app.Errors.TxUnderpricedError) {
+      if(error instanceof this.app.Errors.AccountFundsError) {
         this.app.logger.warn(`insufficient funds agent account`);
         return {
           error: error.message,

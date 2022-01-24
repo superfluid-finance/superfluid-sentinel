@@ -1,5 +1,5 @@
 require("./loadCmdArgs");
-const networkConfigs = require("../../package.json").networks;
+const networkConfigs = require("../../manifest.json").networks;
 
 class Config {
   constructor (config) {

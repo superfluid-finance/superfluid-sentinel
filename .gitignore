@@ -13,3 +13,5 @@ datadir/
 *.sqlite
 
 .idea/
+
+snapshots/

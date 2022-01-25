@@ -24,6 +24,7 @@ class App {
     */
   constructor (config) {
     this.Errors = Errors;
+    this.eventTracker = new EventTracker(this);
     this.config = new Config(config);
     this.logger = new Logger(this);
     this.db = require("./database/db")(this.config.DB);
@@ -87,6 +88,11 @@ class App {
   // return PIC saved on database
   async getPICInfo(onlyTokens) {
     return this.db.queries.getPICInfo(onlyTokens);
+  }
+
+  // return configuration used
+  getConfigurationInfo() {
+    return this.config.getConfigurationInfo();
   }
 
   // close agent processes and exit
@@ -177,7 +183,12 @@ class App {
         this.timer.startAfter(this.server);
       }
       // await x milliseconds before running next liquidation job
-      this.run(this.liquidator, this.config.LIQUIDATION_JOB_AWAITS);
+      if(!this.config.OBSERVER) {
+        this.run(this.liquidator, this.config.LIQUIDATION_JOB_AWAITS);
+      } else {
+        this.logger.warn(`ATTENTION: Configuration is set to be Observer. Liquidations will not be send`);
+      }
+
     } catch (err) {
       this.logger.error(`App.start(): ${err}`);
       process.exit(1);

@@ -64,23 +64,26 @@ class TimeoutError extends BaseError {
 }
 
 function EVMErrorParser(err) {
-    if(err.message.toLowerCase().includes("block gas limit")) {
+    const message = err.message.toLowerCase();
+    if(message.includes("block gas limit")) {
       return new GasBlockLimitError("block gas limit", err.message);
     }
-    if(err.message.toLowerCase().includes("insufficient funds")) {
+    if(message.includes("insufficient funds")) {
       return new AccountFundsError("insufficient funds", err.message);
     }
-    if(err.message.toLowerCase().includes("nonce too low")) {
+    if(message.includes("nonce too low") ||
+        message.includes("transaction nonce"))
+    {
       return new AccountNonceError("nonce too low", err.message);
     }
-    if(err.message.toLowerCase().includes("transaction underpriced")) {
+    if(message.includes("transaction underpriced")) {
       return new TxUnderpricedError("transaction underpriced", err.message);
     }
-    if(err.message.toLowerCase().includes("already known")) {
+    if(message.includes("already known")) {
       return new TxUnderpricedError("tx already known", err.message);
     }
 
-    if(err.message.toLowerCase().includes("execution reverted") ||
+    if(message.includes("execution reverted") ||
         err.message.toLowerCase().includes("reverted by the evm")
     ) {
       return new SmartContractError("execution reverted", err.message);
@@ -90,7 +93,7 @@ function EVMErrorParser(err) {
       return err;
     }
 
-    return new BaseError(true, err.message);
+    return new BaseError(true, message);
 }
 
 module.exports = {

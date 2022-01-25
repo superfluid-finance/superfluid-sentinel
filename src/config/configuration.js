@@ -1,5 +1,5 @@
 require("./loadCmdArgs");
-const networkConfigs = require("../../package.json").networks;
+const networkConfigs = require("../../manifest.json").networks;
 
 class Config {
   constructor (config) {
@@ -9,6 +9,7 @@ class Config {
       this.RUN_TEST_ENV = true;
       this.LOG_LEVEL = "debug";
       this.HTTP_RPC_NODE = config.http_rpc_node;
+      this.OBSERVER = config.observer === "true";
       this.MNEMONIC = config.mnemonic;
       this.MNEMONIC_INDEX = config.mnemonic_index;
       this.PRIVATE_KEY = config.private_key;
@@ -39,6 +40,7 @@ class Config {
       this.TOGA_CONTRACT = config.toga_contract;
     } else {
       this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
+      this.OBSERVER = process.env.OBSERVER === "true";
       this.MNEMONIC = process.env.MNEMONIC;
       this.MNEMONIC_INDEX = process.env.MNEMONIC_INDEX || 0;
       this.PRIVATE_KEY = process.env.PRIVATE_KEY;
@@ -98,6 +100,7 @@ class Config {
   getConfigurationInfo () {
     return {
       HTTP_RPC_NODE: this.HTTP_RPC_NODE,
+      OBSERVER: this.OBSERVER,
       MAX_QUERY_BLOCK_RANGE: this.MAX_QUERY_BLOCK_RANGE,
       TOKENS: this.TOKENS,
       DB_PATH: this.DB,

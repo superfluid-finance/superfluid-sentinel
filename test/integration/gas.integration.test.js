@@ -20,7 +20,7 @@ const bootNode = async (delayParam = 0) => {
     mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
     mnemonic_index: 100,
     epoch_block: 0,
-    db_path: "datadir/test.sqlite",
+    db_path: "datadir/testing/test.sqlite",
     protocol_release_version: "test",
     tx_timeout: 20,
     max_query_block_range: 500000,

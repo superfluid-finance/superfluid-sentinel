@@ -1,6 +1,7 @@
 /*
  * Generate a new network snapshot.
  * Requires HTTP_RPC_NODE to be set. If an .env file exists in the project root, it reads it.
+ * exec: npm run build-snap RPC_URL
  */
 require("dotenv").config();
 const zlib = require('zlib');

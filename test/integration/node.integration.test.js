@@ -32,7 +32,8 @@ const bootNode = async (delayParam = 0) => {
         additional_liquidation_delay: delayParam,
         liquidation_run_every: 1000,
         pic: accounts[0],
-        toga_contract: protocolVars.toga._address
+        toga_contract: protocolVars.toga._address,
+        fastsync: "false"
     });
     app.start();
     while (!app.isInitialized()) {
@@ -47,7 +48,6 @@ const closeNode = async (force = false) => {
 };
 
 const waitForEvent = async (eventName, blockNumber) => {
-    await printEstimations();
     while (true) {
         try {
             const newBlockNumber = await web3.eth.getBlockNumber();
@@ -65,15 +65,6 @@ const waitForEvent = async (eventName, blockNumber) => {
             exitWithError(err);
         }
     }
-};
-
-const printEstimations = async () => {
-    console.log("==========ESTIMATIONS==========");
-    const estimations = await app.getEstimations();
-    for (const est of estimations) {
-        console.log(`SuperToken: ${est.superToken} - account: ${est.address} : ${new Date(est.zestimation)}`);
-    }
-    console.log("===============================");
 };
 
 const expectLiquidation = (event, node, account) => {
@@ -96,20 +87,18 @@ describe("Agent configurations tests", () => {
     });
 
     beforeEach(async () => {
-
     });
 
     afterEach(async () => {
         try {
             snapId = await ganache.helper.revertToSnapShot(snapId.result);
-            await closeNode();
         } catch (err) {
             exitWithError(err);
         }
     });
 
     after(async () => {
-        await closeNode(true);
+        closeNode(true);
     });
 
     it("Should use delay paramater when sending liquidation", async () => {
@@ -187,6 +176,7 @@ describe("Agent configurations tests", () => {
                 picInfo = await app.getPICInfo(protocolVars.superToken._address);
                 if (picInfo.length > 0) break;
             }
+
             expect(picInfo[0].pic).to.be.equal(accounts[0]);
             //PIC changes
             await protocolVars.superToken.methods.transfer(protocolVars.toga._address, "100000000000000000").send({
@@ -194,7 +184,7 @@ describe("Agent configurations tests", () => {
                 gas: 1000000
             });
             while (true) {
-                await delay(5000);
+                await delay(8000);
                 picInfo = await app.getPICInfo(protocolVars.superToken._address);
                 if (picInfo.length > 0) break;
             }
@@ -217,7 +207,8 @@ describe("Agent configurations tests", () => {
                 cold_boot: 1,
                 only_listed_tokens: 1,
                 number_retries: 3,
-                observer: "true"
+                observer: "true",
+                fastsync: "false"
             });
 
             observer.start();
@@ -225,7 +216,7 @@ describe("Agent configurations tests", () => {
                 await delay(3000);
             }
             expect(observer.getConfigurationInfo().OBSERVER).to.be.true;
-            await observer.shutdown();
+            await observer.shutdown(true);
         } catch(err) {
             exitWithError(err);
         }

@@ -50,7 +50,8 @@ const bootNode = async (delayParam = 0, maxTxNumber) => {
     block_offset: 1,
     liquidation_run_every: 30000,
     batch_contract: batchContract._address,
-    max_tx_number: maxTxNumber
+    max_tx_number: maxTxNumber,
+    fastsync: "false"
   });
   app.start();
   while (!app.isInitialized()) {

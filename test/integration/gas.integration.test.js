@@ -31,7 +31,8 @@ const bootNode = async (delayParam = 0) => {
     number_retries: 3,
     additional_liquidation_delay: delayParam,
     block_offset: 1,
-    liquidation_run_every: 1000
+    liquidation_run_every: 1000,
+    fastsync: "false"
   });
   app.start();
   while (!app.isInitialized()) {
@@ -46,7 +47,6 @@ const closeNode = async (force = false) => {
 };
 
 const waitForEvent = async (eventName, blockNumber) => {
-  await printEstimations();
   while (true) {
     try {
       const newBlockNumber = await web3.eth.getBlockNumber();
@@ -64,15 +64,6 @@ const waitForEvent = async (eventName, blockNumber) => {
       exitWithError(err);
     }
   }
-};
-
-const printEstimations = async () => {
-  console.log("==========ESTIMATIONS==========");
-  const estimations = await app.getEstimations();
-  for (const est of estimations) {
-    console.log(`SuperToken: ${est.superToken} - account: ${est.address} : ${new Date(est.zestimation)}`);
-  }
-  console.log("===============================");
 };
 
 const expectLiquidation = (event, node, account) => {

@@ -233,14 +233,12 @@ class Client {
     if(this.agentAccounts !== undefined) {
       return this.agentAccounts.address;
     }
-    return;
   }
 
   async getAccountBalance () {
     if(this.agentAccounts !== undefined) {
       return this.web3.eth.getBalance(this.agentAccounts.address);
     }
-      return;
   }
 
   getAccount () {

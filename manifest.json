@@ -1,5 +1,6 @@
 {
   "name": "sentinel-manifest",
+  "ipfs_gateway": "https://ipfs.io/ipfs/",
   "networks": {
     "3": {
       "name": "Ropsten",
@@ -30,13 +31,15 @@
       "name": "Gnosis Chain",
       "epoch": 14845091,
       "batch": "0x7Ac49B1539C2580972D9B43b41a4ec93A4290cdF",
-      "toga": "0xb7DE52F4281a7a276E18C40F94cd93159C4A2d22"
+      "toga": "0xb7DE52F4281a7a276E18C40F94cd93159C4A2d22",
+      "cid": "QmQ3nykjwrvdyh7nKQyxUN41mZAoJWBngKRVLRSyprJ2oN"
     },
     "137": {
       "name": "Polygon",
       "epoch": 11000000,
       "batch": "0xAB4075f621100563f4551C0Ca50944809b03E948",
-      "toga": "0x6AEAeE5Fd4D05A741723D752D30EE4D72690A8f7"
+      "toga": "0x6AEAeE5Fd4D05A741723D752D30EE4D72690A8f7",
+      "cid": "QmccaisaKywVXwSFeCq9yzpjvTs5BXoz97QbrH3xZustrU"
     },
     "43113": {
       "name": "Avalanche (Fuji)",

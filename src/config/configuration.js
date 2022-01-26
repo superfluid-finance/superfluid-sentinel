@@ -1,5 +1,5 @@
 require("./loadCmdArgs");
-const networkConfigs = require("../../manifest.json").networks;
+const manifest = require("../../manifest.json");
 
 class Config {
   constructor (config) {
@@ -38,6 +38,7 @@ class Config {
       this.LIQUIDATION_JOB_AWAITS = config.liquidation_job_awaits;
       this.ONLY_LISTED_TOKENS = config.only_listed_tokens === "true";
       this.TOGA_CONTRACT = config.toga_contract;
+      this.FASTSYNC = config.fastsync !== "false";
     } else {
       this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
       this.OBSERVER = process.env.OBSERVER === "true";
@@ -59,6 +60,7 @@ class Config {
       this.PIC = process.env.PIC;
       this.METRICS = process.env.METRICS !== "false"; // default: true
       this.METRICS_PORT = process.env.METRICS_PORT || 3000;
+      this.FASTSYNC = process.env.FASTSYNC !== "false";
 
       // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
       this.CONCURRENCY = process.env.CONCURRENCY || 1;
@@ -92,14 +94,17 @@ class Config {
   }
 
   loadNetworkInfo (chainId) {
-    this.EPOCH_BLOCK = networkConfigs[chainId].epoch || 0;
-    this.BATCH_CONTRACT = networkConfigs[chainId].batch;
-    this.TOGA_CONTRACT = networkConfigs[chainId].toga || undefined;
+    this.EPOCH_BLOCK = manifest.networks[chainId].epoch || 0;
+    this.BATCH_CONTRACT = manifest.networks[chainId].batch;
+    this.TOGA_CONTRACT = manifest.networks[chainId].toga || undefined;
+    this.CID = manifest.networks[chainId].cid || undefined;
+    this.IPFS_GATEWAY = manifest.ipfs_gateway || undefined;
   }
 
   getConfigurationInfo () {
     return {
       HTTP_RPC_NODE: this.HTTP_RPC_NODE,
+      FASTSYNC: this.FASTSYNC,
       OBSERVER: this.OBSERVER,
       MAX_QUERY_BLOCK_RANGE: this.MAX_QUERY_BLOCK_RANGE,
       TOKENS: this.TOKENS,

@@ -142,7 +142,29 @@ class App {
     try {
       this.logger.debug(`booting sentinel`);
       this._isShutdown = false;
-      if (this.config.COLD_BOOT) {
+
+      // create all web3 infrastructure needed
+      await this.client.init();
+      // if we are running tests don't try to load network information
+      if (!this.config.RUN_TEST_ENV) {
+        this.config.loadNetworkInfo(await this.client.getChainId());
+      }
+      if (this.config.BATCH_CONTRACT !== undefined) {
+        await this.client.loadBatchContract();
+      }
+      if (this.config.TOGA_CONTRACT !== undefined) {
+        await this.client.loadTogaContract();
+      }
+      //check conditions to decide if getting snapshot data
+      if((!this.utils.fileExist(this.config.DB) || this.config.COLD_BOOT) &&
+          this.config.FASTSYNC && this.config.CID)
+      {
+        this.logger.info(`getting snapshot from ${this.config.IPFS_GATEWAY + this.config.CID}`);
+        await this.utils.downloadFile(this.config.IPFS_GATEWAY + this.config.CID, this.config.DB + ".gz");
+        this.logger.info("unzipping snapshot...");
+        this.utils.unzip(this.config.DB + ".gz", this.config.DB);
+        await this.db.sync();
+      } else if (!this.config.FASTSYNC && this.config.COLD_BOOT) {
         // drop existing database to force a full boot
         this.logger.debug(`resyncing database data`);
         await this.db.sync({ force: true });
@@ -157,19 +179,6 @@ class App {
         process.exit(1);
       }
       await this.db.queries.saveConfiguration(JSON.stringify(userConfig));
-
-      // create all web3 infrastructure needed
-      await this.client.init();
-      // if we are running tests don't try to load network information
-      if (!this.config.RUN_TEST_ENV) {
-        this.config.loadNetworkInfo(await this.client.getChainId());
-      }
-      if (this.config.BATCH_CONTRACT !== undefined) {
-        await this.client.loadBatchContract();
-      }
-      if (this.config.TOGA_CONTRACT !== undefined) {
-        await this.client.loadTogaContract();
-      }
       // collect events to detect superTokens and accounts
       const currentBlock = await this.loadEvents.start();
       // query balances to make liquidations estimations

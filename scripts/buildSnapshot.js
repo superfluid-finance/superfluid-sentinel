@@ -20,10 +20,11 @@ const networkConfigs = require("./../manifest.json").networks;
  * Build a fresh snapshot
  */
 (async () => {
+    const myArgs = process.argv.slice(2);
     const genAccounts = Utils.generateAccounts;
     try {
         const config = {
-            HTTP_RPC_NODE: process.env.HTTP_RPC_NODE,
+            HTTP_RPC_NODE: myArgs[0] ? myArgs[0] : process.env.HTTP_RPC_NODE,
             PROTOCOL_RELEASE_VERSION: "v1",
             OBSERVER: true,
             LOG_LEVEL: "debug",

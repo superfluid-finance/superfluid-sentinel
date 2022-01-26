@@ -24,6 +24,7 @@ program
     .option("-r, --retry-gas-multiplier [value]", "Gas price multiplier applied to pending transactions at every timeout until reaching the max gas price (default: 1.15")
     .option("--pic [value]", "PIC Address (default: not set)")
     .option("--observer", "Set sentinel to observer (default: not set)")
+    .option("--no-fastsync", "Don't use fastsync feature (default: not set)")
     .action(function (args) {
         if (args.httpRpcNode !== undefined) {
             process.env.HTTP_RPC_NODE = args.httpRpcNode;
@@ -63,6 +64,9 @@ program
         }
         if (args.observer !== undefined) {
             process.env.OBSERVER = "true";
+        }
+        if(args.noFastsync !== undefined) {
+            process.env.FASTSYNC = "false";
         }
     });
 program.parse(process.argv);

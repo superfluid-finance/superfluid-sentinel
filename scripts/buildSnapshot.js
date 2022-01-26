@@ -1,5 +1,10 @@
+/*
+ * Generate a new network snapshot.
+ * Requires HTTP_RPC_NODE to be set. If an .env file exists in the project root, it reads it.
+ */
 require("dotenv").config();
-const { promises: Fs } = require('fs')
+const zlib = require('zlib');
+const fs = require('fs')
 const Utils = require("./../src/utils/utils");
 
 const Client = require("./../src/web3client/client");
@@ -10,7 +15,7 @@ const Bootstrap = require("./../src/boot/bootstrap");
 const LoadEvents = require("./../src/boot/loadEvents");
 const DB = require("./../src/database/db");
 const Repository = require("./../src/database/repository");
-const networkConfigs = require("./../package.json").networks;
+const networkConfigs = require("./../manifest.json").networks;
 /*
  * Build a fresh snapshot
  */
@@ -19,13 +24,12 @@ const networkConfigs = require("./../package.json").networks;
     try {
         const config = {
             HTTP_RPC_NODE: process.env.HTTP_RPC_NODE,
-            PROTOCOL_RELEASE_VERSION: "test",
-            MNEMONIC: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
-            MNEMONIC_INDEX: 0,
+            PROTOCOL_RELEASE_VERSION: "v1",
+            OBSERVER: true,
             LOG_LEVEL: "debug",
             BLOCK_OFFSET: 12,
             NUM_RETRIES: 10,
-            MAX_QUERY_BLOCK_RANGE: 10000
+            MAX_QUERY_BLOCK_RANGE: 2000
         }
 
         const app = {
@@ -63,13 +67,17 @@ const networkConfigs = require("./../package.json").networks;
         await loadEvents.start();
         await bootstrap.start();
 
-        const newFile = `./snapshots/snapshot_${chainId}_${new Date().getTime()}.sqlite`;
-        await Fs.rename(config.db_path, newFile);
+        //compress database
+        const newFile = `./snapshots/snapshot_${chainId}_${new Date().getTime()}.sqlite.gz`;
+        const gzip = zlib.createGzip();
+        const rd = fs.createReadStream(config.db_path);
+        const wr = fs.createWriteStream(newFile);
+        rd.pipe(gzip).pipe(wr);
+        fs.unlinkSync(config.db_path);
         console.log("Snapshot generated...");
         console.log(`chainId: ${chainId}`);
-        console.log(`Protocol Version: ${config.PROTOCOL_RELEASE_VERSION}`);
+        console.log(`protocol version: ${config.PROTOCOL_RELEASE_VERSION}`);
         console.log(`file: ${newFile}`);
-
     } catch(err) {
         console.error(err);
     }

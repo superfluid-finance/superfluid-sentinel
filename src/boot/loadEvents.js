@@ -100,37 +100,41 @@ class LoadEvents {
       }
       // Load supertokens
       await this.app.client.loadSuperTokens(tokens.map(({ superToken }) => superToken));
-
-      this.app.logger.info("start getting delays PIC system");
-      // we need to query each supertoken to check pic address
-      const DelayChecker = async.queue(async function (task) {
-        let keepTrying = 10;
-        while (true) {
-          try {
-            await task.self.app.protocol.calculateAndSaveTokenDelay(task.token);
-            break;
-          } catch (err) {
-            keepTrying++;
-            task.self.app.logger.error(err);
-            if (keepTrying > task.self.app.config.NUM_RETRIES) {
-              task.self.app.logger.error(`exhausted number of retries`);
-              process.exit(1);
+      if(!this.app.config.OBSERVER) {
+        this.app.logger.info("start getting delays PIC system");
+        // we need to query each supertoken to check pic address
+        const DelayChecker = async.queue(async function (task) {
+          let keepTrying = 10;
+          while (true) {
+            try {
+              await task.self.app.protocol.calculateAndSaveTokenDelay(task.token);
+              break;
+            } catch (err) {
+              keepTrying++;
+              task.self.app.logger.error(err);
+              if (keepTrying > task.self.app.config.NUM_RETRIES) {
+                task.self.app.logger.error(`exhausted number of retries`);
+                process.exit(1);
+              }
             }
           }
+        }, this.app.config.CONCURRENCY);
+        const superTokens = this.app.client.superTokensAddresses;
+        for (const st of superTokens) {
+          DelayChecker.push({
+            self: this,
+            token: st
+          });
         }
-      }, this.app.config.CONCURRENCY);
-      const superTokens = this.app.client.superTokensAddresses;
-      for (const st of superTokens) {
-        DelayChecker.push({
-          self: this,
-          token: st
-        });
+
+        if (superTokens.length > 0 && !this.app.config.OBSERVER) {
+          await DelayChecker.drain();
+        }
+        this.app.logger.info("finish getting delays PIC system");
+      } else {
+        this.app.logger.info("running as observer, ignoring PIC system");
       }
 
-      if (superTokens.length > 0) {
-        await DelayChecker.drain();
-      }
-      this.app.logger.info("finish getting delays PIC system");
       this.app.logger.info("finish past event to find SuperTokens");
       return currentBlockNumber;
     } catch (err) {

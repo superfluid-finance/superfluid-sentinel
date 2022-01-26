@@ -98,27 +98,31 @@ class Protocol {
 
   async calculateAndSaveTokenDelay (superToken) {
     try {
-      const tokenInfo = this.app.client.superTokenNames[superToken.toLowerCase()];
-      const currentTokenPIC = await this.getCurrentPIC(superToken);
-      const rewardAccount = await this.getRewardAddress(superToken);
-      const token = await this.app.db.models.SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });
-      token.pic = currentTokenPIC === undefined ? undefined : currentTokenPIC.pic;
-      if (this.app.config.PIC === undefined) {
-        // TOOD: When 3P is implement, change this to be in pirate mode
-        token.delay = 900 + parseInt(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
-        this.app.logger.debug(`${tokenInfo}: no PIC configured, adding ${token.delay}s of delay`);
-      } else if (currentTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === currentTokenPIC.pic.toLowerCase()) {
-        token.delay = 0;
-        this.app.logger.info(`${tokenInfo}: PIC active, removing delay`);
-      } else if (rewardAccount.toLowerCase() === this.app.config.PIC.toLowerCase()) {
-        token.delay = 0;
-        this.app.logger.debug(`${tokenInfo}: configured PIC match reward address directly, removing delay`);
+      if(!this.app.config.OBSERVER) {
+        const tokenInfo = this.app.client.superTokenNames[superToken.toLowerCase()];
+        const currentTokenPIC = await this.getCurrentPIC(superToken);
+        const rewardAccount = await this.getRewardAddress(superToken);
+        const token = await this.app.db.models.SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });
+        token.pic = currentTokenPIC === undefined ? undefined : currentTokenPIC.pic;
+        if (this.app.config.PIC === undefined) {
+          // TOOD: When 3P is implement, change this to be in pirate mode
+          token.delay = 900 + parseInt(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
+          this.app.logger.debug(`${tokenInfo}: no PIC configured, adding ${token.delay}s of delay`);
+        } else if (currentTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === currentTokenPIC.pic.toLowerCase()) {
+          token.delay = 0;
+          this.app.logger.info(`${tokenInfo}: PIC active, removing delay`);
+        } else if (rewardAccount.toLowerCase() === this.app.config.PIC.toLowerCase()) {
+          token.delay = 0;
+          this.app.logger.debug(`${tokenInfo}: configured PIC match reward address directly, removing delay`);
+        } else {
+          token.delay = 900 + parseInt(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
+          this.app.logger.debug(`${tokenInfo}: you are not the PIC, adding ${token.delay}s of delay`);
+        }
+        await token.save();
       } else {
-        token.delay = 900 + parseInt(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
-        this.app.logger.debug(`${tokenInfo}: you are not the PIC, adding ${token.delay}s of delay`);
+        this.app.logger.info("running as observer, ignoring PIC event");
       }
 
-      await token.save();
     } catch (err) {
       this.app.logger.error(err);
       throw Error(`Protocol.calculateAndSaveTokenDelay(): ${err}`);

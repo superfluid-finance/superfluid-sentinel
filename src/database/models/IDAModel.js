@@ -1,7 +1,5 @@
 const Sequelize = require("sequelize");
-const db = require("../db");
-
-const IDAModel = db.define("idaevents", {
+module.exports = (db) => { return db.define("idaevents", {
   eventName: {
     type: Sequelize.STRING,
     allowNull: false
@@ -30,6 +28,4 @@ const IDAModel = db.define("idaevents", {
     type: Sequelize.STRING,
     allowNull: false
   }
-});
-
-module.exports = IDAModel;
+})};

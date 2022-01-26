@@ -36,6 +36,7 @@ const populateEnvVariables = () => {
   process.env.BLOCK_OFFSET = 2;
   process.env.MAX_TX_NUMBER = 50;
   process.env.OBSERVER = true;
+  process.env.FASTSYNC = false
   return {
     HTTP_RPC_NODE: process.env.HTTP_RPC_NODE,
     MNEMONIC: process.env.MNEMONIC,
@@ -63,7 +64,8 @@ const populateEnvVariables = () => {
     POLLING_INTERVAL: process.env.POLLING_INTERVAL,
     BLOCK_OFFSET: process.env.BLOCK_OFFSET,
     MAX_TX_NUMBER: process.env.MAX_TX_NUMBER,
-    OBSERVER: process.env.OBSERVER
+    OBSERVER: process.env.OBSERVER,
+    FASTSYNC: process.env.FASTSYNC
   };
 };
 
@@ -95,6 +97,7 @@ const removeEnvVariables = () => {
   delete process.env.BLOCK_OFFSET;
   delete process.env.MAX_TX_NUMBER;
   delete process.env.OBSERVER;
+  delete process.env.FASTSYNC;
 };
 
 describe("Test Agent user configurations", () => {
@@ -129,6 +132,7 @@ describe("Test Agent user configurations", () => {
       expect(envObj.BLOCK_OFFSET).to.equal(config.BLOCK_OFFSET);
       expect(envObj.MAX_TX_NUMBER).to.equal(config.MAX_TX_NUMBER);
       expect(envObj.OBSERVER.toString()).to.equal(config.OBSERVER.toString());
+      expect(envObj.FASTSYNC.toString()).to.equal(config.FASTSYNC.toString());
       removeEnvVariables();
     } catch (err) {
       exitWithError(err);

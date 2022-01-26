@@ -4,14 +4,14 @@ const Client = require("./web3client/client");
 const EventTracker = require("./web3client/eventTracker");
 const Queues = require("./protocol/queues");
 const Protocol = require("./protocol/protocol");
-const LoadEvents = require("./loadEvents");
+const LoadEvents = require("./boot/loadEvents");
 const Liquidator = require("./web3client/liquidator");
 const Gas = require("./transaction/gas");
 const Time = require("./utils/time");
 const Timer = require("./utils/timer");
 const EventModel = require("./models/EventModel");
-const Bootstrap = require("./bootstrap.js");
-const DB = require("./database/db");
+const Bootstrap = require("./boot/bootstrap.js");
+
 const Repository = require("./database/repository");
 const utils = require("./utils/utils.js");
 const HTTPServer = require("./httpserver/server");
@@ -27,10 +27,22 @@ class App {
     this.eventTracker = new EventTracker(this);
     this.config = new Config(config);
     this.logger = new Logger(this);
+    this.db = require("./database/db")(this.config.DB);
+    this.db.models = {
+      AccountEstimationModel: require("./database/models/accountEstimationModel")(this.db),
+      AgreementModel: require("./database/models/agreementModel")(this.db),
+      FlowUpdatedModel: require("./database/models/flowUpdatedModel")(this.db),
+      SuperTokenModel: require("./database/models/superTokenModel")(this.db),
+      SystemModel: require("./database/models/systemModel")(this.db),
+      UserConfig: require("./database/models/userConfiguration")(this.db)
+    }
+    this.db.queries = new Repository(this);
+    this.eventTracker = new EventTracker(this);
     this.client = new Client(this);
     this.protocol = new Protocol(this);
     this.queues = new Queues(this);
     this.gasEstimator = new Gas(this);
+
     this.loadEvents = new LoadEvents(this);
     this.models = {
       event: new EventModel()
@@ -40,8 +52,7 @@ class App {
     this.time = new Time();
     this.genAccounts = utils.generateAccounts;
     this.utils = utils;
-    this.db = DB;
-    this.db.queries = new Repository(this);
+
     this.healthReport = new Report(this);
     this.server = new HTTPServer(this);
     this.timer = new Timer();
@@ -131,7 +142,29 @@ class App {
     try {
       this.logger.debug(`booting sentinel`);
       this._isShutdown = false;
-      if (this.config.COLD_BOOT) {
+
+      // create all web3 infrastructure needed
+      await this.client.init();
+      // if we are running tests don't try to load network information
+      if (!this.config.RUN_TEST_ENV) {
+        this.config.loadNetworkInfo(await this.client.getChainId());
+      }
+      if (this.config.BATCH_CONTRACT !== undefined) {
+        await this.client.loadBatchContract();
+      }
+      if (this.config.TOGA_CONTRACT !== undefined) {
+        await this.client.loadTogaContract();
+      }
+      //check conditions to decide if getting snapshot data
+      if((!this.utils.fileExist(this.config.DB) || this.config.COLD_BOOT) &&
+          this.config.FASTSYNC && this.config.CID)
+      {
+        this.logger.info(`getting snapshot from ${this.config.IPFS_GATEWAY + this.config.CID}`);
+        await this.utils.downloadFile(this.config.IPFS_GATEWAY + this.config.CID, this.config.DB + ".gz");
+        this.logger.info("unzipping snapshot...");
+        this.utils.unzip(this.config.DB + ".gz", this.config.DB);
+        await this.db.sync();
+      } else if (!this.config.FASTSYNC && this.config.COLD_BOOT) {
         // drop existing database to force a full boot
         this.logger.debug(`resyncing database data`);
         await this.db.sync({ force: true });
@@ -146,19 +179,6 @@ class App {
         process.exit(1);
       }
       await this.db.queries.saveConfiguration(JSON.stringify(userConfig));
-
-      // create all web3 infrastructure needed
-      await this.client.init();
-      // if we are running tests don't try to load network information
-      if (!this.config.RUN_TEST_ENV) {
-        this.config.loadNetworkInfo(await this.client.getChainId());
-      }
-      if (this.config.BATCH_CONTRACT !== undefined) {
-        await this.client.loadBatchContract();
-      }
-      if (this.config.TOGA_CONTRACT !== undefined) {
-        await this.client.loadTogaContract();
-      }
       // collect events to detect superTokens and accounts
       const currentBlock = await this.loadEvents.start();
       // query balances to make liquidations estimations

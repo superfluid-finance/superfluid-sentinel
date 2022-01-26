@@ -6,7 +6,6 @@ const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IIn
 const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
 const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
-const SuperTokenModel = require("./../database/models/superTokenModel");
 const BatchContract = require("../inc/BatchLiquidator.json");
 const TogaContract = require("../inc/TOGA.json");
 const { wad4human } = require("@decentral.ee/web3-helpers");
@@ -156,7 +155,7 @@ class Client {
           where: { listed: 1 }
         };
       }
-      const superTokensDB = await SuperTokenModel.findAll(filter);
+      const superTokensDB = await this.app.db.models.SuperTokenModel.findAll(filter);
       const promises = superTokensDB.map(async (token) => {
         return this.loadSuperToken(token.address);
       });
@@ -211,7 +210,7 @@ class Client {
       this.superTokensAddresses.push(newSuperToken.toLowerCase());
     }
     // persistence database
-    await SuperTokenModel.upsert({
+    await this.app.db.models.SuperTokenModel.upsert({
       address: newSuperToken,
       symbol: tokenSymbol,
       name: tokenName,
@@ -234,14 +233,12 @@ class Client {
     if(this.agentAccounts !== undefined) {
       return this.agentAccounts.address;
     }
-    return;
   }
 
   async getAccountBalance () {
     if(this.agentAccounts !== undefined) {
       return this.web3.eth.getBalance(this.agentAccounts.address);
     }
-      return;
   }
 
   getAccount () {
@@ -298,6 +295,7 @@ class Client {
     this._testMode = flag;
     this._testOption = options;
   }
+
 }
 
 module.exports = Client;

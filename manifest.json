@@ -20,7 +20,8 @@
     "42": {
       "name": "Kovan",
       "epoch": 23709362,
-      "batch": "0x6b878902A8648815e1E896515e25D985715bE485"
+      "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
+      "cid": "QmdHZjQwnN9fGkACv6Cy3DPAThhp241WpLHnZZRw1pvxwJ"
     },
     "69": {
       "name": "Optimism (Kovan)",

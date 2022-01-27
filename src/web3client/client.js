@@ -29,6 +29,7 @@ class Client {
 
   async initialize () {
     try {
+      if(!this.app.config.HTTP_RPC_NODE) throw new Error("No HTTP RPC");
       const web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_RPC_NODE, {
         keepAlive: true
       });
@@ -47,6 +48,7 @@ class Client {
     try {
       this.app.logger.info(`Web3Client start`);
       await this.initialize();
+      this.app.logger.info(`ChainId: ${await this.getChainId()}`)
       await this._loadSuperfluidContracts();
       if (this.app.config.PRIVATE_KEY !== undefined) {
         this.app.logger.info("using provided private key");

@@ -164,7 +164,7 @@ class App {
                 this.logger.info("unzipping snapshot...");
                 this.utils.unzip(this.config.DB + ".gz", this.config.DB);
                 await this.db.sync();
-            } else if (!this.config.FASTSYNC && this.config.COLD_BOOT) {
+            } else if (this.config.COLD_BOOT) {
                 // drop existing database to force a full boot
                 this.logger.debug(`resyncing database data`);
                 await this.db.sync({force: true});

@@ -43,9 +43,8 @@ const networkConfigs = require("./../manifest.json").networks;
         app.client = new Client(app);
         await app.client.init();
         const chainId = await app.client.getChainId();
-
         /*Set up database*/
-        config.db_path = `./snapshots/snapshot_${chainId}_${new Date().getTime()}.tmp`;
+        config.db_path = `./snapshots/snapshot_${chainId}_${Math.round(new Date().getTime() / 1000)}.tmp`;
         const db = DB(config.db_path);
         db.models = {
             AccountEstimationModel: require("./../src/database/models/accountEstimationModel")(db),
@@ -70,7 +69,7 @@ const networkConfigs = require("./../manifest.json").networks;
         await bootstrap.start();
 
         //compress database
-        const newFile = `./snapshots/snapshot_${chainId}_${new Date().getTime()}.sqlite.gz`;
+        const newFile = config.db_path.slice(0, -3).concat("sqlite.gz");
         const gzip = zlib.createGzip();
         const rd = fs.createReadStream(config.db_path);
         const wr = fs.createWriteStream(newFile);
@@ -84,4 +83,3 @@ const networkConfigs = require("./../manifest.json").networks;
         console.error(err);
     }
 })();
-

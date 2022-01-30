@@ -72,9 +72,11 @@ const networkConfigs = require("./../manifest.json").networks;
         const newFile = config.db_path.slice(0, -3).concat("sqlite.gz");
         const gzip = zlib.createGzip();
         const rd = fs.createReadStream(config.db_path);
+        rd.on("close", () => {
+            fs.unlinkSync(config.db_path);
+        });
         const wr = fs.createWriteStream(newFile);
         rd.pipe(gzip).pipe(wr);
-        fs.unlinkSync(config.db_path);
         console.log("Snapshot generated...");
         console.log(`chainId: ${chainId}`);
         console.log(`protocol version: ${config.PROTOCOL_RELEASE_VERSION}`);

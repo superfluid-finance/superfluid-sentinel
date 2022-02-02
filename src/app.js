@@ -111,16 +111,19 @@ class App {
             this.logger.info(`app.shutdown() - closing client`);
             this.client.disconnect();
             this.time.resetTime();
-            // this.logger.info(`app.shutdown() - closing database`);
-            // await this.db.close();
-            let counter = 10;
-            while (counter > 0) {
-                await this.timer.timeout(3000);
-                if (this.liquidator._isShutdown) {
-                    return;
+            this.logger.info(`app.shutdown() - closing database`);
+            await this.db.close();
+            if(!this.config.OBSERVER) {
+                let counter = 10;
+                while (counter > 0) {
+                    await this.timer.timeout(this.config.LIQUIDATION_JOB_AWAITS);
+                    if (this.liquidator._isShutdown) {
+                        return;
+                    }
+                    counter--;
                 }
-                counter--;
             }
+
         } catch (err) {
             this.logger.error(`App.shutdown(): ${err}`);
             process.exit(1);

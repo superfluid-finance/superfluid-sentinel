@@ -6,7 +6,7 @@ class Config {
     if (typeof config === "object") {
       // used by tests
       // TODO: make less redundant
-      this.RUN_TEST_ENV = true;
+      this.RUN_TEST_ENV = !(config.run_test_env === "false");
       this.LOG_LEVEL = "debug";
       this.HTTP_RPC_NODE = config.http_rpc_node;
       this.OBSERVER = config.observer === "true";

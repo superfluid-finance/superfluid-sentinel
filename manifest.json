@@ -1,7 +1,6 @@
 {
   "schema-version": "1",
   "name": "sentinel-manifest",
-  "ipfs_gateway": "https://ipfs.io/ipfs/",
   "networks": {
     "3": {
       "name": "Ropsten",

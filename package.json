@@ -7,7 +7,7 @@
     "start": "node main.js $1",
     "toga-status": "node scripts/printTOGAstatus.js",
     "build-snap": "node scripts/buildSnapshot.js",
-    "verify-snap": "node scripts/verifySnap.js",
+    "test-sync": "node scripts/testSync.js",
     "test-node": "node_modules/.bin/mocha -t 1000000 test/integration/node.integration.test.js",
     "test-gas": "node_modules/.bin/mocha -t 1000000 test/integration/gas.integration.test.js",
     "test-ida": "node_modules/.bin/mocha -t 1000000 test/integration/ida.integration.test.js",

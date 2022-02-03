@@ -200,7 +200,7 @@ class App {
             if (!this.config.OBSERVER) {
                 this.run(this.liquidator, this.config.LIQUIDATION_JOB_AWAITS);
             } else {
-                this.logger.warn(`ATTENTION: Configuration is set to be Observer. Liquidations will not be send`);
+                this.logger.warn(`ATTENTION: Configuration is set to be Observer. Liquidations will not be sent`);
             }
 
         } catch (err) {

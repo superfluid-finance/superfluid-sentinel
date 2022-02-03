@@ -4,8 +4,8 @@
  * exec: npm run build-snap RPC_URL
  */
 require("dotenv").config();
-const zlib = require('zlib');
-const fs = require('fs')
+const zlib = require("zlib");
+const fs = require("fs");
 const Utils = require("./../src/utils/utils");
 
 const Client = require("./../src/web3client/client");
@@ -28,7 +28,7 @@ const networkConfigs = require("./../manifest.json").networks;
             HTTP_RPC_NODE: myArgs[0] ? myArgs[0] : process.env.HTTP_RPC_NODE,
             PROTOCOL_RELEASE_VERSION: "v1",
             OBSERVER: true,
-            LOG_LEVEL: "debug",
+            LOG_LEVEL: "info",
             BLOCK_OFFSET: 12,
             NUM_RETRIES: 10,
             MAX_QUERY_BLOCK_RANGE: 2000

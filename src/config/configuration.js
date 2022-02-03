@@ -7,7 +7,7 @@ class Config {
       // used by tests
       // TODO: make less redundant
       this.RUN_TEST_ENV = !(config.run_test_env === "false");
-      this.LOG_LEVEL = "debug";
+      this.LOG_LEVEL = config.log_level;
       this.HTTP_RPC_NODE = config.http_rpc_node;
       this.OBSERVER = config.observer === "true";
       this.MNEMONIC = config.mnemonic;
@@ -39,6 +39,7 @@ class Config {
       this.ONLY_LISTED_TOKENS = config.only_listed_tokens === "true";
       this.TOGA_CONTRACT = config.toga_contract;
       this.FASTSYNC = config.fastsync !== "false";
+      this.PIRATE = config.pirate === "true";
     } else {
       this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
       this.OBSERVER = process.env.OBSERVER === "true";
@@ -61,6 +62,7 @@ class Config {
       this.METRICS = process.env.METRICS !== "false"; // default: true
       this.METRICS_PORT = process.env.METRICS_PORT || 3000;
       this.FASTSYNC = process.env.FASTSYNC !== "false";
+      this.PIRATE = process.env.PIRATE === "true";
 
       // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
       this.CONCURRENCY = process.env.CONCURRENCY || 1;
@@ -115,6 +117,7 @@ class Config {
       MAX_GAS_PRICE: this.MAX_GAS_PRICE,
       RETRY_GAS_MULTIPLIER: this.RETRY_GAS_MULTIPLIER,
       PIC: this.PIC,
+      PIRATE: this.PIRATE,
       CONCURRENCY: this.CONCURRENCY,
       ONLY_LISTED_TOKENS: this.ONLY_LISTED_TOKENS,
       NUM_RETRIES: this.NUM_RETRIES,

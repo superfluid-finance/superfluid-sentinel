@@ -7,36 +7,12 @@ const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
 
 let app, accounts, snapId, protocolVars, web3;
 
-// eslint-disable-next-line promise/param-names
-const delay = ms => new Promise(res => setTimeout(res, ms));
-const exitWithError = (error) => {
-  console.error(error);
-  process.exit(1);
-};
-
-const bootNode = async (delayParam = 0) => {
-  app = new App({
-    http_rpc_node: "http://127.0.0.1:8545",
-    mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
-    mnemonic_index: 100,
-    epoch_block: 0,
-    db_path: "datadir/testing/test.sqlite",
-    protocol_release_version: "test",
-    tx_timeout: 20,
-    max_query_block_range: 500000,
-    max_gas_price: 4000000000,
-    concurrency: 1,
-    cold_boot: 1,
-    only_listed_tokens: 1,
-    number_retries: 3,
-    additional_liquidation_delay: delayParam,
-    block_offset: 1,
-    liquidation_run_every: 1000,
-    fastsync: "false"
-  });
+const bootNode = async (config) => {
+  const sentinelConfig = protocolHelper.getSentinelConfig(config);
+  app = new App(sentinelConfig);
   app.start();
   while (!app.isInitialized()) {
-    await delay(5000);
+    await protocolHelper.timeout(5000);
   }
 };
 
@@ -46,31 +22,7 @@ const closeNode = async (force = false) => {
   }
 };
 
-const waitForEvent = async (eventName, blockNumber) => {
-  while (true) {
-    try {
-      const newBlockNumber = await web3.eth.getBlockNumber();
-      console.log(`${blockNumber} - ${newBlockNumber}`);
-      const events = await protocolVars.superToken.getPastEvents(eventName, {
-        fromBlock: blockNumber,
-        toBlock: newBlockNumber
-      });
-      if (events.length > 0) {
-        return events;
-      }
-      await delay(1000);
-      await ganache.helper.timeTravelOnce(1, app, true);
-    } catch (err) {
-      exitWithError(err);
-    }
-  }
-};
 
-const expectLiquidation = (event, node, account) => {
-  expect(event.returnValues.liquidatorAccount).to.equal(node);
-  expect(event.returnValues.bailoutAmount).to.equal("0");
-  expect(event.returnValues.penaltyAccount).to.equal(account);
-};
 
 describe("Integration scripts tests", () => {
   before(async function () {
@@ -87,12 +39,15 @@ describe("Integration scripts tests", () => {
     try {
       snapId = await ganache.helper.revertToSnapShot(snapId.result);
     } catch (err) {
-      exitWithError(err);
+      protocolHelper.exitWithError(err);
     }
   });
 
   after(async () => {
-    closeNode(true);
+    if(!app._isShutdown) {
+      await closeNode(true);
+    }
+    await ganache.close();
   });
 
   it("Create one stream", async () => {
@@ -108,16 +63,17 @@ describe("Integration scripts tests", () => {
         gas: 1000000
       });
       await ganache.helper.timeTravelOnce(1);
-      await bootNode(-900);
+      await bootNode({pic: accounts[0]});
       await ganache.helper.timeTravelOnce(60);
       const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({
         from: accounts[0],
         gas: 1000000
       });
-      const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
-      expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
+      await app.shutdown();
+      protocolHelper.expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
     } catch (err) {
-      exitWithError(err);
+      protocolHelper.exitWithError(err);
     }
   });
 
@@ -134,7 +90,7 @@ describe("Integration scripts tests", () => {
         gas: 1000000
       });
       await ganache.helper.timeTravelOnce(1);
-      await bootNode(-900);
+      await bootNode({pic: accounts[0]});
       await ganache.helper.timeTravelOnce(60);
       const dataUpdate = protocolVars.cfa.methods.updateFlow(
         protocolVars.superToken._address,
@@ -151,10 +107,11 @@ describe("Integration scripts tests", () => {
         from: accounts[0],
         gas: 1000000
       });
-      const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
-      expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
+      await app.shutdown();
+      protocolHelper.expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
     } catch (err) {
-      exitWithError(err);
+      protocolHelper.exitWithError(err);
     }
   });
 
@@ -174,7 +131,7 @@ describe("Integration scripts tests", () => {
         gas: 1000000
       });
       await ganache.helper.timeTravelOnce(1);
-      await bootNode(-900);
+      await bootNode({pic: accounts[0]});
       await ganache.helper.timeTravelOnce(60);
       const receivingFlowData = protocolVars.cfa.methods.createFlow(
         protocolVars.superToken._address,
@@ -194,10 +151,11 @@ describe("Integration scripts tests", () => {
         from: accounts[0],
         gas: 1000000
       });
-      const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
-      expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
+      await app.shutdown();
+      protocolHelper.expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
     } catch (err) {
-      exitWithError(err);
+      protocolHelper.exitWithError(err);
     }
   });
 
@@ -214,7 +172,7 @@ describe("Integration scripts tests", () => {
         gas: 1000000
       });
       await ganache.helper.timeTravelOnce(1);
-      await bootNode(-900);
+      await bootNode({pic: accounts[0]});
       await ganache.helper.timeTravelOnce(3600, app, true);
       const flowData2 = protocolVars.cfa.methods.createFlow(
         protocolVars.superToken._address,
@@ -230,10 +188,12 @@ describe("Integration scripts tests", () => {
         from: accounts[0],
         gas: 1000000
       });
-      const result = await waitForEvent("AgreementLiquidatedBy", 0);
-      expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", 0);
+      await app.shutdown();
+      protocolHelper.expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+
     } catch (err) {
-      exitWithError(err);
+      protocolHelper.exitWithError(err);
     }
   });
 
@@ -265,13 +225,14 @@ describe("Integration scripts tests", () => {
       });
       await ganache.helper.timeTravelUntil(1, 20);
       const secondEstimation = await app.db.queries.getAddressEstimation(accounts[5]);
-      console.log("Estimation 1: ", firstEstimation[0].zestimation);
-      console.log("Estimation 2: ", secondEstimation[0].zestimation);
-      expect(firstEstimation[0].zestimation).to.not.equal(32503593600000);
+      await app.shutdown();
+      console.log("Estimation 1: ", firstEstimation[0].estimation);
+      console.log("Estimation 2: ", secondEstimation[0].estimation);
+      expect(firstEstimation[0].estimation).to.not.equal(32503593600000);
       // the stream is soo small that we mark as not a real estimation
-      expect(secondEstimation[0].zestimation).to.equal(32503593600000);
+      expect(secondEstimation[0].estimation).to.equal(32503593600000);
     } catch (err) {
-      exitWithError(err);
+      protocolHelper.exitWithError(err);
     }
   });
 });

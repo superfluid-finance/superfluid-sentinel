@@ -7,37 +7,12 @@ const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
 
 let app, accounts, snapId, protocolVars, web3;
 
-// eslint-disable-next-line promise/param-names
-const delay = ms => new Promise(res => setTimeout(res, ms));
-const exitWithError = (error) => {
-    console.error(error);
-    process.exit(1);
-};
-
-const bootNode = async (delayParam = 0) => {
-    app = new App({
-        http_rpc_node: "http://127.0.0.1:8545",
-        mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
-        mnemonic_index: 100,
-        epoch_block: 0,
-        db_path: "datadir/testing/test.sqlite",
-        protocol_release_version: "test",
-        tx_timeout: 300000,
-        max_query_block_range: 500000,
-        max_gas_price: 4000000000,
-        concurrency: 1,
-        cold_boot: 1,
-        only_listed_tokens: 1,
-        number_retries: 3,
-        additional_liquidation_delay: delayParam,
-        liquidation_run_every: 1000,
-        pic: accounts[0],
-        toga_contract: protocolVars.toga._address,
-        fastsync: "false"
-    });
+const bootNode = async (config) => {
+    const sentinelConfig = protocolHelper.getSentinelConfig(config);
+    app = new App(sentinelConfig);
     app.start();
     while (!app.isInitialized()) {
-        await delay(3000);
+        await protocolHelper.timeout(5000);
     }
 };
 
@@ -47,37 +22,6 @@ const closeNode = async (force = false) => {
     }
 };
 
-const waitForEvent = async (eventName, blockNumber) => {
-    while (true) {
-        try {
-            const newBlockNumber = await web3.eth.getBlockNumber();
-            console.log(`${blockNumber} - ${newBlockNumber}`);
-            const events = await protocolVars.superToken.getPastEvents(eventName, {
-                fromBlock: blockNumber,
-                toBlock: newBlockNumber
-            });
-            if (events.length > 0) {
-                return events;
-            }
-            await delay(1000);
-            await ganache.helper.timeTravelOnce(1, app, true);
-        } catch (err) {
-            exitWithError(err);
-        }
-    }
-};
-
-const expectLiquidation = (event, node, account) => {
-    expect(event.returnValues.liquidatorAccount).to.equal(node);
-    expect(event.returnValues.bailoutAmount).to.equal("0");
-    expect(event.returnValues.penaltyAccount).to.equal(account);
-};
-
-const expectBailout = (event, node, account) => {
-    expect(event.returnValues.liquidatorAccount).to.equal(node);
-    expect(event.returnValues.bailoutAmount).not.equal("0");
-    expect(event.returnValues.penaltyAccount).to.equal(account);
-};
 describe("Agent configurations tests", () => {
     before(async function () {
         protocolVars = await protocolHelper.setup(ganache.provider, AGENT_ACCOUNT);
@@ -93,12 +37,15 @@ describe("Agent configurations tests", () => {
         try {
             snapId = await ganache.helper.revertToSnapShot(snapId.result);
         } catch (err) {
-            exitWithError(err);
+            protocolHelper.exitWithError(err);
         }
     });
 
     after(async () => {
-        closeNode(true);
+        if(!app._isShutdown) {
+            await closeNode(true);
+        }
+        await ganache.close();
     });
 
     it("Should use delay paramater when sending liquidation", async () => {
@@ -113,16 +60,18 @@ describe("Agent configurations tests", () => {
                 from: accounts[0],
                 gas: 1000000
             });
-            await bootNode(2700);
+            await ganache.helper.timeTravelOnce(1);
+            await bootNode({additional_liquidation_delay: 2700});
             const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({
                 from: accounts[0],
                 gas: 1000000
             });
             await ganache.helper.timeTravelOnce(3580, app, true);
-            const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
+            const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
+            await app.shutdown();
             expect(result[0].returnValues.liquidatorAccount).to.equal(AGENT_ACCOUNT);
         } catch (err) {
-            exitWithError(err);
+            protocolHelper.exitWithError(err);
         }
     });
 
@@ -138,17 +87,19 @@ describe("Agent configurations tests", () => {
                 from: accounts[0],
                 gas: 1000000
             });
+            await ganache.helper.timeTravelOnce(1);
             await bootNode();
             let healthy;
             while (true) {
-                await delay(9000);
+                await protocolHelper.timeout(9000);
                 const report = await app.healthReport.fullReport();
                 healthy = report.healthy;
                 if (!healthy) break;
             }
+            await app.shutdown();
             expect(healthy).eq(false);
         } catch (err) {
-            exitWithError(err);
+            protocolHelper.exitWithError(err);
         }
     });
 
@@ -169,10 +120,11 @@ describe("Agent configurations tests", () => {
                 from: accounts[0],
                 gas: 1000000
             });
-            await bootNode();
+            await ganache.helper.timeTravelOnce(5);
+            await bootNode({toga_contract: protocolVars.toga._address});
             let picInfo
             while (true) {
-                await delay(5000);
+                await protocolHelper.timeout(5000);
                 picInfo = await app.getPICInfo(protocolVars.superToken._address);
                 if (picInfo.length > 0) break;
             }
@@ -183,42 +135,26 @@ describe("Agent configurations tests", () => {
                 from: accounts[1],
                 gas: 1000000
             });
+            await ganache.helper.timeTravelOnce(5);
             while (true) {
-                await delay(8000);
+                await protocolHelper.timeout(8000);
                 picInfo = await app.getPICInfo(protocolVars.superToken._address);
                 if (picInfo.length > 0) break;
             }
+            await app.shutdown();
             expect(picInfo[0].pic).to.be.equal(accounts[1]);
         } catch (err) {
-            exitWithError(err);
+            protocolHelper.exitWithError(err);
         }
     });
 
     it("When observer, no need for wallet / address", async () => {
         try{
-            //start new sentinel as observer
-            const observer = new App({
-                http_rpc_node: "http://127.0.0.1:8545",
-                epoch_block: 0,
-                protocol_release_version: "test",
-                db_path: "datadir/testing/test.sqlite",
-                max_query_block_range: 500000,
-                concurrency: 1,
-                cold_boot: 1,
-                only_listed_tokens: 1,
-                number_retries: 3,
-                observer: "true",
-                fastsync: "false"
-            });
-
-            observer.start();
-            while (!observer.isInitialized()) {
-                await delay(3000);
-            }
-            expect(observer.getConfigurationInfo().OBSERVER).to.be.true;
-            await observer.shutdown(true);
+            await bootNode({observer: "true", fastsync: "false"});
+            expect(app.getConfigurationInfo().OBSERVER).to.be.true;
+            await app.shutdown();
         } catch(err) {
-            exitWithError(err);
+            protocolHelper.exitWithError(err);
         }
     });
 
@@ -242,17 +178,17 @@ describe("Agent configurations tests", () => {
                     console.log(estimation);
                     break;
                 }
-                await delay(1000);
+                await protocolHelper.timeout(1000);
             }
-            await delay(1000);
+            await protocolHelper.timeout(1000);
             const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({
                 from: accounts[0],
                 gas: 1000000
             });
-            const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
-            expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+            const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
+            protocolHelper.expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
         } catch (err) {
-            exitWithError(err);
+            protocolHelper.exitWithError(err);
         }
     });
     // not yet supported
@@ -274,10 +210,10 @@ describe("Agent configurations tests", () => {
             });
             //  const timestamp = await ganache.helper.timeTravelOnce(3600 * 4);
             await bootNode();
-            const result = await waitForEvent("AgreementLiquidatedBy", tx.blockNumber);
-            expectBailout(result[0], AGENT_ACCOUNT, accounts[0]);
+            const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
+            protocolHelper.expectBailout(result[0], AGENT_ACCOUNT, accounts[0]);
         } catch (err) {
-            exitWithError(err);
+            protocolHelper.exitWithError(err);
         }
     });
 });

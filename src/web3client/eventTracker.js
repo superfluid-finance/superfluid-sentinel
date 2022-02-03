@@ -5,6 +5,7 @@ const IDAEvents = require("../models/IDAEventsAbi");
 const TOGAEvents = require("../models/TOGAEventsAbi");
 const decoder = require("ethjs-abi");
 const { wad4human } = require("@decentral.ee/web3-helpers");
+const BN = require("bn.js");
 
 class EventTracker {
   constructor (app) {
@@ -138,7 +139,10 @@ class EventTracker {
         }
         case "AgreementLiquidatedV2": {
           this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.targetAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
-          if (event.targetAccountBalanceDelta.toString() !== "0") {
+          const ramount = new BN(event.rewardAmount)
+          const delta = new BN(event.targetAccountBalanceDelta)
+          const isBailout = ramount.add(delta).lt(0);
+          if (isBailout) {
             this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.targetAccountBalanceDelta)}`);
           }
           break;

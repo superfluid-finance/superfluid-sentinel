@@ -37,7 +37,7 @@ const populateEnvVariables = () => {
   process.env.MAX_TX_NUMBER = 50;
   process.env.OBSERVER = true;
   process.env.FASTSYNC = false;
-  process.env.IPFS_GATEWAY = "http://localhost:5001";
+  process.env.IPFS_GATEWAY = "http://localhost:8080/ipfs/";
   return {
     HTTP_RPC_NODE: process.env.HTTP_RPC_NODE,
     MNEMONIC: process.env.MNEMONIC,

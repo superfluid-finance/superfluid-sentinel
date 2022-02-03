@@ -56,7 +56,10 @@ class Protocol {
       arrPromise = await Promise.all(arrPromise);
       return this._getLiquidationData(
         new BN(arrPromise[0]),
-        new BN(arrPromise[1].availableBalance)
+        new BN(arrPromise[1].availableBalance),
+        new BN(arrPromise[1].deposit),
+          this.app.client.superTokens[token.toLowerCase()].liquidation_period,
+          this.app.client.superTokens[token.toLowerCase()].patrician_period
       );
     } catch (err) {
       console.error(err);
@@ -104,19 +107,18 @@ class Protocol {
         const rewardAccount = await this.getRewardAddress(superToken);
         const token = await this.app.db.models.SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });
         token.pic = currentTokenPIC === undefined ? undefined : currentTokenPIC.pic;
+        token.pmode = this.app.config.PIRATE ? 2 : 1;
+
         if (this.app.config.PIC === undefined) {
-          // TOOD: When 3P is implement, change this to be in pirate mode
-          token.delay = 900 + parseInt(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
-          this.app.logger.debug(`${tokenInfo}: no PIC configured, adding ${token.delay}s of delay`);
+          this.app.logger.debug(`${tokenInfo}: no PIC configured, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`);
         } else if (currentTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === currentTokenPIC.pic.toLowerCase()) {
-          token.delay = 0;
-          this.app.logger.info(`${tokenInfo}: PIC active, removing delay`);
+          token.pmode = 0;
+          this.app.logger.info(`${tokenInfo}: PIC active`);
         } else if (rewardAccount.toLowerCase() === this.app.config.PIC.toLowerCase()) {
-          token.delay = 0;
-          this.app.logger.debug(`${tokenInfo}: configured PIC match reward address directly, removing delay`);
+          token.pmode = 0;
+          this.app.logger.debug(`${tokenInfo}: configured PIC match reward address directly, set as PIC`);
         } else {
-          token.delay = 900 + parseInt(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
-          this.app.logger.debug(`${tokenInfo}: you are not the PIC, adding ${token.delay}s of delay`);
+          this.app.logger.debug(`${tokenInfo}: you are not the PIC, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`);
         }
         await token.save();
       } else {
@@ -170,27 +172,37 @@ class Protocol {
     }
   }
 
-  _getLiquidationData (totalNetFlowRate, totalBalance) {
+  _getLiquidationData (totalNetFlowRate, availableBalance, deposit, liqPeriod, plebPeriod) {
     const result = {
       totalNetFlowRate: totalNetFlowRate.toString(),
-      totalBalance: totalBalance.toString(),
-      estimation: new Date(0)
+      availableBalance: availableBalance.toString(),
+      totalCFADeposit: deposit.toString(),
+      estimation: new Date(0),
+      estimationPleb: new Date(0),
+      estimationPirate: new Date(0)
     };
 
     if (totalNetFlowRate.lt(new BN(0))) {
-      if (totalBalance.lt(new BN(0))) {
-        result.estimation = new Date();
-        return result;
-      }
-
-      const seconds = isFinite(totalBalance.div(totalNetFlowRate)) ? totalBalance.div(totalNetFlowRate) : 0;
-      const roundSeconds = Math.round(Math.abs(isNaN(seconds) ? 0 : seconds));
-      const estimation = new Date();
-      const dateFuture = new Date(estimation.setSeconds(roundSeconds));
-      result.estimation = (isNaN(dateFuture) ? new Date("2999-12-31") : dateFuture);
+      result.estimation = this._calculateDatePoint(availableBalance, totalNetFlowRate);
+      const liquidation_period = new BN(liqPeriod);
+      const patrician_period = new BN(plebPeriod);
+      const propDeposit = patrician_period.mul(deposit).div(liquidation_period);
+      result.estimationPleb = this._calculateDatePoint((availableBalance.add(propDeposit)), totalNetFlowRate);
+      result.estimationPirate = this._calculateDatePoint(availableBalance.add(deposit), totalNetFlowRate);
     }
 
     return result;
+  }
+
+  _calculateDatePoint(balance, netFlowRate) {
+    if(balance.lt(new BN(0))) {
+      return new Date();
+    }
+    const seconds = isFinite(balance.div(netFlowRate)) ? balance.div(netFlowRate) : 0;
+    const roundSeconds = Math.round(Math.abs(isNaN(seconds) ? 0 : seconds));
+    const estimation = new Date();
+    const dateFuture = new Date(estimation.setSeconds(roundSeconds));
+    return (isNaN(dateFuture) ? new Date("2999-12-31") : dateFuture);
   }
 }
 

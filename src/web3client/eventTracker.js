@@ -136,6 +136,13 @@ class EventTracker {
           }
           break;
         }
+        case "AgreementLiquidatedV2": {
+          this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.targetAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
+          if (event.targetAccountBalanceDelta.toString() !== "0") {
+            this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.targetAccountBalanceDelta)}`);
+          }
+          break;
+        }
       }
     } catch (err) {
       this.app.logger.error(err);

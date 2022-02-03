@@ -16,9 +16,17 @@ module.exports = (db) => { return  db.define("supertokens", {
   pic: {
     type: Sequelize.STRING
   },
-  delay: {
+  pmode:{
     type: Sequelize.INTEGER,
-    defaultValue: 900
+    defaultValue: 1
+  },
+  liquidationPeriod: {
+    type: Sequelize.INTEGER,
+    defaultValue: 0
+  },
+  patricianPeriod: {
+    type: Sequelize.INTEGER,
+    defaultValue: 0
   },
   listed: {
     type: Sequelize.BOOLEAN,

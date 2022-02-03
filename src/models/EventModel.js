@@ -33,6 +33,8 @@ class EventModel {
           bondAccount: toChecksumAddress(event.returnValues.bondAccount),
           pic: toChecksumAddress(event.returnValues.pic),
           liquidatorAccount: toChecksumAddress(event.returnValues.liquidatorAccount),
+          targetAccount: toChecksumAddress(event.returnValues.targetAccount),
+          rewardAccount: toChecksumAddress(event.returnValues.rewardAccount),
           to: toChecksumAddress(event.returnValues.to),
           from: toChecksumAddress(event.returnValues.from),
           publisher: toChecksumAddress(event.returnValues.publisher),
@@ -42,8 +44,10 @@ class EventModel {
           value: event.returnValues.value,
           rewardAmount: event.returnValues.rewardAmount,
           bailoutAmount: event.returnValues.bailoutAmount,
+          targetAccountBalanceDelta: event.returnValues.targetAccountBalanceDelta,
           bond: event.returnValues.bond,
           exitRate: event.returnValues.exitRate,
+          liquidationTypeData: event.returnValues.liquidationTypeData,
           flowRate: (isNaN(parseInt(event.returnValues.flowRate))
             ? undefined
             : parseInt(event.returnValues.flowRate)),

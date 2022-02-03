@@ -46,9 +46,13 @@ class Queues {
               address: task.account,
               superToken: task.token,
               totalNetFlowRate: estimationData.totalNetFlowRate,
-              totalBalance: estimationData.totalBalance,
-              zestimation: new Date(estimationData.estimation).getTime(),
-              zestimationHuman: estimationData.estimation,
+              availableBalance: estimationData.availableBalance,
+              totalCFADeposit: estimationData.totalCFADeposit,
+              estimation: new Date(estimationData.estimation).getTime(),
+              estimationPleb: new Date(estimationData.estimationPleb).getTime(),
+              estimationPirate: new Date(estimationData.estimationPirate).getTime(),
+              estimationHuman: estimationData.estimation,
+              estimationHumanPirate: estimationData.estimationPirate,
               blockNumber: task.blockNumber
             });
             const estimationOutput = new Date(estimationData.estimation).getTime() > 0 ? estimationData.estimation : "no estimation found";

@@ -11,14 +11,29 @@ module.exports = (db) => { return db.define("estimations", {
   totalNetFlowRate: {
     type: Sequelize.STRING
   },
-  totalBalance: {
+  availableBalance: {
     type: Sequelize.STRING
   },
-  zestimation: {
+  totalCFADeposit: {
+    type: Sequelize.STRING
+  },
+  estimation: {
     type: Sequelize.INTEGER,
     allowNull: false
   },
-  zestimationHuman: {
+  estimationPleb: {
+    type: Sequelize.INTEGER,
+    allowNull: false
+  },
+  estimationPirate: {
+    type: Sequelize.INTEGER,
+    allowNull: false
+  },
+  estimationHuman: {
+    type: Sequelize.DATE,
+    allowNull: false
+  },
+  estimationHumanPirate: {
     type: Sequelize.DATE,
     allowNull: false
   },

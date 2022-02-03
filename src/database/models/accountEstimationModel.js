@@ -33,6 +33,10 @@ module.exports = (db) => { return db.define("estimations", {
     type: Sequelize.DATE,
     allowNull: false
   },
+  estimationHumanPleb: {
+    type: Sequelize.DATE,
+    allowNull: false
+  },
   estimationHumanPirate: {
     type: Sequelize.DATE,
     allowNull: false

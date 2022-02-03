@@ -52,6 +52,7 @@ class Queues {
               estimationPleb: new Date(estimationData.estimationPleb).getTime(),
               estimationPirate: new Date(estimationData.estimationPirate).getTime(),
               estimationHuman: estimationData.estimation,
+              estimationHumanPleb:estimationData.estimationPleb,
               estimationHumanPirate: estimationData.estimationPirate,
               blockNumber: task.blockNumber
             });

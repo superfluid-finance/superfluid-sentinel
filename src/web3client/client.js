@@ -116,17 +116,9 @@ class Client {
         resolverAddress = SDKConfig(await this.getChainId()).resolverAddress;
       }
       const superfluidIdent = `Superfluid.${this.version}`;
-
-      this.resolver = new this.web3.eth.Contract(
-        IResolver.abi,
-        resolverAddress
-      );
+      this.resolver = new this.web3.eth.Contract(IResolver.abi,resolverAddress);
       const superfluidAddress = await this.resolver.methods.get(superfluidIdent).call();
-
-      this.sf = new this.web3.eth.Contract(
-        ISuperfluid.abi,
-        superfluidAddress
-      );
+      this.sf = new this.web3.eth.Contract(ISuperfluid.abi,superfluidAddress);
       const govAddress = await this.sf.methods.getGovernance().call();
       this.gov = new this.web3.eth.Contract(SuperfluidGovernance.abi, govAddress);
       const cfaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
@@ -192,6 +184,20 @@ class Client {
         superTokenHTTP.methods.symbol().call()
       ]
     );
+    //assuming default values to test
+    let liquidation_period = 3600;
+    let patrician_period = 900;
+    try {
+      //get liquidation period
+      let [lp, pp]  = await this.gov.methods.getThreePsConfig(this.sf._address, newSuperToken).call();
+      liquidation_period = parseInt(lp);
+      patrician_period = parseInt(pp);
+    } catch(err) {
+      this.app.logger.error(`client.loadSuperToken(): ${err}`);
+      this.app.logger.warn(`default to liquidation period to ${liquidation_period} and ${patrician_period}`);
+    }
+    superTokenHTTP.liquidation_period = liquidation_period;
+    superTokenHTTP.patrician_period = patrician_period;
     const superTokenAddress = await this.resolver.methods.get(
       `supertokens.${this.version}.${tokenSymbol}`
     ).call();
@@ -216,6 +222,8 @@ class Client {
       address: newSuperToken,
       symbol: tokenSymbol,
       name: tokenName,
+      liquidationPeriod: liquidation_period,
+      patricianPeriod: patrician_period,
       listed: isListed
     });
   }

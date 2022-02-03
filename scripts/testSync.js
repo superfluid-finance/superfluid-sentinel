@@ -1,6 +1,6 @@
 /*
  * Tests if a sentinel can successfully sync to the head of the connected chain,
- * using the snapshot set for the chain in manifest.json if set.
+ * using the snapshot set for the chain in manifest.json (if set).
  *
  * Requires HTTP_RPC_NODE to be set. If an .env file exists in the project root, it reads it.
  * exec: npm run test-sync RPC_URL

@@ -111,8 +111,7 @@ class App {
             this.logger.info(`app.shutdown() - closing client`);
             this.client.disconnect();
             this.time.resetTime();
-            this.logger.info(`app.shutdown() - closing database`);
-            await this.db.close();
+
             if(!this.config.OBSERVER) {
                 let counter = 10;
                 while (counter > 0) {
@@ -123,7 +122,8 @@ class App {
                     counter--;
                 }
             }
-
+            this.logger.info(`app.shutdown() - closing database`);
+            await this.db.close();
         } catch (err) {
             this.logger.error(`App.shutdown(): ${err}`);
             process.exit(1);

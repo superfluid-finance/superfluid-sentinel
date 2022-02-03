@@ -12,11 +12,11 @@ class Liquidator {
         return;
       }
       this.app.logger.debug(`running liquidation job`);
-      const checkDate = this.app.time.getTimeWithDelay(0);
+      const checkDate = this.app.time.getTimeWithDelay(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
       let haveBatchWork = [];
       // if we have a batchLiquidator contract, use batch calls
       if (this.app.config.BATCH_CONTRACT !== undefined) {
-        haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
+        haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate, this.app.config.TOKENS);
         this.app.logger.debug(JSON.stringify(haveBatchWork));
       }
       if (haveBatchWork.length > 0) {

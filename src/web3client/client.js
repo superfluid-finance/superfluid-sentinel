@@ -189,9 +189,10 @@ class Client {
     let patrician_period = 900;
     try {
       //get liquidation period
-      let [lp, pp]  = await this.gov.methods.getThreePsConfig(this.sf._address, newSuperToken).call();
-      liquidation_period = parseInt(lp);
-      patrician_period = parseInt(pp);
+
+      const resp = await this.gov.methods.getThreePsConfig(this.sf._address, newSuperToken).call();
+      liquidation_period = parseInt(resp.liquidationPeriod);
+      patrician_period = parseInt(resp.patricianPeriod);
     } catch(err) {
       this.app.logger.error(`client.loadSuperToken(): ${err}`);
       this.app.logger.warn(`default to liquidation period to ${liquidation_period} and ${patrician_period}`);

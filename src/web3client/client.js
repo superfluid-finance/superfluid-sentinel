@@ -29,7 +29,7 @@ class Client {
 
   async initialize () {
     try {
-      if(!this.app.config.HTTP_RPC_NODE) throw new Error("No HTTP RPC");
+      if(!this.app.config.HTTP_RPC_NODE) throw new Error("No HTTP RPC set");
       const web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_RPC_NODE, {
         keepAlive: true
       });

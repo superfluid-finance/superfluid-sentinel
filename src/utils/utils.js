@@ -1,8 +1,7 @@
 const bip39 = require("bip39");
 const { hdkey } = require("ethereumjs-wallet");
 const fs = require("fs");
-const path = require('path')
-const axios = require("axios")
+const axios = require("axios");
 const zlib = require("zlib");
 
 function generateAccounts (mnemonic, accountIndex) {
@@ -25,7 +24,8 @@ function fileExist(path) {
   return fs.existsSync(path);
 }
 
-async function downloadFile(url, dest, retries=3) {
+// TODO: implement retry or remove retries param
+async function downloadFile(url, dest, retries= 3) {
   const writer = fs.createWriteStream(dest);
   const response = await axios({
     url,

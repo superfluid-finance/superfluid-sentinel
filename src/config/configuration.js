@@ -39,6 +39,7 @@ class Config {
       this.ONLY_LISTED_TOKENS = config.only_listed_tokens === "true";
       this.TOGA_CONTRACT = config.toga_contract;
       this.FASTSYNC = config.fastsync !== "false";
+      this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://ipfs.io/ipfs/"
       this.PIRATE = config.pirate === "true";
     } else {
       this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
@@ -61,15 +62,16 @@ class Config {
       this.PIC = process.env.PIC;
       this.METRICS = process.env.METRICS !== "false"; // default: true
       this.METRICS_PORT = process.env.METRICS_PORT || 3000;
-      this.FASTSYNC = process.env.FASTSYNC !== "false";
+      this.FASTSYNC = process.env.FASTSYNC !== "false";  // default: true
+      this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://ipfs.io/ipfs/";
       this.PIRATE = process.env.PIRATE === "true";
 
       // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
       this.CONCURRENCY = process.env.CONCURRENCY || 1;
-      this.ONLY_LISTED_TOKENS = process.env.ONLY_LISTED_TOKENS === "true";
+      this.ONLY_LISTED_TOKENS = process.env.ONLY_LISTED_TOKENS === "true"; // default: false
       this.NUM_RETRIES = process.env.NUM_RETRIES || 10;
       this.COLD_BOOT = process.env.COLD_BOOT || 0;
-      this.SHUTDOWN_ON_ERROR = process.env.SHUTDOWN_ON_ERROR === "true";
+      this.SHUTDOWN_ON_ERROR = process.env.SHUTDOWN_ON_ERROR === "true"; // default: false
       this.LIQUIDATION_JOB_AWAITS = process.env.LIQUIDATION_JOB_AWAITS * 1000 || 30000;
       this.MAX_BATCH_TX = process.env.MAX_BATCH_TX || 10;
       this.RESOLVER = process.env.RESOLVER;
@@ -100,7 +102,6 @@ class Config {
     this.BATCH_CONTRACT = manifest.networks[chainId].batch;
     this.TOGA_CONTRACT = manifest.networks[chainId].toga || undefined;
     this.CID = manifest.networks[chainId].cid || undefined;
-    this.IPFS_GATEWAY = manifest.ipfs_gateway || undefined;
   }
 
   getConfigurationInfo () {

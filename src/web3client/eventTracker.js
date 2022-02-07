@@ -210,7 +210,8 @@ class EventTracker {
   }
 
   _disconnect () {
-    return this.blockTracker.removeAllListeners();
+    if(this.blockTracker !== undefined)
+      return this.blockTracker.removeAllListeners();
   }
 }
 

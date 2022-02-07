@@ -20,9 +20,9 @@ const bootNode = async (delayParam = 0) => {
     mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
     mnemonic_index: 100,
     epoch_block: 0,
-    DB: "datadir/test.sqlite",
+    db_path: "datadir/testing/test.sqlite",
     protocol_release_version: "test",
-    tx_timeout: 30,
+    tx_timeout: 20,
     max_query_block_range: 500000,
     max_gas_price: 4000000000,
     concurrency: 1,
@@ -30,12 +30,13 @@ const bootNode = async (delayParam = 0) => {
     only_listed_tokens: 1,
     number_retries: 3,
     additional_liquidation_delay: delayParam,
-    liquidation_run_every: 5000,
-    polling_interval: 10
+    block_offset: 1,
+    liquidation_run_every: 1000,
+    fastsync: "false"
   });
   app.start();
   while (!app.isInitialized()) {
-    await delay(3000);
+    await delay(5000);
   }
 };
 
@@ -46,7 +47,6 @@ const closeNode = async (force = false) => {
 };
 
 const waitForEvent = async (eventName, blockNumber) => {
-  await printEstimations();
   while (true) {
     try {
       const newBlockNumber = await web3.eth.getBlockNumber();
@@ -64,15 +64,6 @@ const waitForEvent = async (eventName, blockNumber) => {
       exitWithError(err);
     }
   }
-};
-
-const printEstimations = async () => {
-  console.log("==========ESTIMATIONS==========");
-  const estimations = await app.getEstimations();
-  for (const est of estimations) {
-    console.log(`SuperToken: ${est.superToken} - account: ${est.address} : ${new Date(est.zestimation)}`);
-  }
-  console.log("===============================");
 };
 
 const expectLiquidation = (event, node, account) => {
@@ -116,7 +107,9 @@ describe("Integration scripts tests", () => {
         from: accounts[0],
         gas: 1000000
       });
+      await ganache.helper.timeTravelOnce(1);
       await bootNode(-900);
+      await ganache.helper.timeTravelOnce(60);
       const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({
         from: accounts[0],
         gas: 1000000
@@ -140,6 +133,7 @@ describe("Integration scripts tests", () => {
         from: accounts[0],
         gas: 1000000
       });
+      await ganache.helper.timeTravelOnce(1);
       await bootNode(-900);
       await ganache.helper.timeTravelOnce(60);
       const dataUpdate = protocolVars.cfa.methods.updateFlow(
@@ -179,6 +173,7 @@ describe("Integration scripts tests", () => {
         from: accounts[0],
         gas: 1000000
       });
+      await ganache.helper.timeTravelOnce(1);
       await bootNode(-900);
       await ganache.helper.timeTravelOnce(60);
       const receivingFlowData = protocolVars.cfa.methods.createFlow(
@@ -218,6 +213,7 @@ describe("Integration scripts tests", () => {
         from: accounts[0],
         gas: 1000000
       });
+      await ganache.helper.timeTravelOnce(1);
       await bootNode(-900);
       await ganache.helper.timeTravelOnce(3600, app, true);
       const flowData2 = protocolVars.cfa.methods.createFlow(
@@ -234,7 +230,6 @@ describe("Integration scripts tests", () => {
         from: accounts[0],
         gas: 1000000
       });
-      // await timeTravelOnce(3600, true);
       const result = await waitForEvent("AgreementLiquidatedBy", 0);
       expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
     } catch (err) {
@@ -254,11 +249,9 @@ describe("Integration scripts tests", () => {
         from: accounts[5],
         gas: 1000000
       });
-      await ganache.helper.timeTravelOnce(60);
-      await bootNode(-900);
-      // await ganache.helper.timeTravelOnce(60);
+      await ganache.helper.timeTravelOnce(1);
+      await bootNode();
       const firstEstimation = await app.db.queries.getAddressEstimation(accounts[5]);
-      // await ganache.helper.timeTravelUntil(1, 20);
       const updateData = protocolVars.cfa.methods.updateFlow(
         protocolVars.superToken._address,
         accounts[2],
@@ -266,11 +259,10 @@ describe("Integration scripts tests", () => {
         "0x"
       ).encodeABI();
       await ganache.helper.timeTravelUntil(1, 20);
-      const x = await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, updateData, "0x").send({
+      await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, updateData, "0x").send({
         from: accounts[5],
         gas: 1000000
       });
-      console.log(x);
       await ganache.helper.timeTravelUntil(1, 20);
       const secondEstimation = await app.db.queries.getAddressEstimation(accounts[5]);
       console.log("Estimation 1: ", firstEstimation[0].zestimation);

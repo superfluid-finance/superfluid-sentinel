@@ -37,7 +37,7 @@ const bootNode = async (delayParam = 0, maxTxNumber) => {
     mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
     mnemonic_index: 100,
     epoch_block: 0,
-    DB: "TestDatabase.sqlite",
+    db_path: "datadir/testing/test.sqlite",
     protocol_release_version: "test",
     tx_timeout: 20,
     max_query_block_range: 500000,
@@ -50,7 +50,8 @@ const bootNode = async (delayParam = 0, maxTxNumber) => {
     block_offset: 1,
     liquidation_run_every: 30000,
     batch_contract: batchContract._address,
-    max_tx_number: maxTxNumber
+    max_tx_number: maxTxNumber,
+    fastsync: "false"
   });
   app.start();
   while (!app.isInitialized()) {

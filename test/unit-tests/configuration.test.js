@@ -35,6 +35,9 @@ const populateEnvVariables = () => {
   process.env.POLLING_INTERVAL = 10;
   process.env.BLOCK_OFFSET = 2;
   process.env.MAX_TX_NUMBER = 50;
+  process.env.OBSERVER = true;
+  process.env.FASTSYNC = false;
+  process.env.IPFS_GATEWAY = "http://localhost:8080/ipfs/";
   return {
     HTTP_RPC_NODE: process.env.HTTP_RPC_NODE,
     MNEMONIC: process.env.MNEMONIC,
@@ -61,7 +64,10 @@ const populateEnvVariables = () => {
     LOG_LEVEL: process.env.LOG_LEVEL,
     POLLING_INTERVAL: process.env.POLLING_INTERVAL,
     BLOCK_OFFSET: process.env.BLOCK_OFFSET,
-    MAX_TX_NUMBER: process.env.MAX_TX_NUMBER
+    MAX_TX_NUMBER: process.env.MAX_TX_NUMBER,
+    OBSERVER: process.env.OBSERVER,
+    FASTSYNC: process.env.FASTSYNC,
+    IPFS_GATEWAY: process.env.IPFS_GATEWAY
   };
 };
 
@@ -92,6 +98,9 @@ const removeEnvVariables = () => {
   delete process.env.POLLING_INTERVAL;
   delete process.env.BLOCK_OFFSET;
   delete process.env.MAX_TX_NUMBER;
+  delete process.env.OBSERVER;
+  delete process.env.FASTSYNC;
+  delete process.env.IPFS_GATEWAY;
 };
 
 describe("Test Agent user configurations", () => {
@@ -125,6 +134,9 @@ describe("Test Agent user configurations", () => {
       expect(envObj.POLLING_INTERVAL * 1000).to.equal(config.POLLING_INTERVAL);
       expect(envObj.BLOCK_OFFSET).to.equal(config.BLOCK_OFFSET);
       expect(envObj.MAX_TX_NUMBER).to.equal(config.MAX_TX_NUMBER);
+      expect(envObj.OBSERVER.toString()).to.equal(config.OBSERVER.toString());
+      expect(envObj.FASTSYNC.toString()).to.equal(config.FASTSYNC.toString());
+      expect(envObj.IPFS_GATEWAY.toString()).to.equal(config.IPFS_GATEWAY.toString());
       removeEnvVariables();
     } catch (err) {
       exitWithError(err);

@@ -1,18 +1,16 @@
-const SystemModel = require("./database/models/systemModel");
-const FlowUpdatedModel = require("./database/models/flowUpdatedModel");
 const async = require("async");
 
 class LoadEvents {
   constructor (app) {
     this.app = app;
-    this.numRetries = this.app.config.NUM_RETRIES;
+    ;
   }
 
   async start () {
     try {
       this.app.logger.info("getting past event to find SuperTokens");
-      const systemInfo = await SystemModel.findOne();
-      const lastEventBlockNumber = await FlowUpdatedModel.findOne({
+      const systemInfo = await this.app.db.models.SystemModel.findOne();
+      const lastEventBlockNumber = await this.app.db.models.FlowUpdatedModel.findOne({
         order: [["blockNumber", "DESC"]]
       });
       let blockNumber = lastEventBlockNumber === null
@@ -53,7 +51,7 @@ class LoadEvents {
             for (const event of result) {
               const agreementId = task.self.app.protocol.generateId(event.sender, event.receiver);
               const hashId = task.self.app.protocol.generateId(event.token, agreementId);
-              await FlowUpdatedModel.create({
+              await task.self.app.db.models.FlowUpdatedModel.create({
                 address: event.address,
                 blockNumber: event.blockNumber,
                 superToken: event.token,
@@ -68,12 +66,12 @@ class LoadEvents {
           } catch (err) {
             keepTrying++;
             task.self.app.logger.error(err);
-            if (keepTrying > task.self.numRetries) {
+            if (keepTrying > task.self.app.config.NUM_RETRIES) {
               process.exit(1);
             }
           }
         }
-      }, this.concurency);
+      }, this.app.config.CONCURRENCY);
 
       while (pullCounter <= currentBlockNumber) {
         const end = (pullCounter + parseInt(this.app.config.MAX_QUERY_BLOCK_RANGE));
@@ -85,13 +83,13 @@ class LoadEvents {
         pullCounter = end + 1;
       }
       await queue.drain();
-      const tokens = await FlowUpdatedModel.findAll({
+      const tokens = await this.app.db.models.FlowUpdatedModel.findAll({
         attributes: ["superToken"],
         group: ["superToken"]
       });
       // fresh database
       if (systemInfo === null) {
-        await SystemModel.create({
+        await this.app.db.models.SystemModel.create({
           blockNumber: blockNumber,
           chainId: await this.app.client.getChainId(),
           superTokenBlockNumber: currentBlockNumber
@@ -102,37 +100,41 @@ class LoadEvents {
       }
       // Load supertokens
       await this.app.client.loadSuperTokens(tokens.map(({ superToken }) => superToken));
-
-      this.app.logger.info("start getting delays PIC system");
-      // we need to query each supertoken to check pic address
-      const DelayChecker = async.queue(async function (task) {
-        let keepTrying = 10;
-        while (true) {
-          try {
-            await task.self.app.protocol.calculateAndSaveTokenDelay(task.token);
-            break;
-          } catch (err) {
-            keepTrying++;
-            task.self.app.logger.error(err);
-            if (keepTrying > task.self.numRetries) {
-              task.self.app.logger.error(`exhausted number of retries`);
-              process.exit(1);
+      if(!this.app.config.OBSERVER) {
+        this.app.logger.info("start getting delays PIC system");
+        // we need to query each supertoken to check pic address
+        const DelayChecker = async.queue(async function (task) {
+          let keepTrying = 10;
+          while (true) {
+            try {
+              await task.self.app.protocol.calculateAndSaveTokenDelay(task.token);
+              break;
+            } catch (err) {
+              keepTrying++;
+              task.self.app.logger.error(err);
+              if (keepTrying > task.self.app.config.NUM_RETRIES) {
+                task.self.app.logger.error(`exhausted number of retries`);
+                process.exit(1);
+              }
             }
           }
+        }, this.app.config.CONCURRENCY);
+        const superTokens = this.app.client.superTokensAddresses;
+        for (const st of superTokens) {
+          DelayChecker.push({
+            self: this,
+            token: st
+          });
         }
-      }, this.concurency);
-      const superTokens = this.app.client.superTokensAddresses;
-      for (const st of superTokens) {
-        DelayChecker.push({
-          self: this,
-          token: st
-        });
+
+        if (superTokens.length > 0 && !this.app.config.OBSERVER) {
+          await DelayChecker.drain();
+        }
+        this.app.logger.info("finish getting delays PIC system");
+      } else {
+        this.app.logger.info("running as observer, ignoring PIC system");
       }
 
-      if (superTokens.length > 0) {
-        await DelayChecker.drain();
-      }
-      this.app.logger.info("finish getting delays PIC system");
       this.app.logger.info("finish past event to find SuperTokens");
       return currentBlockNumber;
     } catch (err) {

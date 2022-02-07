@@ -1,7 +1,5 @@
 const Sequelize = require("sequelize");
-const db = require("../db");
-
-const AgreementModel = db.define("agreements", {
+module.exports = (db) => { return db.define("agreements", {
   agreementId: {
     type: Sequelize.STRING,
     primaryKey: true
@@ -32,6 +30,4 @@ const AgreementModel = db.define("agreements", {
     fields: ["superToken", "sender"]
   }]
 }
-);
-
-module.exports = AgreementModel;
+)};

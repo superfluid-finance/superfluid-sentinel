@@ -16,12 +16,11 @@ const exitWithError = (error) => {
 
 const bootNode = async (delayParam = 0) => {
     app = new App({
-        ws_rpc_node: "ws://127.0.0.1:8545",
         http_rpc_node: "http://127.0.0.1:8545",
         mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
         mnemonic_index: 100,
         epoch_block: 0,
-        DB: "TestDatabase.sqlite",
+        db_path: "datadir/testing/test.sqlite",
         protocol_release_version: "test",
         tx_timeout: 300000,
         max_query_block_range: 500000,
@@ -33,7 +32,8 @@ const bootNode = async (delayParam = 0) => {
         additional_liquidation_delay: delayParam,
         liquidation_run_every: 1000,
         pic: accounts[0],
-        toga_contract: protocolVars.toga._address
+        toga_contract: protocolVars.toga._address,
+        fastsync: "false"
     });
     app.start();
     while (!app.isInitialized()) {
@@ -48,7 +48,6 @@ const closeNode = async (force = false) => {
 };
 
 const waitForEvent = async (eventName, blockNumber) => {
-    await printEstimations();
     while (true) {
         try {
             const newBlockNumber = await web3.eth.getBlockNumber();
@@ -66,15 +65,6 @@ const waitForEvent = async (eventName, blockNumber) => {
             exitWithError(err);
         }
     }
-};
-
-const printEstimations = async () => {
-    console.log("==========ESTIMATIONS==========");
-    const estimations = await app.getEstimations();
-    for (const est of estimations) {
-        console.log(`SuperToken: ${est.superToken} - account: ${est.address} : ${new Date(est.zestimation)}`);
-    }
-    console.log("===============================");
 };
 
 const expectLiquidation = (event, node, account) => {
@@ -186,6 +176,7 @@ describe("Agent configurations tests", () => {
                 picInfo = await app.getPICInfo(protocolVars.superToken._address);
                 if (picInfo.length > 0) break;
             }
+
             expect(picInfo[0].pic).to.be.equal(accounts[0]);
             //PIC changes
             await protocolVars.superToken.methods.transfer(protocolVars.toga._address, "100000000000000000").send({
@@ -193,7 +184,7 @@ describe("Agent configurations tests", () => {
                 gas: 1000000
             });
             while (true) {
-                await delay(5000);
+                await delay(8000);
                 picInfo = await app.getPICInfo(protocolVars.superToken._address);
                 if (picInfo.length > 0) break;
             }
@@ -202,6 +193,35 @@ describe("Agent configurations tests", () => {
             exitWithError(err);
         }
     });
+
+    it("When observer, no need for wallet / address", async () => {
+        try{
+            //start new sentinel as observer
+            const observer = new App({
+                http_rpc_node: "http://127.0.0.1:8545",
+                epoch_block: 0,
+                protocol_release_version: "test",
+                db_path: "datadir/testing/test.sqlite",
+                max_query_block_range: 500000,
+                concurrency: 1,
+                cold_boot: 1,
+                only_listed_tokens: 1,
+                number_retries: 3,
+                observer: "true",
+                fastsync: "false"
+            });
+
+            observer.start();
+            while (!observer.isInitialized()) {
+                await delay(3000);
+            }
+            expect(observer.getConfigurationInfo().OBSERVER).to.be.true;
+            await observer.shutdown(true);
+        } catch(err) {
+            exitWithError(err);
+        }
+    });
+
     // not yet supported
     it.skip("Start node, subscribe to new Token and perform estimation", async () => {
         try {

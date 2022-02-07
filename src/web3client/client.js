@@ -6,7 +6,6 @@ const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IIn
 const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
 const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
-const SuperTokenModel = require("./../database/models/superTokenModel");
 const BatchContract = require("../inc/BatchLiquidator.json");
 const TogaContract = require("../inc/TOGA.json");
 const { wad4human } = require("@decentral.ee/web3-helpers");
@@ -30,6 +29,7 @@ class Client {
 
   async initialize () {
     try {
+      if(!this.app.config.HTTP_RPC_NODE) throw new Error("No HTTP RPC set");
       const web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_RPC_NODE, {
         keepAlive: true
       });
@@ -48,6 +48,7 @@ class Client {
     try {
       this.app.logger.info(`Web3Client start`);
       await this.initialize();
+      this.app.logger.info(`ChainId: ${await this.getChainId()}`)
       await this._loadSuperfluidContracts();
       if (this.app.config.PRIVATE_KEY !== undefined) {
         this.app.logger.info("using provided private key");
@@ -59,14 +60,18 @@ class Client {
       } else if (this.app.config.MNEMONIC !== undefined) {
         this.app.logger.info("using provided mnemonic");
         this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, this.app.config.MNEMONIC_INDEX);
+      } else if(this.app.config.OBSERVER) {
+        this.app.logger.warn(`Configuration is set to be Observer.`);
       } else {
         throw Error("No account configured. Either PRIVATE_KEY or MNEMONIC needs to be set.");
       }
-      this.app.logger.info(`account: ${this.agentAccounts.address}`);
-      const accBalance = await this.app.client.getAccountBalance();
-      this.app.logger.info(`balance: ${wad4human(accBalance)}`);
-      if (accBalance === "0") {
-        this.app.logger.warn("!!!ACCOUNT NOT FUNDED!!!  Will fail to execute liquidations!");
+      if(!this.app.config.OBSERVER) {
+        this.app.logger.info(`account: ${this.agentAccounts.address}`);
+        const accBalance = await this.app.client.getAccountBalance();
+        this.app.logger.info(`balance: ${wad4human(accBalance)}`);
+        if (accBalance === "0") {
+          this.app.logger.warn("!!!ACCOUNT NOT FUNDED!!!  Will fail to execute liquidations!");
+        }
       }
       this.app.logger.info("Connecting to Node: HTTP");
       this.web3.eth.transactionConfirmationBlocks = 3;
@@ -152,7 +157,7 @@ class Client {
           where: { listed: 1 }
         };
       }
-      const superTokensDB = await SuperTokenModel.findAll(filter);
+      const superTokensDB = await this.app.db.models.SuperTokenModel.findAll(filter);
       const promises = superTokensDB.map(async (token) => {
         return this.loadSuperToken(token.address);
       });
@@ -207,7 +212,7 @@ class Client {
       this.superTokensAddresses.push(newSuperToken.toLowerCase());
     }
     // persistence database
-    await SuperTokenModel.upsert({
+    await this.app.db.models.SuperTokenModel.upsert({
       address: newSuperToken,
       symbol: tokenSymbol,
       name: tokenName,
@@ -227,11 +232,15 @@ class Client {
   }
 
   getAccountAddress () {
-    return this.agentAccounts.address;
+    if(this.agentAccounts !== undefined) {
+      return this.agentAccounts.address;
+    }
   }
 
   async getAccountBalance () {
-    return this.web3.eth.getBalance(this.agentAccounts.address);
+    if(this.agentAccounts !== undefined) {
+      return this.web3.eth.getBalance(this.agentAccounts.address);
+    }
   }
 
   getAccount () {

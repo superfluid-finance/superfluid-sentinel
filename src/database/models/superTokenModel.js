@@ -1,7 +1,5 @@
 const Sequelize = require("sequelize");
-const db = require("../db");
-
-const SuperTokensModel = db.define("supertokens", {
+module.exports = (db) => { return  db.define("supertokens", {
   address: {
     type: Sequelize.STRING,
     allowNull: false,
@@ -26,6 +24,4 @@ const SuperTokensModel = db.define("supertokens", {
     type: Sequelize.BOOLEAN,
     allowNull: false
   }
-});
-
-module.exports = SuperTokensModel;
+})};

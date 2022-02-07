@@ -1,14 +1,15 @@
 require("./loadCmdArgs");
-const networkConfigs = require("../../package.json").networks;
+const manifest = require("../../manifest.json");
 
 class Config {
   constructor (config) {
     if (typeof config === "object") {
       // used by tests
       // TODO: make less redundant
-      this.RUN_TEST_ENV = true;
+      this.RUN_TEST_ENV = !(config.run_test_env === "false");
       this.LOG_LEVEL = "debug";
       this.HTTP_RPC_NODE = config.http_rpc_node;
+      this.OBSERVER = config.observer === "true";
       this.MNEMONIC = config.mnemonic;
       this.MNEMONIC_INDEX = config.mnemonic_index;
       this.PRIVATE_KEY = config.private_key;
@@ -27,7 +28,7 @@ class Config {
       this.MAX_BATCH_TX = config.max_batch_tx || 10;
       this.BLOCK_OFFSET = config.block_offset || 0;
       this.MAX_TX_NUMBER = config.max_tx_number || 100;
-      this.EPOCH_BLOCK = config.epoch_block;
+      this.EPOCH_BLOCK = config.epoch_block || 0;
       this.BATCH_CONTRACT = config.batch_contract;
       this.CONCURRENCY = config.concurrency;
       this.COLD_BOOT = config.cold_boot;
@@ -37,8 +38,11 @@ class Config {
       this.LIQUIDATION_JOB_AWAITS = config.liquidation_job_awaits;
       this.ONLY_LISTED_TOKENS = config.only_listed_tokens === "true";
       this.TOGA_CONTRACT = config.toga_contract;
+      this.FASTSYNC = config.fastsync !== "false";
+      this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://ipfs.io/ipfs/"
     } else {
       this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
+      this.OBSERVER = process.env.OBSERVER === "true";
       this.MNEMONIC = process.env.MNEMONIC;
       this.MNEMONIC_INDEX = process.env.MNEMONIC_INDEX || 0;
       this.PRIVATE_KEY = process.env.PRIVATE_KEY;
@@ -57,13 +61,15 @@ class Config {
       this.PIC = process.env.PIC;
       this.METRICS = process.env.METRICS !== "false"; // default: true
       this.METRICS_PORT = process.env.METRICS_PORT || 3000;
+      this.FASTSYNC = process.env.FASTSYNC !== "false";  // default: true
+      this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://ipfs.io/ipfs/";
 
       // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
       this.CONCURRENCY = process.env.CONCURRENCY || 1;
-      this.ONLY_LISTED_TOKENS = process.env.ONLY_LISTED_TOKENS === "true";
+      this.ONLY_LISTED_TOKENS = process.env.ONLY_LISTED_TOKENS === "true"; // default: false
       this.NUM_RETRIES = process.env.NUM_RETRIES || 10;
       this.COLD_BOOT = process.env.COLD_BOOT || 0;
-      this.SHUTDOWN_ON_ERROR = process.env.SHUTDOWN_ON_ERROR === "true";
+      this.SHUTDOWN_ON_ERROR = process.env.SHUTDOWN_ON_ERROR === "true"; // default: false
       this.LIQUIDATION_JOB_AWAITS = process.env.LIQUIDATION_JOB_AWAITS * 1000 || 30000;
       this.MAX_BATCH_TX = process.env.MAX_BATCH_TX || 10;
       this.RESOLVER = process.env.RESOLVER;
@@ -90,14 +96,17 @@ class Config {
   }
 
   loadNetworkInfo (chainId) {
-    this.EPOCH_BLOCK = networkConfigs[chainId].epoch || 0;
-    this.BATCH_CONTRACT = networkConfigs[chainId].batch;
-    this.TOGA_CONTRACT = networkConfigs[chainId].toga || undefined;
+    this.EPOCH_BLOCK = manifest.networks[chainId].epoch || 0;
+    this.BATCH_CONTRACT = manifest.networks[chainId].batch;
+    this.TOGA_CONTRACT = manifest.networks[chainId].toga || undefined;
+    this.CID = manifest.networks[chainId].cid || undefined;
   }
 
   getConfigurationInfo () {
     return {
       HTTP_RPC_NODE: this.HTTP_RPC_NODE,
+      FASTSYNC: this.FASTSYNC,
+      OBSERVER: this.OBSERVER,
       MAX_QUERY_BLOCK_RANGE: this.MAX_QUERY_BLOCK_RANGE,
       TOKENS: this.TOKENS,
       DB_PATH: this.DB,

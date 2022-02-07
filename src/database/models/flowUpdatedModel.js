@@ -1,7 +1,5 @@
 const Sequelize = require("sequelize");
-const db = require("../db");
-
-const FlowUpdatedModel = db.define("flowupdated", {
+module.exports = (db) => { return db.define("flowupdated", {
   hashId: {
     type: Sequelize.STRING,
     allowNull: false
@@ -34,6 +32,5 @@ const FlowUpdatedModel = db.define("flowupdated", {
     type: Sequelize.STRING,
     allowNull: false
   }
-});
+})};
 
-module.exports = FlowUpdatedModel;

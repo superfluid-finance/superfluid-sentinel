@@ -21,7 +21,7 @@ const bootNode = async (delayParam = 0) => {
     mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
     mnemonic_index: 100,
     epoch_block: 0,
-    DB: "TestDatabase.sqlite",
+    db_path: "datadir/testing/test.sqlite",
     protocol_release_version: "test",
     tx_timeout: 300000,
     max_query_block_range: 500000,
@@ -31,7 +31,8 @@ const bootNode = async (delayParam = 0) => {
     only_listed_tokens: 1,
     number_retries: 3,
     additional_liquidation_delay: delayParam,
-    liquidation_run_every: 5000
+    liquidation_run_every: 5000,
+    fastsync: "false"
   });
   app.start();
   while (!app.isInitialized()) {
@@ -46,7 +47,6 @@ const closeNode = async (force = false) => {
 };
 
 const waitForEvent = async (eventName, blockNumber) => {
-  await printEstimations();
   while (true) {
     try {
       const newBlockNumber = await web3.eth.getBlockNumber();
@@ -64,15 +64,6 @@ const waitForEvent = async (eventName, blockNumber) => {
       exitWithError(err);
     }
   }
-};
-
-const printEstimations = async () => {
-  console.log("==========ESTIMATIONS==========");
-  const estimations = await app.getEstimations();
-  for (const est of estimations) {
-    console.log(`SuperToken: ${est.superToken} - account: ${est.address} : ${new Date(est.zestimation)}`);
-  }
-  console.log("===============================");
 };
 
 const expectLiquidation = (event, node, account) => {

@@ -46,6 +46,15 @@ class Protocol {
     }
   }
 
+  async isAccountSolventNow (superToken, account) {
+    try {
+      this.app.client.addTotalRequest();
+      return this.app.client.superTokens[superToken.toLowerCase()].methods.isAccountSolventNow(account).call();
+    } catch (err) {
+      throw Error(`Protocol.isAccountCriticalNow(): ${err}`);
+    }
+  }
+
   async liquidationData (token, account) {
     try {
       this.app.client.addTotalRequest(2);
@@ -74,7 +83,6 @@ class Protocol {
       if (result.flowRate !== "0") {
         return result;
       }
-      return undefined;
     } catch (err) {
       throw Error(`Protocol.checkFlow(): ${err}`);
     }
@@ -85,7 +93,6 @@ class Protocol {
       if (this.app.client.toga !== undefined) {
         return await this.app.client.toga.methods.getCurrentPICInfo(superToken).call();
       }
-      return undefined;
     } catch (err) {
       throw Error(`Protocol.getCurrentPIC(): ${err}`);
     }
@@ -96,6 +103,15 @@ class Protocol {
       return await this.app.client.gov.methods.getRewardAddress(this.app.client.sf._address, superToken).call();
     } catch (err) {
       throw Error(`Protocol.getRewardAddress(): ${err}`);
+    }
+  }
+
+  async isPatricianPeriodNow(superToken, account) {
+    try {
+      this.app.client.addTotalRequest();
+      return await this.app.client.CFAv1.methods.isPatricianPeriodNow(superToken, account).call();
+    } catch (err) {
+      throw Error(`Protocol.isPatricianPeriodNow(): ${err}`);
     }
   }
 
@@ -173,6 +189,7 @@ class Protocol {
   }
 
   _getLiquidationData (totalNetFlowRate, availableBalance, deposit, liqPeriod, plebPeriod) {
+
     const result = {
       totalNetFlowRate: totalNetFlowRate.toString(),
       availableBalance: availableBalance.toString(),
@@ -198,6 +215,7 @@ class Protocol {
     if(balance.lt(new BN(0))) {
       return new Date();
     }
+
     const seconds = isFinite(balance.div(netFlowRate)) ? balance.div(netFlowRate) : 0;
     const roundSeconds = Math.round(Math.abs(isNaN(seconds) ? 0 : seconds));
     const estimation = new Date();

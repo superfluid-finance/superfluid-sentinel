@@ -83,7 +83,8 @@ CASE pmode
 WHEN 0 THEN est.estimation
 WHEN 1 THEN est.estimationPleb
 WHEN 2 THEN est.estimationPirate
-END as estimation
+END as estimation,
+pmode
 FROM agreements agr
 INNER JOIN supertokens st on agr.superToken == st.address
 INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.estimation <> 0 AND agr.flowRate <> 0

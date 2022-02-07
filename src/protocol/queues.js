@@ -111,9 +111,8 @@ class Queues {
 
           if (allFlowUpdatedEvents.length === 0) {
             task.self.app.logger.debug(`Didn't find FlowUpdated for sender: ${task.account} in blockNumber: ${task.blockNumber} / blockHash ${task.blockHash}`);
-          } else {
-            task.self.app.logger.debug(allFlowUpdatedEvents);
           }
+
           for (const event of allFlowUpdatedEvents) {
             await task.self.app.db.models.AgreementModel.upsert({
               agreementId: event.agreementId,

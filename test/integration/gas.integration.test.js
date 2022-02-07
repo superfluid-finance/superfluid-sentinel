@@ -66,9 +66,9 @@ describe("Gas Integration tests", () => {
       });
       await bootNode({pic: accounts[0], tx_timeout: 2});
       app.setTestFlag("TIMEOUT_ON_LOW_GAS_PRICE", { minimumGas: 3000000000 });
-      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
       await app.shutdown();
-      protocolHelper.expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+      protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
     } catch (err) {
       protocolHelper.exitWithError(err);
     }

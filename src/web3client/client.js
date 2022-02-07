@@ -6,8 +6,8 @@ const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IIn
 const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
 const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
-const BatchContract = require("../inc/BatchLiquidator.json");
-const TogaContract = require("../inc/TOGA.json");
+const BatchContract = require("@superfluid-finance/ethereum-contracts/build/contracts/BatchLiquidator.json");
+const TogaContract = require("@superfluid-finance/ethereum-contracts/build/contracts/TOGA.json");
 const { wad4human } = require("@decentral.ee/web3-helpers");
 
 /*
@@ -84,7 +84,7 @@ class Client {
   async loadBatchContract () {
     try {
       if (this.app.config.BATCH_CONTRACT !== undefined) {
-        this.batch = new this.web3.eth.Contract(BatchContract, this.app.config.BATCH_CONTRACT);
+        this.batch = new this.web3.eth.Contract(BatchContract.abi, this.app.config.BATCH_CONTRACT);
       } else {
         this.app.logger.info("Batch Contract not found");
       }
@@ -97,7 +97,7 @@ class Client {
   async loadTogaContract () {
     try {
       if (this.app.config.TOGA_CONTRACT !== undefined) {
-        this.toga = new this.web3.eth.Contract(TogaContract, this.app.config.TOGA_CONTRACT);
+        this.toga = new this.web3.eth.Contract(TogaContract.abi, this.app.config.TOGA_CONTRACT);
       } else {
         this.app.logger.info("TOGA Contract not found");
       }
@@ -184,12 +184,11 @@ class Client {
         superTokenHTTP.methods.symbol().call()
       ]
     );
-    //assuming default values to test
-    let liquidation_period = 3600;
+    //TOOD: assuming default if not defined, remove when all networks are using 3Ps
+    let liquidation_period = 14400;
     let patrician_period = 900;
     try {
       //get liquidation period
-
       const resp = await this.gov.methods.getThreePsConfig(this.sf._address, newSuperToken).call();
       liquidation_period = parseInt(resp.liquidationPeriod);
       patrician_period = parseInt(resp.patricianPeriod);

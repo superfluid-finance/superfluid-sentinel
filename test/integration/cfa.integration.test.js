@@ -22,8 +22,6 @@ const closeNode = async (force = false) => {
   }
 };
 
-
-
 describe("Integration scripts tests", () => {
   before(async function () {
     protocolVars = await protocolHelper.setup(ganache.provider, AGENT_ACCOUNT);
@@ -69,9 +67,9 @@ describe("Integration scripts tests", () => {
         from: accounts[0],
         gas: 1000000
       });
-      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
       await app.shutdown();
-      protocolHelper.expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+      protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
     } catch (err) {
       protocolHelper.exitWithError(err);
     }
@@ -107,9 +105,9 @@ describe("Integration scripts tests", () => {
         from: accounts[0],
         gas: 1000000
       });
-      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
       await app.shutdown();
-      protocolHelper.expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+      protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
     } catch (err) {
       protocolHelper.exitWithError(err);
     }
@@ -151,9 +149,9 @@ describe("Integration scripts tests", () => {
         from: accounts[0],
         gas: 1000000
       });
-      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
       await app.shutdown();
-      protocolHelper.expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+      protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
     } catch (err) {
       protocolHelper.exitWithError(err);
     }
@@ -188,9 +186,9 @@ describe("Integration scripts tests", () => {
         from: accounts[0],
         gas: 1000000
       });
-      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", 0);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", 0);
       await app.shutdown();
-      protocolHelper.expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+      protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
 
     } catch (err) {
       protocolHelper.exitWithError(err);
@@ -231,6 +229,90 @@ describe("Integration scripts tests", () => {
       expect(firstEstimation[0].estimation).to.not.equal(32503593600000);
       // the stream is soo small that we mark as not a real estimation
       expect(secondEstimation[0].estimation).to.equal(32503593600000);
+    } catch (err) {
+      protocolHelper.exitWithError(err);
+    }
+  });
+
+  it("Should make liquidation as Pleb", async() => {
+    try {
+      const data = protocolVars.cfa.methods.createFlow(
+          protocolVars.superToken._address,
+          accounts[2],
+          "10000000000000000",
+          "0x"
+      ).encodeABI();
+      await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({
+        from: accounts[0],
+        gas: 1000000
+      });
+      await ganache.helper.timeTravelOnce(1);
+      await bootNode({log_level:"debug"});
+      await ganache.helper.timeTravelOnce(60);
+      const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({
+        from: accounts[0],
+        gas: 1000000
+      });
+      await ganache.helper.timeTravelOnce(900);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+      await app.shutdown();
+      protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "1");
+    } catch (err) {
+      protocolHelper.exitWithError(err);
+    }
+  });
+
+  it("Should make liquidation wait until Pleb slot", async() => {
+    try {
+      const data = protocolVars.cfa.methods.createFlow(
+          protocolVars.superToken._address,
+          accounts[2],
+          "10000000000000000",
+          "0x"
+      ).encodeABI();
+      await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({
+        from: accounts[0],
+        gas: 1000000
+      });
+      await ganache.helper.timeTravelOnce(1);
+      await bootNode({log_level:"debug"});
+      await ganache.helper.timeTravelOnce(60);
+      const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({
+        from: accounts[0],
+        gas: 1000000
+      });
+      await ganache.helper.timeTravelOnce(850);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+      await app.shutdown();
+      protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "1");
+    } catch (err) {
+      protocolHelper.exitWithError(err);
+    }
+  });
+
+  it("Should make liquidation as Pirate", async() => {
+    try {
+      const data = protocolVars.cfa.methods.createFlow(
+          protocolVars.superToken._address,
+          accounts[2],
+          "10000000000000000",
+          "0x"
+      ).encodeABI();
+      await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({
+        from: accounts[0],
+        gas: 1000000
+      });
+      await ganache.helper.timeTravelOnce(1);
+      await bootNode({pirate: "true"});
+      await ganache.helper.timeTravelOnce(60);
+      const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({
+        from: accounts[0],
+        gas: 1000000
+      });
+      await ganache.helper.timeTravelOnce(14400);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+      await app.shutdown();
+      protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "2");
     } catch (err) {
       protocolHelper.exitWithError(err);
     }

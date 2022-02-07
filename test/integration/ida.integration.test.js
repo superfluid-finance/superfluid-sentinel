@@ -96,9 +96,9 @@ describe("IDA integration tests", () => {
         from: accounts[0],
         gas: 1000000
       });
-      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
       await app.shutdown();
-      protocolHelper.expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+      protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
     } catch (err) {
       exitWithError(err);
     }

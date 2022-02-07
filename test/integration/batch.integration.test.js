@@ -118,7 +118,7 @@ describe("Integration scripts tests", () => {
       });
       await bootNode({batch_contract: batchContract._address, polling_interval: 1, max_tx_number: 5});
       await ganache.helper.timeTravelOnce(1000, app, true);
-      const result = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedBy", 5, tx.blockNumber);
+      const result = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedV2", 5, tx.blockNumber);
       await app.shutdown();
       expect(result).gt(tx.blockNumber);
     } catch (err) {
@@ -171,8 +171,8 @@ describe("Integration scripts tests", () => {
       });
       await bootNode({batch_contract: batchContract._address, polling_interval: 1, max_tx_number: 3});
       await ganache.helper.timeTravelOnce(1000, app, true);
-      const result1 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedBy", 3, tx.blockNumber);
-      const result2 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedBy", 2, result1);
+      const result1 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedV2", 3, tx.blockNumber);
+      const result2 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedV2", 2, result1);
       await app.shutdown();
       expect(result1).gt(tx.blockNumber);
       expect(result2).gt(result1);
@@ -215,8 +215,8 @@ describe("Integration scripts tests", () => {
       });
       await bootNode({batch_contract: batchContract._address, polling_interval: 1, max_tx_number: 10});
       await ganache.helper.timeTravelOnce(1000, app, true);
-      const result1 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedBy", 5, tx.blockNumber);
-      const result2 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedBy", 5, result1 + 1);
+      const result1 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedV2", 5, tx.blockNumber);
+      const result2 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedV2", 5, result1 + 1);
       await app.shutdown();
       expect(result1).gt(tx.blockNumber);
       expect(result2).gt(result1);

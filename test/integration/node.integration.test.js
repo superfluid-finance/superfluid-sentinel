@@ -67,7 +67,7 @@ describe("Agent configurations tests", () => {
                 gas: 1000000
             });
             await ganache.helper.timeTravelOnce(3580, app, true);
-            const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
+            const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
             await app.shutdown();
             expect(result[0].returnValues.liquidatorAccount).to.equal(AGENT_ACCOUNT);
         } catch (err) {
@@ -185,8 +185,8 @@ describe("Agent configurations tests", () => {
                 from: accounts[0],
                 gas: 1000000
             });
-            const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
-            protocolHelper.expectLiquidation(result[0], AGENT_ACCOUNT, accounts[0]);
+            const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+            protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
         } catch (err) {
             protocolHelper.exitWithError(err);
         }
@@ -210,8 +210,8 @@ describe("Agent configurations tests", () => {
             });
             //  const timestamp = await ganache.helper.timeTravelOnce(3600 * 4);
             await bootNode();
-            const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedBy", tx.blockNumber);
-            protocolHelper.expectBailout(result[0], AGENT_ACCOUNT, accounts[0]);
+            const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+            protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
         } catch (err) {
             protocolHelper.exitWithError(err);
         }

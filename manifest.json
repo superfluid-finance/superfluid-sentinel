@@ -1,5 +1,5 @@
 {
-  "schema-version": "2",
+  "schema-version": "1",
   "name": "sentinel-manifest",
   "networks": {
     "3": {

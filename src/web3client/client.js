@@ -186,10 +186,10 @@ class Client {
     );
     //TOOD: assuming default if not defined, remove when all networks are using 3Ps
     let liquidation_period = 14400;
-    let patrician_period = 900;
+    let patrician_period = 1800;
     try {
       //get liquidation period
-      const resp = await this.gov.methods.getThreePsConfig(this.sf._address, newSuperToken).call();
+      const resp = await this.gov.methods.getPPPConfig(this.sf._address, newSuperToken).call();
       liquidation_period = parseInt(resp.liquidationPeriod);
       patrician_period = parseInt(resp.patricianPeriod);
     } catch(err) {

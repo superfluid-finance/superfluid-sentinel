@@ -68,7 +68,7 @@ const populateEnvVariables = () => {
     MAX_TX_NUMBER: process.env.MAX_TX_NUMBER,
     OBSERVER: process.env.OBSERVER,
     FASTSYNC: process.env.FASTSYNC,
-    IPFS_GATEWAY: process.env.IPFS_GATEWAY
+    IPFS_GATEWAY: process.env.IPFS_GATEWAY,
     PIRATE: process.env.PIRATE
   };
 };

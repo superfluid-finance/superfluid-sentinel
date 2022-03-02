@@ -33,7 +33,7 @@ async function setup(provider, agentAccount) {
     const host = new web3.eth.Contract(ISuperfluid.abi, superfluidAddress);
     const govAddress = await host.methods.getGovernance().call();
     const gov = new web3.eth.Contract(SuperfluidGovernance.abi, govAddress);
-    await gov.methods.setThreePsConfig(host._address,"0x0000000000000000000000000000000000000000", 3600, 900).send({from:accounts[0]});
+    await gov.methods.setPPPConfig(host._address,"0x0000000000000000000000000000000000000000", 3600, 900).send({from:accounts[0]});
     const cfaIdent = web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
     const idaIdent = web3.utils.sha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
     const cfaAddress = await host.methods.getAgreementClass(cfaIdent).call();

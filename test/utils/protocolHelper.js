@@ -8,7 +8,6 @@ const IToken = require("@superfluid-finance/ethereum-contracts/build/contracts/T
 const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
 const TOGA = require("@superfluid-finance/ethereum-contracts/build/contracts/TOGA.json");
 const TokenCustodian = require("@superfluid-finance/ethereum-contracts/build/contracts/TokenCustodian.json");
-const BN = require("BN.js");
 
 const Web3 = require("web3");
 const expect = require("chai").expect;

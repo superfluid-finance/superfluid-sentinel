@@ -2,8 +2,7 @@
 
 The sentinel monitors the state of Superfluid agreements on the configured network and
 liquidates [critical agreements](https://docs.superfluid.finance/superfluid/docs/constant-flow-agreement#liquidation-and-solvency).  
-It also allows you to configure a related PIC account in order to automatically time liquidations according to its state
-in the [TOGA](https://docs.superfluid.finance/superfluid/docs/liquidations-and-toga) system.
+It also allows you to configure a related PIC account and other parameters related to [3Ps & TOGA](https://docs.superfluid.finance/superfluid/docs/liquidations-and-toga).
 
 ## Quickstart
 

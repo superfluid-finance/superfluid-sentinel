@@ -3,7 +3,6 @@ const async = require("async");
 class LoadEvents {
   constructor (app) {
     this.app = app;
-    ;
   }
 
   async start () {

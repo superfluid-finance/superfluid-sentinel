@@ -184,20 +184,14 @@ class Client {
         superTokenHTTP.methods.symbol().call()
       ]
     );
-    //TOOD: assuming default if not defined, remove when all networks are using 3Ps
-    let liquidation_period = 14400;
-    let patrician_period = 1800;
-    try {
-      //get liquidation period
-      const resp = await this.gov.methods.getPPPConfig(this.sf._address, newSuperToken).call();
-      liquidation_period = parseInt(resp.liquidationPeriod);
-      patrician_period = parseInt(resp.patricianPeriod);
-    } catch(err) {
-      this.app.logger.error(`client.loadSuperToken(): ${err}`);
-      this.app.logger.warn(`default to liquidation period to ${liquidation_period} and ${patrician_period}`);
-    }
-    superTokenHTTP.liquidation_period = liquidation_period;
-    superTokenHTTP.patrician_period = patrician_period;
+
+    let liquidation_period = 0;
+    let patrician_period = 0;
+
+    //get liquidation period
+    const resp = await this.gov.methods.getPPPConfig(this.sf._address, newSuperToken).call();
+    superTokenHTTP.liquidation_period = parseInt(resp.liquidationPeriod);
+    superTokenHTTP.patrician_period = parseInt(resp.patricianPeriod);
     const superTokenAddress = await this.resolver.methods.get(
       `supertokens.${this.version}.${tokenSymbol}`
     ).call();
@@ -222,8 +216,8 @@ class Client {
       address: newSuperToken,
       symbol: tokenSymbol,
       name: tokenName,
-      liquidationPeriod: liquidation_period,
-      patricianPeriod: patrician_period,
+      liquidationPeriod: parseInt(resp.liquidationPeriod),
+      patricianPeriod: parseInt(resp.patricianPeriod),
       listed: isListed
     });
   }

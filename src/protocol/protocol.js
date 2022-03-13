@@ -3,6 +3,11 @@ const BN = require("bn.js");
 class Protocol {
   constructor (app) {
     this.app = app;
+    this.PPPMode = {
+      Patrician: 0,
+      Pleb: 1,
+      Pirate: 2
+    }
   }
 
   async getAccountRealtimeBalanceOfNow (token, address) {
@@ -123,15 +128,15 @@ class Protocol {
         const rewardAccount = await this.getRewardAddress(superToken);
         const token = await this.app.db.models.SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });
         token.pic = currentTokenPIC === undefined ? undefined : currentTokenPIC.pic;
-        token.pmode = this.app.config.PIRATE ? 2 : 1;
+        token.pppmode = this.app.config.PIRATE ? this.PPPMode.Pirate : this.PPPMode.Pleb;
 
         if (this.app.config.PIC === undefined) {
           this.app.logger.debug(`${tokenInfo}: no PIC configured, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`);
         } else if (currentTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === currentTokenPIC.pic.toLowerCase()) {
-          token.pmode = 0;
+          token.pppmode = this.PPPMode.Patrician;
           this.app.logger.info(`${tokenInfo}: PIC active`);
         } else if (rewardAccount.toLowerCase() === this.app.config.PIC.toLowerCase()) {
-          token.pmode = 0;
+          token.pppmode = this.PPPMode.Patrician;
           this.app.logger.debug(`${tokenInfo}: configured PIC match reward address directly, set as PIC`);
         } else {
           this.app.logger.debug(`${tokenInfo}: you are not the PIC, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`);

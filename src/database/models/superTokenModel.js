@@ -16,7 +16,7 @@ module.exports = (db) => { return  db.define("supertokens", {
   pic: {
     type: Sequelize.STRING
   },
-  pmode:{
+  pppmode:{
     type: Sequelize.INTEGER,
     defaultValue: 1
   },

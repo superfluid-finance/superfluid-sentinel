@@ -41,12 +41,12 @@ class Liquidator {
     };
   }
 
-  async isPossibleToClose (superToken, sender, receiver, pmode) {
+  async isPossibleToClose (superToken, sender, receiver, pppmode) {
     const checkFlow = await this.app.protocol.checkFlow(superToken, sender, receiver);
     const isCritical = await this.app.protocol.isAccountCriticalNow(superToken, sender);
-    if(pmode === 0) {
+    if(pppmode === this.app.protocol.PPPMode.Patrician) {
       return checkFlow !== undefined && isCritical;
-    } else if(pmode === 1) {
+    } else if(pppmode === this.app.protocol.PPPMode.Pleb) {
       const isPatrician = await this.app.protocol.isPatricianPeriodNow(superToken, sender);
       return checkFlow !== undefined && isCritical && !isPatrician.isPatricianPeriod;
     } else {
@@ -60,7 +60,7 @@ class Liquidator {
     const chainId = await this.app.client.getChainId();
     const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
     for (const job of work) {
-      if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver, job.pmode)) {
+      if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver, job.pppmode)) {
         try {
           const tx = this.app.protocol.generateDeleteFlowABI(job.superToken, job.sender, job.receiver);
           const BaseGasPrice = await this.app.gasEstimator.getGasPrice();
@@ -105,7 +105,7 @@ class Liquidator {
       );
 
       for (const flow of streams) {
-        if (await this.isPossibleToClose(flow.superToken, flow.sender, flow.receiver, flow.pmode)) {
+        if (await this.isPossibleToClose(flow.superToken, flow.sender, flow.receiver, flow.pppmode)) {
           senders.push(flow.sender);
           receivers.push(flow.receiver);
         } else {

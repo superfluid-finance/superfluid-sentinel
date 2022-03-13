@@ -79,12 +79,12 @@ class Repository {
         }
 
         const sqlquery = `SELECT * FROM (SELECT agr.superToken, agr.sender, agr.receiver,
-CASE pmode
+CASE pppmode
 WHEN 0 THEN est.estimation
 WHEN 1 THEN est.estimationPleb
 WHEN 2 THEN est.estimationPirate
 END as estimation,
-pmode
+pppmode
 FROM agreements agr
 INNER JOIN supertokens st on agr.superToken == st.address
 INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.estimation <> 0 AND agr.flowRate <> 0
@@ -114,7 +114,7 @@ ORDER BY out.estimation ASC ${inSnippedLimit}`;
         }
 
         const sqlquery = `SELECT superToken, count(*) as numberTxs  FROM (SELECT agr.superToken, agr.sender, agr.receiver,
-CASE pmode
+CASE pppmode
 WHEN 0 THEN est.estimation
 WHEN 1 THEN est.estimationPleb
 WHEN 2 THEN est.estimationPirate

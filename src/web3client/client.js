@@ -185,9 +185,6 @@ class Client {
       ]
     );
 
-    let liquidation_period = 0;
-    let patrician_period = 0;
-
     //get liquidation period
     const resp = await this.gov.methods.getPPPConfig(this.sf._address, newSuperToken).call();
     superTokenHTTP.liquidation_period = parseInt(resp.liquidationPeriod);

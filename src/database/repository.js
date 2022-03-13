@@ -183,27 +183,6 @@ order by count(*) desc`;
             type: QueryTypes.SELECT
         });
     }
-
-    async getPICInfo(onlyTokens) {
-        let inSnipped = "";
-        if (onlyTokens !== undefined) {
-            inSnipped = "where address in (:tokens)";
-        }
-        const sqlquery = `SELECT address, symbol, name, pic from supertokens ${inSnipped}`;
-
-        if (inSnipped !== "") {
-            return this.app.db.query(sqlquery, {
-                replacements: {
-                    tokens: onlyTokens
-                },
-                type: QueryTypes.SELECT
-            });
-        }
-
-        return this.app.db.query(sqlquery, {
-            type: QueryTypes.SELECT
-        });
-    }
 }
 
 module.exports = Repository;

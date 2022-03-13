@@ -43,7 +43,7 @@ class Config {
       this.PIRATE = config.pirate === "true";
     } else {
       this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
-      this.OBSERVER = process.env.OBSERVER === "true";
+      this.OBSERVER = process.env.OBSERVER === "true"; // default: false
       this.MNEMONIC = process.env.MNEMONIC;
       this.MNEMONIC_INDEX = process.env.MNEMONIC_INDEX || 0;
       this.PRIVATE_KEY = process.env.PRIVATE_KEY;
@@ -64,7 +64,7 @@ class Config {
       this.METRICS_PORT = process.env.METRICS_PORT || 3000;
       this.FASTSYNC = process.env.FASTSYNC !== "false";  // default: true
       this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://ipfs.io/ipfs/";
-      this.PIRATE = process.env.PIRATE === "true";
+      this.PIRATE = process.env.PIRATE === "true"; // default: false
 
       // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
       this.CONCURRENCY = process.env.CONCURRENCY || 1;

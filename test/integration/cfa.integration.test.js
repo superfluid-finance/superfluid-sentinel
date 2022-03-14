@@ -209,7 +209,7 @@ describe("Integration scripts tests", () => {
       });
       await ganache.helper.timeTravelOnce(1);
       await bootNode();
-      const firstEstimation = await app.db.queries.getAddressEstimation(accounts[5]);
+      const firstEstimation = await app.db.queries.getAddressEstimations(accounts[5]);
       const updateData = protocolVars.cfa.methods.updateFlow(
         protocolVars.superToken._address,
         accounts[2],
@@ -222,7 +222,7 @@ describe("Integration scripts tests", () => {
         gas: 1000000
       });
       await ganache.helper.timeTravelUntil(1, 20);
-      const secondEstimation = await app.db.queries.getAddressEstimation(accounts[5]);
+      const secondEstimation = await app.db.queries.getAddressEstimations(accounts[5]);
       await app.shutdown();
       console.log("Estimation 1: ", firstEstimation[0].estimation);
       console.log("Estimation 2: ", secondEstimation[0].estimation);

@@ -51,7 +51,7 @@ class Repository {
         });
     }
 
-    async getAddressEstimation(address) {
+    async getAddressEstimations(address) {
         return this.app.db.models.AccountEstimationModel.findAll({
             attributes: ["address", "superToken", "estimation"],
             where:

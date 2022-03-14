@@ -173,7 +173,7 @@ describe("Agent configurations tests", () => {
                 gas: 1000000
             });
             while (true) {
-                const estimation = await app.db.queries.getAddressEstimation(accounts[0]);
+                const estimation = await app.db.queries.getAddressEstimations(accounts[0]);
                 if (estimation.length > 0) {
                     console.log(estimation);
                     break;

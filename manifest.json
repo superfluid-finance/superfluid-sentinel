@@ -6,64 +6,64 @@
       "name": "Ropsten",
       "epoch": 9400000,
       "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "cid": "QmeEc2eePLaSjvJ8xF2GwrH8ijX3gkXYbb52UVf23EpyZC"
+      "cid": "QmeXA7DXVjSi1m6AVgKfGXGoRmdzEVWtC61jiPG46CqgG4"
     },
     "4": {
       "name": "Rinkeby",
       "epoch": 7400000,
       "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "cid": "QmbDVHmVriqD6t6oW8dJAdZ9QqWMjEmzfwr8x1H59ajNEJ"
+      "cid": "QmbjBccKM4KpULfauknMfruZCsMiJcgzmhqjyxLg6kUFha"
     },
     "5": {
       "name": "Goerli",
       "epoch": 3500000,
       "batch": "0x48B6934B354666Daa1d9A4ccEE114873312acF55",
-      "cid": "QmUK2sai1fcmYksMYCGxG1Esqumt6LTtZuaL9821a2fHnN"
+      "cid": "Qmf8U7cRZcvqW7J8WYaZGG7whEWJfhjdPCyMQdK7EaesfW"
     },
     "42": {
       "name": "Kovan",
       "epoch": 23709362,
       "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "cid": "QmRWnCHWcmUiqSqFpVLguoXjebhyKHTjzyd1RDtCaYs98R"
+      "cid": "QmavpZdKJeRN3zk2VWxP6dj8zKGfKxDWPcWiFBqgS4DoWq"
     },
     "69": {
       "name": "Optimism (Kovan)",
       "epoch": 308821,
       "batch": "0x62C82F3b04705a8b54a60c6A9B782AFbe8081C40",
-      "cid": "QmfKWmbbxEZ3sb3oefif532WvBAeKaPWcgNPnLZbr8bes6"
+      "cid": "Qmf1L2Lw3z4WzqQRRw8jV43JtgVzAfFEHR81bavCV3bRuL"
     },
     "100": {
       "name": "Gnosis Chain",
       "epoch": 14845091,
       "batch": "0x7Ac49B1539C2580972D9B43b41a4ec93A4290cdF",
       "toga": "0xb7DE52F4281a7a276E18C40F94cd93159C4A2d22",
-      "cid": "QmVY5AmySFy6DY2WEwjLMakF4Pcv2LyXjY4qpVTNWC7aWc"
+      "cid": "QmYpvhjEw8jubkP9YMxmkiSf8Jbcthq3NV8auvcwZ4cTJR"
     },
     "137": {
       "name": "Polygon",
       "epoch": 11000000,
       "batch": "0xAB4075f621100563f4551C0Ca50944809b03E948",
       "toga": "0x6AEAeE5Fd4D05A741723D752D30EE4D72690A8f7",
-      "cid": "QmReCXMdjwEqZqs9bRuiVRzZRrL9LjpGMNU7RnRDxRMX8a"
+      "cid": "QmdcjBYuAZiW4Vm8TR6AEE6Ajt9LVLT5WvLL3Rqt5f46fC"
     },
     "43113": {
       "name": "Avalanche (Fuji)",
       "epoch": 3220231,
       "batch": "0xFabcf1239357D8051a8028222c28b0ffdc0F7398",
-      "cid": "QmXdfbYguwU6KdyfD5j2D4o62N5kKLvPFvJT9D4gRFw7co"
+      "cid": ""
     },
     "80001": {
       "name": "Mumbai (Polygon)",
       "epoch": 7295264,
       "batch": "0xf8A70a8589c579D3C169812b050C2B4475784EA9",
       "toga": "0xc301D28088d537E24c41A7AAd03896E7E16074f4",
-      "cid": "QmfK38XHRcxfAT8gnJN9Qd3yEaojB5Wc7xA7gipdBRbe7x"
+      "cid": "QmXhmMyzf2p4hBwytqCdqZioihqApvRtk3mx4kBrn7B3BV"
     },
     "421611": {
       "name": "Arbitrum (Rinkeby)",
       "epoch": 7309284,
       "batch": "0x00A1c6dB5287f09D9C3e99C2B74E03F4A7d2F545",
-      "cid": "QmaGyNqGZFYJrq786jW9toHDqzzeWdZKW24rswvbg5JNZR"
+      "cid": "QmREesEuHQXAi4FFkD36Wo1cca2pJPETjRfnZQ46BcyJUK"
     }
   }
 }

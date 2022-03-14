@@ -6,8 +6,8 @@ const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IIn
 const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
 const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
-const BatchContract = require("../inc/BatchLiquidator.json");
-const TogaContract = require("../inc/TOGA.json");
+const BatchContract = require("@superfluid-finance/ethereum-contracts/build/contracts/BatchLiquidator.json");
+const TogaContract = require("@superfluid-finance/ethereum-contracts/build/contracts/TOGA.json");
 const { wad4human } = require("@decentral.ee/web3-helpers");
 
 /*
@@ -84,7 +84,7 @@ class Client {
   async loadBatchContract () {
     try {
       if (this.app.config.BATCH_CONTRACT !== undefined) {
-        this.batch = new this.web3.eth.Contract(BatchContract, this.app.config.BATCH_CONTRACT);
+        this.batch = new this.web3.eth.Contract(BatchContract.abi, this.app.config.BATCH_CONTRACT);
       } else {
         this.app.logger.info("Batch Contract not found");
       }
@@ -97,7 +97,7 @@ class Client {
   async loadTogaContract () {
     try {
       if (this.app.config.TOGA_CONTRACT !== undefined) {
-        this.toga = new this.web3.eth.Contract(TogaContract, this.app.config.TOGA_CONTRACT);
+        this.toga = new this.web3.eth.Contract(TogaContract.abi, this.app.config.TOGA_CONTRACT);
       } else {
         this.app.logger.info("TOGA Contract not found");
       }
@@ -116,17 +116,9 @@ class Client {
         resolverAddress = SDKConfig(await this.getChainId()).resolverAddress;
       }
       const superfluidIdent = `Superfluid.${this.version}`;
-
-      this.resolver = new this.web3.eth.Contract(
-        IResolver.abi,
-        resolverAddress
-      );
+      this.resolver = new this.web3.eth.Contract(IResolver.abi,resolverAddress);
       const superfluidAddress = await this.resolver.methods.get(superfluidIdent).call();
-
-      this.sf = new this.web3.eth.Contract(
-        ISuperfluid.abi,
-        superfluidAddress
-      );
+      this.sf = new this.web3.eth.Contract(ISuperfluid.abi,superfluidAddress);
       const govAddress = await this.sf.methods.getGovernance().call();
       this.gov = new this.web3.eth.Contract(SuperfluidGovernance.abi, govAddress);
       const cfaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
@@ -192,6 +184,11 @@ class Client {
         superTokenHTTP.methods.symbol().call()
       ]
     );
+
+    //get liquidation period
+    const resp = await this.gov.methods.getPPPConfig(this.sf._address, newSuperToken).call();
+    superTokenHTTP.liquidation_period = parseInt(resp.liquidationPeriod);
+    superTokenHTTP.patrician_period = parseInt(resp.patricianPeriod);
     const superTokenAddress = await this.resolver.methods.get(
       `supertokens.${this.version}.${tokenSymbol}`
     ).call();
@@ -216,6 +213,8 @@ class Client {
       address: newSuperToken,
       symbol: tokenSymbol,
       name: tokenName,
+      liquidationPeriod: parseInt(resp.liquidationPeriod),
+      patricianPeriod: parseInt(resp.patricianPeriod),
       listed: isListed
     });
   }
@@ -297,6 +296,7 @@ class Client {
     this._testMode = flag;
     this._testOption = options;
   }
+
 }
 
 module.exports = Client;

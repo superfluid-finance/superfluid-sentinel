@@ -46,9 +46,14 @@ class Queues {
               address: task.account,
               superToken: task.token,
               totalNetFlowRate: estimationData.totalNetFlowRate,
-              totalBalance: estimationData.totalBalance,
-              zestimation: new Date(estimationData.estimation).getTime(),
-              zestimationHuman: estimationData.estimation,
+              availableBalance: estimationData.availableBalance,
+              totalCFADeposit: estimationData.totalCFADeposit,
+              estimation: new Date(estimationData.estimation).getTime(),
+              estimationPleb: new Date(estimationData.estimationPleb).getTime(),
+              estimationPirate: new Date(estimationData.estimationPirate).getTime(),
+              estimationHuman: estimationData.estimation,
+              estimationHumanPleb:estimationData.estimationPleb,
+              estimationHumanPirate: estimationData.estimationPirate,
               blockNumber: task.blockNumber
             });
             const estimationOutput = new Date(estimationData.estimation).getTime() > 0 ? estimationData.estimation : "no estimation found";
@@ -106,9 +111,8 @@ class Queues {
 
           if (allFlowUpdatedEvents.length === 0) {
             task.self.app.logger.debug(`Didn't find FlowUpdated for sender: ${task.account} in blockNumber: ${task.blockNumber} / blockHash ${task.blockHash}`);
-          } else {
-            task.self.app.logger.debug(allFlowUpdatedEvents);
           }
+
           for (const event of allFlowUpdatedEvents) {
             await task.self.app.db.models.AgreementModel.upsert({
               agreementId: event.agreementId,

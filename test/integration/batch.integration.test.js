@@ -31,57 +31,18 @@ const deployBatchContract = async () => {
   }
 };
 
-const bootNode = async (delayParam = 0, maxTxNumber) => {
-  app = new App({
-    http_rpc_node: "http://127.0.0.1:8545",
-    mnemonic: "clutch mutual favorite scrap flag rifle tone brown forget verify galaxy return",
-    mnemonic_index: 100,
-    epoch_block: 0,
-    db_path: "datadir/testing/test.sqlite",
-    protocol_release_version: "test",
-    tx_timeout: 20,
-    max_query_block_range: 500000,
-    max_gas_price: 4000000000,
-    concurrency: 1,
-    cold_boot: 1,
-    only_listed_tokens: 1,
-    number_retries: 3,
-    additional_liquidation_delay: delayParam,
-    block_offset: 1,
-    liquidation_run_every: 30000,
-    batch_contract: batchContract._address,
-    max_tx_number: maxTxNumber,
-    fastsync: "false"
-  });
+const bootNode = async (config) => {
+  const sentinelConfig = protocolHelper.getSentinelConfig(config);
+  app = new App(sentinelConfig);
   app.start();
   while (!app.isInitialized()) {
-    await delay(3000);
+    await protocolHelper.timeout(3000);
   }
 };
 
 const closeNode = async (force = false) => {
   if (app !== undefined) {
     return app.shutdown(force);
-  }
-};
-
-const waitForEventAtSameBlock = async (eventName, numberOfEvents, blockNumber) => {
-  while (true) {
-    try {
-      console.log(`checking block: ${blockNumber}`);
-      const events = await protocolVars.superToken.getPastEvents(eventName, {
-        fromBlock: blockNumber,
-        toBlock: blockNumber
-      });
-      if (events.length === numberOfEvents) {
-        return Number(events[0].blockNumber);
-      }
-      await delay(1000);
-      await ganache.helper.timeTravelOnce(1, app, true);
-      blockNumber += 1;
-    } catch (err) {
-      exitWithError(err);
-    }
   }
 };
 
@@ -106,7 +67,10 @@ describe("Integration scripts tests", () => {
   });
 
   after(async () => {
-    closeNode(true);
+    if(!app._isShutdown) {
+      await closeNode(true);
+    }
+    await ganache.close();
   });
 
   it("Send a batch Liquidation to close multi streams", async () => {
@@ -152,10 +116,10 @@ describe("Integration scripts tests", () => {
         from: accounts[5],
         gas: 1000000
       });
-      await bootNode(-900);
+      await bootNode({batch_contract: batchContract._address, polling_interval: 1, max_tx_number: 5});
       await ganache.helper.timeTravelOnce(1000, app, true);
-      const result = await waitForEventAtSameBlock("AgreementLiquidatedBy", 5, tx.blockNumber);
-      await closeNode();
+      const result = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedV2", 5, tx.blockNumber);
+      await app.shutdown();
       expect(result).gt(tx.blockNumber);
     } catch (err) {
       exitWithError(err);
@@ -205,11 +169,11 @@ describe("Integration scripts tests", () => {
         from: accounts[5],
         gas: 1000000
       });
-      await bootNode(-900, 3);
+      await bootNode({batch_contract: batchContract._address, polling_interval: 1, max_tx_number: 3});
       await ganache.helper.timeTravelOnce(1000, app, true);
-      const result1 = await waitForEventAtSameBlock("AgreementLiquidatedBy", 3, tx.blockNumber);
-      const result2 = await waitForEventAtSameBlock("AgreementLiquidatedBy", 2, result1);
-      await closeNode();
+      const result1 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedV2", 3, tx.blockNumber);
+      const result2 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedV2", 2, result1);
+      await app.shutdown();
       expect(result1).gt(tx.blockNumber);
       expect(result2).gt(result1);
     } catch (err) {
@@ -249,10 +213,11 @@ describe("Integration scripts tests", () => {
         from: accounts[5],
         gas: 1000000
       });
-      await bootNode(-900, 10);
+      await bootNode({batch_contract: batchContract._address, polling_interval: 1, max_tx_number: 10});
       await ganache.helper.timeTravelOnce(1000, app, true);
-      const result1 = await waitForEventAtSameBlock("AgreementLiquidatedBy", 5, tx.blockNumber);
-      const result2 = await waitForEventAtSameBlock("AgreementLiquidatedBy", 5, result1 + 1);
+      const result1 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedV2", 5, tx.blockNumber);
+      const result2 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedV2", 5, result1 + 1);
+      await app.shutdown();
       expect(result1).gt(tx.blockNumber);
       expect(result2).gt(result1);
     } catch (err) {

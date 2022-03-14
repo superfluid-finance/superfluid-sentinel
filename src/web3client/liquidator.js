@@ -12,12 +12,14 @@ class Liquidator {
         return;
       }
       this.app.logger.debug(`running liquidation job`);
-      const checkDate = this.app.time.getTimeWithDelay(0);
+      const checkDate = this.app.time.getTimeWithDelay(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
       let haveBatchWork = [];
       // if we have a batchLiquidator contract, use batch calls
       if (this.app.config.BATCH_CONTRACT !== undefined) {
-        haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate);
-        this.app.logger.debug(JSON.stringify(haveBatchWork));
+        haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate, this.app.config.TOKENS);
+        if(haveBatchWork.length > 0) {
+          this.app.logger.debug(JSON.stringify(haveBatchWork));
+        }
       }
       if (haveBatchWork.length > 0) {
         await this.multiTermination(haveBatchWork, checkDate);
@@ -39,10 +41,18 @@ class Liquidator {
     };
   }
 
-  async isPossibleToClose (superToken, sender, receiver) {
-    // Note: If flow does not exist on the network, we are going to remove from DB
-    return (await this.app.protocol.checkFlow(superToken, sender, receiver)) !== undefined &&
-      (await this.app.protocol.isAccountCriticalNow(superToken, sender));
+  async isPossibleToClose (superToken, sender, receiver, pppmode) {
+    const checkFlow = await this.app.protocol.checkFlow(superToken, sender, receiver);
+    const isCritical = await this.app.protocol.isAccountCriticalNow(superToken, sender);
+    if(pppmode === this.app.protocol.PPPMode.Patrician) {
+      return checkFlow !== undefined && isCritical;
+    } else if(pppmode === this.app.protocol.PPPMode.Pleb) {
+      const isPatrician = await this.app.protocol.isPatricianPeriodNow(superToken, sender);
+      return checkFlow !== undefined && isCritical && !isPatrician.isPatricianPeriod;
+    } else {
+      const isSolvent = await this.app.protocol.isAccountSolventNow(superToken, sender);
+      return checkFlow !== undefined && isCritical && !isSolvent;
+    }
   }
 
   async singleTerminations (work) {
@@ -50,7 +60,7 @@ class Liquidator {
     const chainId = await this.app.client.getChainId();
     const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
     for (const job of work) {
-      if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver)) {
+      if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver, job.pppmode)) {
         try {
           const tx = this.app.protocol.generateDeleteFlowABI(job.superToken, job.sender, job.receiver);
           const BaseGasPrice = await this.app.gasEstimator.getGasPrice();
@@ -95,7 +105,7 @@ class Liquidator {
       );
 
       for (const flow of streams) {
-        if (await this.isPossibleToClose(flow.superToken, flow.sender, flow.receiver)) {
+        if (await this.isPossibleToClose(flow.superToken, flow.sender, flow.receiver, flow.pppmode)) {
           senders.push(flow.sender);
           receivers.push(flow.receiver);
         } else {
@@ -161,10 +171,10 @@ class Liquidator {
     // When estimate gas we get a preview of what can happen when send the transaction. Depending on the error we should execute specific logic
     const gas = await this.app.gasEstimator.getGasLimit(wallet, txObject);
     if (gas.error !== undefined) {
-      if (gas.error instanceof this.app.Errors.ExecutionReverted) {
+      if (gas.error instanceof this.app.Errors.SmartContractError) {
+        console.error(`GasEstimation - ${gas.error}`)
         await this.app.protocol.checkFlow(txObject.superToken, txObject.flowSender, txObject.flowReceiver);
       }
-
       return {
         error: gas.error,
         tx: undefined
@@ -180,7 +190,7 @@ class Liquidator {
         txObject.retry++;
         return this.sendWithRetry(wallet, txObject, ms);
       }
-    if(error instanceof this.app.Errors.ExecutionReverted) {
+    if(error instanceof this.app.Errors.SmartContractError) {
         this.app.logger.warn(error.originalMessage);
         return {
           error: error,

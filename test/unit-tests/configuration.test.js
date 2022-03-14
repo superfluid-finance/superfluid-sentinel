@@ -38,6 +38,7 @@ const populateEnvVariables = () => {
   process.env.OBSERVER = true;
   process.env.FASTSYNC = false;
   process.env.IPFS_GATEWAY = "http://localhost:8080/ipfs/";
+  process.env.PIRATE = false;
   return {
     HTTP_RPC_NODE: process.env.HTTP_RPC_NODE,
     MNEMONIC: process.env.MNEMONIC,
@@ -67,7 +68,8 @@ const populateEnvVariables = () => {
     MAX_TX_NUMBER: process.env.MAX_TX_NUMBER,
     OBSERVER: process.env.OBSERVER,
     FASTSYNC: process.env.FASTSYNC,
-    IPFS_GATEWAY: process.env.IPFS_GATEWAY
+    IPFS_GATEWAY: process.env.IPFS_GATEWAY,
+    PIRATE: process.env.PIRATE
   };
 };
 
@@ -101,6 +103,7 @@ const removeEnvVariables = () => {
   delete process.env.OBSERVER;
   delete process.env.FASTSYNC;
   delete process.env.IPFS_GATEWAY;
+  delete process.env.PIRATE;
 };
 
 describe("Test Agent user configurations", () => {
@@ -137,6 +140,7 @@ describe("Test Agent user configurations", () => {
       expect(envObj.OBSERVER.toString()).to.equal(config.OBSERVER.toString());
       expect(envObj.FASTSYNC.toString()).to.equal(config.FASTSYNC.toString());
       expect(envObj.IPFS_GATEWAY.toString()).to.equal(config.IPFS_GATEWAY.toString());
+      expect(envObj.PIRATE.toString()).to.equal(config.PIRATE.toString());
       removeEnvVariables();
     } catch (err) {
       exitWithError(err);

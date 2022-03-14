@@ -15,12 +15,6 @@ class EVM extends BaseError {
   }
 }
 
-class ExecutionReverted extends EVM {
-  constructor(description, originalMessage) {
-    super(false, description, originalMessage);
-  }
-}
-
 class GasBlockLimitError extends EVM {
   constructor(description, originalMessage) {
     super(false, description, originalMessage );
@@ -84,8 +78,9 @@ function EVMErrorParser(err) {
     }
 
     if(message.includes("execution reverted") ||
-        err.message.toLowerCase().includes("reverted by the evm")
-    ) {
+        err.message.toLowerCase().includes("reverted by the evm") ||
+        err.message.toLowerCase().includes("vm exception"))
+    {
       return new SmartContractError("execution reverted", err.message);
     }
     //don't default to BaseError in the case on custom error
@@ -99,7 +94,6 @@ function EVMErrorParser(err) {
 module.exports = {
   EVMErrorParser,
   TimeoutError,
-  ExecutionReverted,
   GasBlockLimitError,
   TxUnderpricedError,
   TxAlreadyKnownError,

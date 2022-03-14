@@ -7,7 +7,7 @@ class Config {
       // used by tests
       // TODO: make less redundant
       this.RUN_TEST_ENV = !(config.run_test_env === "false");
-      this.LOG_LEVEL = "debug";
+      this.LOG_LEVEL = config.log_level;
       this.HTTP_RPC_NODE = config.http_rpc_node;
       this.OBSERVER = config.observer === "true";
       this.MNEMONIC = config.mnemonic;
@@ -40,9 +40,10 @@ class Config {
       this.TOGA_CONTRACT = config.toga_contract;
       this.FASTSYNC = config.fastsync !== "false";
       this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://ipfs.io/ipfs/"
+      this.PIRATE = config.pirate === "true";
     } else {
       this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
-      this.OBSERVER = process.env.OBSERVER === "true";
+      this.OBSERVER = process.env.OBSERVER === "true"; // default: false
       this.MNEMONIC = process.env.MNEMONIC;
       this.MNEMONIC_INDEX = process.env.MNEMONIC_INDEX || 0;
       this.PRIVATE_KEY = process.env.PRIVATE_KEY;
@@ -63,6 +64,7 @@ class Config {
       this.METRICS_PORT = process.env.METRICS_PORT || 3000;
       this.FASTSYNC = process.env.FASTSYNC !== "false";  // default: true
       this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://ipfs.io/ipfs/";
+      this.PIRATE = process.env.PIRATE === "true"; // default: false
 
       // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
       this.CONCURRENCY = process.env.CONCURRENCY || 1;
@@ -116,6 +118,7 @@ class Config {
       MAX_GAS_PRICE: this.MAX_GAS_PRICE,
       RETRY_GAS_MULTIPLIER: this.RETRY_GAS_MULTIPLIER,
       PIC: this.PIC,
+      PIRATE: this.PIRATE,
       CONCURRENCY: this.CONCURRENCY,
       ONLY_LISTED_TOKENS: this.ONLY_LISTED_TOKENS,
       NUM_RETRIES: this.NUM_RETRIES,

@@ -13,6 +13,7 @@ class Report {
   }
 
   async fullReport () {
+    const rpcProvider = (new URL(this.app.config.HTTP_RPC_NODE)).hostname;
     const rpcIsSyncing = await this.app.client.web3.eth.isSyncing();
     const databaseOk = await this.checkDatabase();
     const estimationQueueSize = this.app.queues.getEstimationQueueLength();
@@ -34,6 +35,7 @@ class Report {
       network: {
         chainId: await this.app.client.getChainId(),
         rpc: {
+          rpcProvider: rpcProvider,
           totalRequests: this.app.client.getTotalRequests(),
           isSyncing: rpcIsSyncing,
           lastTimeNewBlocks: lastTimeNewBlocks,

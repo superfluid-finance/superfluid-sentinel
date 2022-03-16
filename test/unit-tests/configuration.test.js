@@ -39,6 +39,7 @@ const populateEnvVariables = () => {
   process.env.FASTSYNC = false;
   process.env.IPFS_GATEWAY = "http://localhost:8080/ipfs/";
   process.env.PIRATE = false;
+  process.env.TELEMETRY = false;
   return {
     HTTP_RPC_NODE: process.env.HTTP_RPC_NODE,
     MNEMONIC: process.env.MNEMONIC,
@@ -69,7 +70,8 @@ const populateEnvVariables = () => {
     OBSERVER: process.env.OBSERVER,
     FASTSYNC: process.env.FASTSYNC,
     IPFS_GATEWAY: process.env.IPFS_GATEWAY,
-    PIRATE: process.env.PIRATE
+    PIRATE: process.env.PIRATE,
+    TELEMETRY: process.env.TELEMETRY
   };
 };
 
@@ -104,6 +106,7 @@ const removeEnvVariables = () => {
   delete process.env.FASTSYNC;
   delete process.env.IPFS_GATEWAY;
   delete process.env.PIRATE;
+  delete process.env.TELEMETRY;
 };
 
 describe("Test Agent user configurations", () => {
@@ -141,6 +144,7 @@ describe("Test Agent user configurations", () => {
       expect(envObj.FASTSYNC.toString()).to.equal(config.FASTSYNC.toString());
       expect(envObj.IPFS_GATEWAY.toString()).to.equal(config.IPFS_GATEWAY.toString());
       expect(envObj.PIRATE.toString()).to.equal(config.PIRATE.toString());
+      expect(envObj.TELEMETRY.toString()).to.equal(config.TELEMETRY.toString());
       removeEnvVariables();
     } catch (err) {
       exitWithError(err);

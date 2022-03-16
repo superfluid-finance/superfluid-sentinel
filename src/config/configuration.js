@@ -39,8 +39,10 @@ class Config {
       this.ONLY_LISTED_TOKENS = config.only_listed_tokens === "true";
       this.TOGA_CONTRACT = config.toga_contract;
       this.FASTSYNC = config.fastsync !== "false";
-      this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://ipfs.io/ipfs/"
+      this.IPFS_GATEWAY = config.ipfs_gateway || "https://ipfs.io/ipfs/"
       this.PIRATE = config.pirate === "true";
+      this.TELEMETRY = config.telemetry !== "false";
+      this.TELEMETRY_ENDPOINT = config.telemetry_endpoint || "https://localhost:3333/";
     } else {
       this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
       this.OBSERVER = process.env.OBSERVER === "true"; // default: false
@@ -65,6 +67,8 @@ class Config {
       this.FASTSYNC = process.env.FASTSYNC !== "false";  // default: true
       this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://ipfs.io/ipfs/";
       this.PIRATE = process.env.PIRATE === "true"; // default: false
+      this.TELEMETRY = process.env.TELEMETRY !== "false"; // default: true
+      this.TELEMETRY_ENDPOINT = process.env.TELEMETRY_ENDPOINT || undefined; //TODO: fix when endpoint online
 
       // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
       this.CONCURRENCY = process.env.CONCURRENCY || 1;
@@ -109,6 +113,7 @@ class Config {
       HTTP_RPC_NODE: this.HTTP_RPC_NODE,
       FASTSYNC: this.FASTSYNC,
       OBSERVER: this.OBSERVER,
+      TELEMETRY: this.TELEMETRY,
       MAX_QUERY_BLOCK_RANGE: this.MAX_QUERY_BLOCK_RANGE,
       TOKENS: this.TOKENS,
       DB_PATH: this.DB,
@@ -131,7 +136,7 @@ class Config {
       LOG_LEVEL: this.LOG_LEVEL,
       POLLING_INTERVAL: this.POLLING_INTERVAL,
       BLOCK_OFFSET: this.BLOCK_OFFSET,
-      MAX_TX_NUMBER: this.MAX_TX_NUMBER
+      MAX_TX_NUMBER: this.MAX_TX_NUMBER,
     };
   }
 }

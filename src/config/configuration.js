@@ -43,6 +43,7 @@ class Config {
       this.PIRATE = config.pirate === "true";
       this.TELEMETRY = config.telemetry !== "false";
       this.TELEMETRY_ENDPOINT = config.telemetry_endpoint || "https://localhost:3333/";
+      this.TELEMETRY_INTERVAL = config.telemetry_interval || 43200000;
     } else {
       this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
       this.OBSERVER = process.env.OBSERVER === "true"; // default: false
@@ -69,6 +70,7 @@ class Config {
       this.PIRATE = process.env.PIRATE === "true"; // default: false
       this.TELEMETRY = process.env.TELEMETRY !== "false"; // default: true
       this.TELEMETRY_ENDPOINT = process.env.TELEMETRY_ENDPOINT || undefined; //TODO: fix when endpoint online
+      this.TELEMETRY_INTERVAL = 43200000; //Hard coded on purpose
 
       // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
       this.CONCURRENCY = process.env.CONCURRENCY || 1;

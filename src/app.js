@@ -124,6 +124,8 @@ class App {
                     counter--;
                 }
             }
+            this.logger.info(`app.shutdown() - clear interval`);
+            clearInterval(this._telemetryIntervalId);
             this.logger.info(`app.shutdown() - closing database`);
             await this.db.close();
         } catch (err) {
@@ -196,9 +198,9 @@ class App {
             if (this.config.METRICS === true) {
                 this.timer.startAfter(this.server);
             }
-            // start reporting services every 12 hours
+            // start reporting services every 12 hours.
             if(this.config.TELEMETRY) {
-                this.run(this.telemetry, 43200000);
+                this._telemetryIntervalId = this.timer.triggerInterval(this.telemetry.start, this.config.TELEMETRY_INTERVAL);
             }
             //from this point on, sentinel is considered initialized.
             this._isInitialized = true;

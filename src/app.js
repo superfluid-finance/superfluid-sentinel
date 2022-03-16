@@ -14,8 +14,9 @@ const Bootstrap = require("./boot/bootstrap.js");
 
 const Repository = require("./database/repository");
 const utils = require("./utils/utils.js");
-const HTTPServer = require("./httpserver/server");
-const Report = require("./httpserver/report");
+const HTTPServer = require("./services/httpserver/server");
+const Report = require("./services/httpserver/report");
+const Telemetry = require("./services/telemetry/telemetry");
 const Errors = require("./utils/errors/errors");
 
 class App {
@@ -55,6 +56,7 @@ class App {
 
         this.healthReport = new Report(this);
         this.server = new HTTPServer(this);
+        this.telemetry = new Telemetry(this);
         this.timer = new Timer();
 
         this._isShutdown = false;
@@ -122,6 +124,8 @@ class App {
                     counter--;
                 }
             }
+            this.logger.info(`app.shutdown() - clear interval`);
+            clearInterval(this._telemetryIntervalId);
             this.logger.info(`app.shutdown() - closing database`);
             await this.db.close();
         } catch (err) {
@@ -193,6 +197,10 @@ class App {
             // start http server to serve node health reports and dashboard
             if (this.config.METRICS === true) {
                 this.timer.startAfter(this.server);
+            }
+            // start reporting services every 12 hours.
+            if(this.config.TELEMETRY) {
+                this._telemetryIntervalId = this.timer.triggerInterval(this.telemetry.start, this.config.TELEMETRY_INTERVAL);
             }
             //from this point on, sentinel is considered initialized.
             this._isInitialized = true;

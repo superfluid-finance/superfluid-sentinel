@@ -20,6 +20,12 @@
       "batch": "0x48B6934B354666Daa1d9A4ccEE114873312acF55",
       "cid": "Qmf8U7cRZcvqW7J8WYaZGG7whEWJfhjdPCyMQdK7EaesfW"
     },
+    "10": {
+      "name": "Optimism",
+      "epoch": 4300000,
+      "batch": "0xEe1bd2C743BF40B1206B090Fa9aB27A0C57d7B90",
+      "toga": "0x3D9A67D5ec1E72CEcA8157e028855056786b6159"
+    },
     "42": {
       "name": "Kovan",
       "epoch": 23709362,
@@ -45,6 +51,12 @@
       "batch": "0xAB4075f621100563f4551C0Ca50944809b03E948",
       "toga": "0x6AEAeE5Fd4D05A741723D752D30EE4D72690A8f7",
       "cid": "QmdcjBYuAZiW4Vm8TR6AEE6Ajt9LVLT5WvLL3Rqt5f46fC"
+    },
+    "42161": {
+      "name": "arbitrum-one",
+      "epoch": 7600000,
+      "batch": "0xA87F76e99f6C8Ff8996d14f550ceF47f193D9A09",
+      "toga": "0xEe1bd2C743BF40B1206B090Fa9aB27A0C57d7B90"
     },
     "43113": {
       "name": "Avalanche (Fuji)",

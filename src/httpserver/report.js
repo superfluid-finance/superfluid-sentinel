@@ -1,6 +1,7 @@
 class Report {
   constructor (app) {
     this.app = app;
+    this._isSyncingMethodExist = true; //default we will try to call web3.eth.isSyncing.
   }
 
   async checkDatabase () {
@@ -14,12 +15,16 @@ class Report {
 
   async fullReport () {
     let rpcIsSyncing = false;
-    try {
-      // not available on all networks
-      rpcIsSyncing = await this.app.client.web3.eth.isSyncing();
-    } catch(e) {
-      console.error(`web3.eth.isSyncing failed: ${e}`);
+    // not available on all networks
+    if(this._isSyncingMethodExist) {
+      try {
+        rpcIsSyncing = await this.app.client.web3.eth.isSyncing();
+      } catch(err) {
+        this._isSyncingMethodExist = false;
+        this.app.logger.error(`report.fullReport() - web3.eth.isSyncing failed: ${err}`);
+      }
     }
+
     const databaseOk = await this.checkDatabase();
     const estimationQueueSize = this.app.queues.getEstimationQueueLength();
     const agreementQueueSize = this.app.queues.getAgreementQueueLength();
@@ -43,7 +48,8 @@ class Report {
           totalRequests: this.app.client.getTotalRequests(),
           isSyncing: rpcIsSyncing,
           lastTimeNewBlocks: lastTimeNewBlocks,
-          waitingForNewBlocksSince: waitingForNewBlocksSince
+          waitingForNewBlocksSince: waitingForNewBlocksSince,
+          msg: this._isSyncingMethodExist ? "" : "RPC don't implement web3.eth.isSyncing",
         }
       },
       account: {

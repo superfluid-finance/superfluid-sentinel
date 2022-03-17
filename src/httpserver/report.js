@@ -13,7 +13,13 @@ class Report {
   }
 
   async fullReport () {
-    const rpcIsSyncing = await this.app.client.web3.eth.isSyncing();
+    let rpcIsSyncing = false;
+    try {
+      // not available on all networks
+      rpcIsSyncing = await this.app.client.web3.eth.isSyncing();
+    } catch(e) {
+      console.error(`web3.eth.isSyncing failed: ${e}`);
+    }
     const databaseOk = await this.checkDatabase();
     const estimationQueueSize = this.app.queues.getEstimationQueueLength();
     const agreementQueueSize = this.app.queues.getAgreementQueueLength();

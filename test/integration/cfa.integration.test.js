@@ -262,6 +262,39 @@ describe("Integration scripts tests", () => {
     }
   });
 
+  it("Should make liquidation as Pleb even if netFlowRate is smaller than flowRate", async () => {
+    try {
+      const flowData = protocolVars.cfa.methods.createFlow(
+          protocolVars.superToken._address,
+          accounts[2],
+          "15000000000000000000",
+          "0x"
+      ).encodeABI();
+      await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData, "0x").send({
+        from: accounts[0],
+        gas: 1000000
+      });
+      const flowData2 = protocolVars.cfa.methods.createFlow(
+          protocolVars.superToken._address,
+          accounts[0],
+          "13000000000000000000",
+          "0x"
+      ).encodeABI();
+      await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, flowData2, "0x").send({
+        from: accounts[2],
+        gas: 1000000
+      });
+      await ganache.helper.timeTravelOnce(1000);
+      await bootNode({log_level:"debug"});
+      await ganache.helper.timeTravelOnce(3900, true);
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+      await app.shutdown();
+      protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "1");
+    } catch(err) {
+
+    }
+  });
+
   it("Should make liquidation wait until Pleb slot", async() => {
     try {
       const data = protocolVars.cfa.methods.createFlow(
@@ -281,7 +314,7 @@ describe("Integration scripts tests", () => {
         from: accounts[0],
         gas: 1000000
       });
-      await ganache.helper.timeTravelOnce(850);
+      await ganache.helper.timeTravelOnce(1000);
       const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
       await app.shutdown();
       protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "1");

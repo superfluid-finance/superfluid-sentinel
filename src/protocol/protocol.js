@@ -60,20 +60,31 @@ class Protocol {
     }
   }
 
+  async getMaximumFlowRateFromDeposit(superToken, deposit) {
+    try {
+      this.app.client.addTotalRequest();
+      return await this.app.client.CFAv1.methods.getMaximumFlowRateFromDeposit(superToken, deposit).call();
+    } catch (err) {
+      throw Error(`Protocol.getMaximumFlowRateFromDeposit(): ${err}`);
+    }
+  }
+
   async liquidationData (token, account) {
     try {
-      this.app.client.addTotalRequest(2);
+      this.app.client.addTotalRequest(3);
       let arrPromise = [
         this.getUserNetFlow(token, account),
         this.getAccountRealtimeBalanceOfNow(token, account)
       ];
       arrPromise = await Promise.all(arrPromise);
-      return this._getLiquidationData(
+      const totalCFAOutFlowRate = await this.getMaximumFlowRateFromDeposit(token, arrPromise[1].deposit);
+      return await this._getLiquidationData(
         new BN(arrPromise[0]),
         new BN(arrPromise[1].availableBalance),
         new BN(arrPromise[1].deposit),
           this.app.client.superTokens[token.toLowerCase()].liquidation_period,
-          this.app.client.superTokens[token.toLowerCase()].patrician_period
+          this.app.client.superTokens[token.toLowerCase()].patrician_period,
+          totalCFAOutFlowRate
       );
     } catch (err) {
       console.error(err);
@@ -193,10 +204,11 @@ class Protocol {
     }
   }
 
-  _getLiquidationData (totalNetFlowRate, availableBalance, deposit, liqPeriod, plebPeriod) {
+  async _getLiquidationData (totalNetFlowRate, availableBalance, deposit, liquidationPeriod, patricianPeriod, flowRateFromDeposit, print) {
 
     const result = {
       totalNetFlowRate: totalNetFlowRate.toString(),
+      flowRateFromDeposit: flowRateFromDeposit.toString(),
       availableBalance: availableBalance.toString(),
       totalCFADeposit: deposit.toString(),
       estimation: new Date(0),
@@ -205,12 +217,23 @@ class Protocol {
     };
 
     if (totalNetFlowRate.lt(new BN(0))) {
+
+      const PP_LP = patricianPeriod / liquidationPeriod; //float
+      const flowRateFromDepositBN = new BN(flowRateFromDeposit);
+      const CDP = deposit * (PP_LP);
       result.estimation = this._calculateDatePoint(availableBalance, totalNetFlowRate);
-      const liquidation_period = new BN(liqPeriod);
-      const patrician_period = new BN(plebPeriod);
-      const propDeposit = patrician_period.mul(deposit).div(liquidation_period);
-      result.estimationPleb = this._calculateDatePoint((availableBalance.add(propDeposit)), totalNetFlowRate);
-      result.estimationPirate = this._calculateDatePoint(availableBalance.add(deposit), totalNetFlowRate);
+      result.estimationPleb = this._calculateDatePoint(availableBalance.add(new BN(CDP.toString())), flowRateFromDepositBN);
+      result.estimationPirate = this._calculateDatePoint(availableBalance.add(deposit), flowRateFromDepositBN);
+      /*
+      //result checker
+      //1 - simple case, we don't case about deposit. Only if balance is going to negative.
+      const baseEstimation = this._calculateDatePoint(availableBalance, totalNetFlowRate);
+      result.estimation = baseEstimation;
+      //2 - Using baseEstimation we add patrician period.
+      result.estimationPleb = new Date(baseEstimation.getTime() + (Number(patricianPeriod) * 1000));
+      //3 - Using baseEstimation we add liquidation period.
+      result.estimationPirate = new Date(baseEstimation.getTime() + (Number(liquidationPeriod) * 1000))
+      */
     }
 
     return result;
@@ -220,7 +243,6 @@ class Protocol {
     if(balance.lt(new BN(0))) {
       return new Date();
     }
-
     const seconds = isFinite(balance.div(netFlowRate)) ? balance.div(netFlowRate) : 0;
     const roundSeconds = Math.round(Math.abs(isNaN(seconds) ? 0 : seconds));
     const estimation = new Date();

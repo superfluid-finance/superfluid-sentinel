@@ -7,6 +7,7 @@ FROM node:14-alpine@sha256:7bcf853eeb97a25465cb385b015606c22e926f548cbd117f85b71
 ENV NODE_ENV=production
 
 WORKDIR /app
+RUN apk add --update --no-cache g++ make python3 && ln -sf python3 /usr/bin/python
 
 COPY ["package.json", "package-lock.json*", "./"]
 RUN npm ci --only=production

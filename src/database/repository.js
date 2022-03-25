@@ -128,7 +128,6 @@ group by out.superToken
 having count(*) > 1
 order by count(*) desc`;
 
-
         if (inSnipped !== "") {
             return this.app.db.query(sqlquery, {
                 replacements: {

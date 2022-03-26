@@ -49,7 +49,7 @@ class Report {
           isSyncing: rpcIsSyncing,
           lastTimeNewBlocks: lastTimeNewBlocks,
           waitingForNewBlocksSince: waitingForNewBlocksSince,
-          msg: this._isSyncingMethodExist ? "" : "RPC don't implement web3.eth.isSyncing",
+          msg: this._isSyncingMethodExist ? "" : "RPC doesn't implement web3.eth.isSyncing",
         }
       },
       account: {

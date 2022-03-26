@@ -128,7 +128,15 @@ group by out.superToken
 having count(*) > 1
 order by count(*) desc`;
 
-
+        if (inSnipped !== "") {
+            return this.app.db.query(sqlquery, {
+                replacements: {
+                    dt: checkDate,
+                    tokens: onlyTokens
+                },
+                type: QueryTypes.SELECT
+            });
+        }
         return this.app.db.query(sqlquery, {
             replacements: {dt: checkDate},
             type: QueryTypes.SELECT

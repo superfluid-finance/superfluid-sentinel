@@ -65,7 +65,7 @@ program
         if (args.observer !== undefined) {
             process.env.OBSERVER = "true";
         }
-        if(args.noFastsync !== undefined) {
+        if(args.fastsync === false) { // the prefix no- is treated differently
             process.env.FASTSYNC = "false";
         }
     });

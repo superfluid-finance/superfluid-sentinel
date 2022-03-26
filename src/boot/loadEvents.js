@@ -65,6 +65,8 @@ class LoadEvents {
           } catch (err) {
             keepTrying++;
             task.self.app.logger.error(err);
+            // this often happens due to RPC rate limiting, thus it's wise to add some delay here
+            await this.app.timer.timeout(keepTrying * 1000); // linear backoff
             if (keepTrying > task.self.app.config.NUM_RETRIES) {
               process.exit(1);
             }

@@ -1,6 +1,6 @@
 {
   "name": "superfluid-sentinel",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "description": "Superfluid Sentinel",
   "main": "main.js",
   "scripts": {

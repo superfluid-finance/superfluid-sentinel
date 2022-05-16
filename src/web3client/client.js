@@ -1,5 +1,4 @@
 const Web3 = require("web3");
-const SDKConfig = require("@superfluid-finance/js-sdk/src/getConfig.js");
 const IResolver = require("@superfluid-finance/ethereum-contracts/build/contracts/IResolver.json");
 const ICFA = require("@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json");
 const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IInstantDistributionAgreementV1.json");
@@ -22,14 +21,15 @@ class Client {
     this.superTokens = new Map();
     this.superTokensAddresses = [];
     this.version = this.app.config.PROTOCOL_RELEASE_VERSION;
-    this.isInitialized = false;
+    this.isConnected = false;
     this.totalRequests = 0;
     this.totalSkippedBlockRequests = 0;
   }
 
-  async initialize () {
+  async connect () {
     try {
-      if(!this.app.config.HTTP_RPC_NODE) throw new Error("No HTTP RPC set");
+      this.app.logger.info(`Client connecting to RPC...`);
+      if(!this.app.config.HTTP_RPC_NODE) throw new Error(`Client.connect(): no HTTP RPC set`);
       const web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_RPC_NODE, {
         keepAlive: true
       });
@@ -37,7 +37,8 @@ class Client {
       this.web3.eth.currentProvider.sendAsync = function (payload, callback) {
         return this.send(payload, callback);
       };
-      this.isInitialized = true;
+      this.isConnected = true;
+      this.app.logger.info(`Client connected to RPC`);
     } catch (err) {
       this.app.logger.error(err);
       throw new Error(`Client.initialize(): ${err}`);
@@ -46,8 +47,10 @@ class Client {
 
   async init () {
     try {
+      if(!this.isConnected) {
+        throw Error(`Client.init(): not connected to rpc`);
+      }
       this.app.logger.info(`Web3Client start`);
-      await this.initialize();
       this.app.logger.info(`ChainId: ${await this.getChainId()}`)
       await this._loadSuperfluidContracts();
       if (this.app.config.PRIVATE_KEY !== undefined) {
@@ -73,7 +76,6 @@ class Client {
           this.app.logger.warn("!!!ACCOUNT NOT FUNDED!!!  Will fail to execute liquidations!");
         }
       }
-      this.app.logger.info("Connecting to Node: HTTP");
       this.web3.eth.transactionConfirmationBlocks = 3;
     } catch (err) {
       this.app.logger.error(err);
@@ -109,14 +111,8 @@ class Client {
 
   async _loadSuperfluidContracts () {
     try {
-      let resolverAddress;
-      if (this.app.config.RESOLVER !== undefined) {
-        resolverAddress = this.app.config.RESOLVER;
-      } else {
-        resolverAddress = SDKConfig(await this.getChainId()).resolverAddress;
-      }
       const superfluidIdent = `Superfluid.${this.version}`;
-      this.resolver = new this.web3.eth.Contract(IResolver.abi,resolverAddress);
+      this.resolver = new this.web3.eth.Contract(IResolver.abi,this.app.config.RESOLVER);
       const superfluidAddress = await this.resolver.methods.get(superfluidIdent).call();
       this.sf = new this.web3.eth.Contract(ISuperfluid.abi,superfluidAddress);
       const govAddress = await this.sf.methods.getGovernance().call();
@@ -126,7 +122,7 @@ class Client {
       const [cfaAddress, idaAddress] = await Promise.all([this.sf.methods.getAgreementClass(cfaIdent).call(), this.sf.methods.getAgreementClass(idaIdent).call()]);
       this.CFAv1 = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
       this.IDAv1 = new this.web3.eth.Contract(IIDA.abi, idaAddress);
-      this.app.logger.info(`Resolver: ${resolverAddress}`);
+      this.app.logger.info(`Resolver: ${this.app.config.RESOLVER}`);
       this.app.logger.info(`Superfluid: ${superfluidAddress}`);
       this.app.logger.info(`Superfluid Governance: ${govAddress}`);
       this.app.logger.info(`CFA address: ${cfaAddress}`);

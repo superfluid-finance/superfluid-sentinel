@@ -6,76 +6,96 @@
       "name": "Ropsten",
       "epoch": 9400000,
       "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "cid": "QmeXA7DXVjSi1m6AVgKfGXGoRmdzEVWtC61jiPG46CqgG4"
+      "cid": "QmeXA7DXVjSi1m6AVgKfGXGoRmdzEVWtC61jiPG46CqgG4",
+      "resolver": "0x3b44e06D96BcA9412CBc23F80F41B9e30933571a"
     },
     "4": {
       "name": "Rinkeby",
       "epoch": 7400000,
       "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "cid": "QmbjBccKM4KpULfauknMfruZCsMiJcgzmhqjyxLg6kUFha"
+      "cid": "QmbjBccKM4KpULfauknMfruZCsMiJcgzmhqjyxLg6kUFha",
+      "resolver": "0x659635Fab0A0cef1293f7eb3c7934542B6A6B31A"
     },
     "5": {
       "name": "Goerli",
       "epoch": 3500000,
       "batch": "0x48B6934B354666Daa1d9A4ccEE114873312acF55",
-      "cid": "Qmf8U7cRZcvqW7J8WYaZGG7whEWJfhjdPCyMQdK7EaesfW"
+      "cid": "Qmf8U7cRZcvqW7J8WYaZGG7whEWJfhjdPCyMQdK7EaesfW",
+      "resolver": "0x3710AB3fDE2B61736B8BB0CE845D6c61F667a78E"
+
     },
     "10": {
       "name": "Optimism",
       "epoch": 4300000,
       "batch": "0xEe1bd2C743BF40B1206B090Fa9aB27A0C57d7B90",
-      "toga": "0xA3c8502187fD7a7118eAD59dc811281448946C8f"
+      "toga": "0xA3c8502187fD7a7118eAD59dc811281448946C8f",
+      "resolver": "0x743B5f46BC86caF41bE4956d9275721E0531B186"
     },
     "42": {
       "name": "Kovan",
       "epoch": 23709362,
       "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "cid": "QmavpZdKJeRN3zk2VWxP6dj8zKGfKxDWPcWiFBqgS4DoWq"
+      "cid": "QmavpZdKJeRN3zk2VWxP6dj8zKGfKxDWPcWiFBqgS4DoWq",
+      "resolver": "0x851d3dd9dc97c1df1DA73467449B3893fc76D85B"
     },
     "69": {
       "name": "Optimism (Kovan)",
       "epoch": 308821,
       "batch": "0x62C82F3b04705a8b54a60c6A9B782AFbe8081C40",
-      "cid": "Qmf1L2Lw3z4WzqQRRw8jV43JtgVzAfFEHR81bavCV3bRuL"
+      "cid": "Qmf1L2Lw3z4WzqQRRw8jV43JtgVzAfFEHR81bavCV3bRuL",
+      "resolver": "0x218B65780615Ff134f9Ad810CB98839534D3C0D6"
     },
     "100": {
       "name": "Gnosis Chain",
       "epoch": 14845091,
       "batch": "0x7Ac49B1539C2580972D9B43b41a4ec93A4290cdF",
       "toga": "0xb7DE52F4281a7a276E18C40F94cd93159C4A2d22",
-      "cid": "QmYpvhjEw8jubkP9YMxmkiSf8Jbcthq3NV8auvcwZ4cTJR"
+      "cid": "QmYpvhjEw8jubkP9YMxmkiSf8Jbcthq3NV8auvcwZ4cTJR",
+      "resolver": "0xD2009765189164b495c110D61e4D301729079911"
     },
     "137": {
       "name": "Polygon",
       "epoch": 11000000,
       "batch": "0xAB4075f621100563f4551C0Ca50944809b03E948",
       "toga": "0x6AEAeE5Fd4D05A741723D752D30EE4D72690A8f7",
-      "cid": "QmdcjBYuAZiW4Vm8TR6AEE6Ajt9LVLT5WvLL3Rqt5f46fC"
+      "cid": "QmdcjBYuAZiW4Vm8TR6AEE6Ajt9LVLT5WvLL3Rqt5f46fC",
+      "resolver": "0xE0cc76334405EE8b39213E620587d815967af39C"
     },
     "42161": {
       "name": "arbitrum-one",
       "epoch": 7600000,
       "batch": "0xA87F76e99f6C8Ff8996d14f550ceF47f193D9A09",
-      "toga": "0xFC63B7C762B10670Eda15cF3ca3970bCDB28C9eF"
+      "toga": "0xFC63B7C762B10670Eda15cF3ca3970bCDB28C9eF",
+      "resolver": "0x609b9d9d6Ee9C3200745A79B9d3398DBd63d509F"
     },
     "43113": {
       "name": "Avalanche (Fuji)",
       "epoch": 3220231,
       "batch": "0xFabcf1239357D8051a8028222c28b0ffdc0F7398",
-      "cid": ""
+      "cid": "",
+      "resolver": "0x141920741bC45b962B59c833cd849bA617F7ef38"
+    },
+    "43114": {
+      "name": "Avalanche (C-Chain)",
+      "epoch": 14700000,
+      "batch": "",
+      "cid": "",
+      "resolver": "0x24a3F04F70B7f07B9673EadD3e146391BcfEa5c1"
     },
     "80001": {
       "name": "Mumbai (Polygon)",
       "epoch": 7295264,
       "batch": "0xf8A70a8589c579D3C169812b050C2B4475784EA9",
       "toga": "0xc301D28088d537E24c41A7AAd03896E7E16074f4",
-      "cid": "QmXhmMyzf2p4hBwytqCdqZioihqApvRtk3mx4kBrn7B3BV"
+      "cid": "QmXhmMyzf2p4hBwytqCdqZioihqApvRtk3mx4kBrn7B3BV",
+      "resolver": "0x8C54C83FbDe3C59e59dd6E324531FB93d4F504d3"
     },
     "421611": {
       "name": "Arbitrum (Rinkeby)",
       "epoch": 7309284,
       "batch": "0x00A1c6dB5287f09D9C3e99C2B74E03F4A7d2F545",
-      "cid": "QmREesEuHQXAi4FFkD36Wo1cca2pJPETjRfnZQ46BcyJUK"
+      "cid": "QmREesEuHQXAi4FFkD36Wo1cca2pJPETjRfnZQ46BcyJUK",
+      "resolver": "0xa2C0C70A1E922f5f060ec20EE3aF002C163b4567"
     }
   }
 }

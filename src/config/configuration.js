@@ -102,6 +102,9 @@ class Config {
     this.BATCH_CONTRACT = manifest.networks[chainId].batch;
     this.TOGA_CONTRACT = manifest.networks[chainId].toga || undefined;
     this.CID = manifest.networks[chainId].cid || undefined;
+    if(this.RESOLVER === undefined) {
+      this.RESOLVER = manifest.networks[chainId].resolver || undefined;
+    }
   }
 
   getConfigurationInfo () {

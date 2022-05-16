@@ -1,5 +1,5 @@
 {
-  "schema-version": "1",
+  "schema-version": "2",
   "name": "sentinel-manifest",
   "networks": {
     "3": {
@@ -78,7 +78,8 @@
     "43114": {
       "name": "Avalanche (C-Chain)",
       "epoch": 14700000,
-      "batch": "",
+      "batch": "0xcFE6382B33F2AdaFbE46e6A26A88E0182ae32b0c",
+      "toga": "0x3D9A67D5ec1E72CEcA8157e028855056786b6159",
       "cid": "",
       "resolver": "0x24a3F04F70B7f07B9673EadD3e146391BcfEa5c1"
     },

@@ -33,7 +33,7 @@ class Config {
       this.CONCURRENCY = config.concurrency;
       this.COLD_BOOT = config.cold_boot;
       this.NUM_RETRIES = config.number_retries;
-      this.RESOLVER = config.resolver;
+      this.RESOLVER = config.resolver || process.env.RESOLVER_ADDRESS;
       this.SHUTDOWN_ON_ERROR = config.shutdown_on_error;
       this.LIQUIDATION_JOB_AWAITS = config.liquidation_job_awaits;
       this.ONLY_LISTED_TOKENS = config.only_listed_tokens === "true";
@@ -102,6 +102,9 @@ class Config {
     this.BATCH_CONTRACT = manifest.networks[chainId].batch;
     this.TOGA_CONTRACT = manifest.networks[chainId].toga || undefined;
     this.CID = manifest.networks[chainId].cid || undefined;
+    if(this.RESOLVER === undefined) {
+      this.RESOLVER = manifest.networks[chainId].resolver || undefined;
+    }
   }
 
   getConfigurationInfo () {

@@ -48,7 +48,7 @@ class EventTracker {
   }
 
   async start (oldBlock) {
-    if (this.app.client.isInitialized === undefined || !this.app.client.isInitialized) {
+    if (this.app.client.isConnected === undefined || !this.app.client.isConnected) {
       throw Error("BlockTracker.start() - client is not initialized ");
     }
     if (oldBlock) {

@@ -146,13 +146,14 @@ class App {
         try {
             this.logger.debug(`booting sentinel`);
             this._isShutdown = false;
-
-            // create all web3 infrastructure needed
-            await this.client.init();
+            // connect to provided rpc
+            await this.client.connect();
             // if we are running tests don't try to load network information
             if (!this.config.RUN_TEST_ENV) {
                 this.config.loadNetworkInfo(await this.client.getChainId());
             }
+            // create all web3 infrastructure needed
+            await this.client.init();
             if (this.config.BATCH_CONTRACT !== undefined) {
                 await this.client.loadBatchContract();
             }
@@ -187,7 +188,6 @@ class App {
             // query balances to make liquidations estimations
             await this.bootstrap.start();
             this.queues.init();
-
             this.timer.startAfter(this.queues);
             this.timer.startAfter(this.eventTracker, currentBlock);
             // start http server to serve node health reports and dashboard

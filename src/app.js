@@ -234,6 +234,12 @@ class App {
         }
         return false;
     }
+
+    isRPCDrifting() {
+        const now = Date.now();
+        const tracker = this.eventTracker.lastTimeNewBlocks.getTime();
+        return Math.floor(Math.abs(now - tracker)) > (this.config.POLLING_INTERVAL * 2);
+    }
 }
 
 module.exports = App;

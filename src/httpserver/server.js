@@ -30,6 +30,19 @@ class HTTPServer {
       }
     });
 
+    this.server.get("/nextliquidations/:hours", async (req, res) => {
+      const seconds = Math.round(Number(req.params.hours) * 3600) * -1;
+      const liquidations = await this.app.db.queries.getLiquidations(
+          this.app.time.getTimeWithDelay(seconds),
+          this.app.config.TOKENS);
+      try {
+        res.send(liquidations);
+      } catch (e) {
+        liquidations.message = e;
+        res.status(503).send();
+      }
+    });
+
     this.runningInstance = this.server.listen(this.port, () => {
       this.app.logger.info(`Metrics: listening via http on port ${this.port}`);
     });

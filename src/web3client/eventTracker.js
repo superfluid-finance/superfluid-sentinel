@@ -158,7 +158,8 @@ class EventTracker {
     try {
       if (!this.app.client.isSuperTokenRegistered(event.token)) {
         this.app.logger.debug(`found a new token at ${event.token}`);
-        // TODO: if subscribe to all tokens add this one
+        this.app.client.loadSuperToken(event.token, true);
+        this.oldSeenBlock = event.blockNumber - 1;
       }
     } catch (err) {
       this.app.logger.error(err);

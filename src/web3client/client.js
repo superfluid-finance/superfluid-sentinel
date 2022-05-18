@@ -169,7 +169,7 @@ class Client {
     }
   }
 
-  async loadSuperToken (newSuperToken) {
+  async loadSuperToken (newSuperToken, setPIC=false) {
     if (this.superTokens[newSuperToken.toLowerCase()] !== undefined) {
       return;
     }
@@ -213,6 +213,10 @@ class Client {
       patricianPeriod: parseInt(resp.patricianPeriod),
       listed: isListed
     });
+    // use for runtime subscription
+    if(setPIC) {
+      this.app.protocol.calculateAndSaveTokenDelay(newSuperToken);
+    }
   }
 
   isSuperTokenRegistered (token) {

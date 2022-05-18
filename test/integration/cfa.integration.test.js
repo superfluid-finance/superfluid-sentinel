@@ -317,4 +317,33 @@ describe("Integration scripts tests", () => {
       protocolHelper.exitWithError(err);
     }
   });
+
+  it("Subscribe to token runtime", async () => {
+    try {
+      await bootNode({pic: accounts[0]});
+      const data = protocolVars.cfa.methods.createFlow(
+          protocolVars.superToken._address,
+          accounts[2],
+          "10000000000000000",
+          "0x"
+      ).encodeABI();
+      console.log("Sending tx");
+
+
+      await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({
+        from: accounts[0],
+        gas: 1000000
+      });
+      //await ganache.helper.timeTravelOnce(60);
+      const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({
+        from: accounts[0],
+        gas: 1000000
+      });
+      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+      await app.shutdown();
+      protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
+    } catch (err) {
+      protocolHelper.exitWithError(err);
+    }
+  });
 });

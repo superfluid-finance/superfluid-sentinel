@@ -41,8 +41,12 @@ const networkConfigs = require("./../manifest.json").networks;
         }
 
         app.client = new Client(app);
-        await app.client.init();
+        await app.client.connect();
         const chainId = await app.client.getChainId();
+        //get resolver from manifest file
+        const resolver = networkConfigs[chainId].resolver;
+        app.config.RESOLVER = resolver;
+        await app.client.init();
         /*Set up database*/
         config.db_path = `./snapshots/snapshot_${chainId}_${Math.round(new Date().getTime() / 1000)}.tmp`;
         const db = DB(config.db_path);

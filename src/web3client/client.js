@@ -146,10 +146,9 @@ class Client {
         };
       }
       const superTokensDB = await this.app.db.models.SuperTokenModel.findAll(filter);
-      const promises = superTokensDB.map(async (token) => {
-        return this.loadSuperToken(token.address);
-      });
-      await Promise.all(promises);
+      for(const token of superTokensDB) {
+        await this.loadSuperToken(token.address);
+      }
     } catch (err) {
       this.app.logger.error(err);
       throw new Error(`Client._loadSuperTokensFromDB(): ${err}`);

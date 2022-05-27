@@ -18,22 +18,24 @@ class EventTracker {
   }
 
   async getPastBlockAndParseEvents (oldBlock, newBlock) {
-    let eventsFromBlocks = await this.app.client.web3.eth.getPastLogs({fromBlock: oldBlock,
-        toBlock: newBlock,
-        address: this.app.client.getSFAddresses()
-    });
-    // scan blocks from new tokens to subscribe before processing the remaining data
-    const newTokens = await this.findNewTokens(eventsFromBlocks);
-    if(newTokens) {
-        eventsFromBlocks = await this.app.client.web3.eth.getPastLogs({fromBlock: oldBlock,
+    if(!oldBlock > newBlock) {
+      let eventsFromBlocks = await this.app.client.web3.eth.getPastLogs({fromBlock: oldBlock,
         toBlock: newBlock,
         address: this.app.client.getSFAddresses()
       });
-    }
-    for (const log of eventsFromBlocks) {
-      this.processSuperTokenEvent(this._parseEvent(superTokenEvents, log));
-      this.processIDAEvent(this._parseEvent(IDAEvents, log));
-      await this.processTOGAEvent(this._parseEvent(TOGAEvents, log));
+      // scan blocks from new tokens to subscribe before processing the remaining data
+      const newTokens = await this.findNewTokens(eventsFromBlocks);
+      if(newTokens) {
+        eventsFromBlocks = await this.app.client.web3.eth.getPastLogs({fromBlock: oldBlock,
+          toBlock: newBlock,
+          address: this.app.client.getSFAddresses()
+        });
+      }
+      for (const log of eventsFromBlocks) {
+        this.processSuperTokenEvent(this._parseEvent(superTokenEvents, log));
+        this.processIDAEvent(this._parseEvent(IDAEvents, log));
+        await this.processTOGAEvent(this._parseEvent(TOGAEvents, log));
+      }
     }
   }
 

@@ -14,7 +14,12 @@ class EventTracker {
   }
 
   updateBlockNumber (oldSeenBlock) {
+    this.potentialOldest = this.oldSeenBlock;
     this.oldSeenBlock = oldSeenBlock;
+  }
+
+  rewindBlockNumber() {
+    this.oldSeenBlock = this.potentialOldest;
   }
 
   async getPastBlockAndParseEvents (oldBlock, newBlock) {
@@ -73,6 +78,10 @@ class EventTracker {
           self.app.client.addSkipBlockRequest();
         }
         self.app.client.addTotalRequest();
+      }).on('error', err => {
+        self.app.logger.warn(`rewinding to old block: ${self.potentialOldest}`);
+        self.rewindBlockNumber();
+        self.app.db.queries.updateBlockNumber(this.oldSeenBlock);
       });
     } catch (err) {
       this.app.logger.error(err);

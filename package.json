@@ -37,6 +37,7 @@
     "ethereumjs-wallet": "^1.0.2",
     "ethjs-abi": "^0.2.1",
     "express": "^4.17.2",
+    "prom-client": "^14.0.1",
     "sequelize": "^6.12.5",
     "sqlite3": "^5.0.2",
     "web3": "1.6.1",

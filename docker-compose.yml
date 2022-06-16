@@ -1,5 +1,7 @@
 version: '3'
-
+networks:
+  monitoring:
+    driver: bridge
 services:
   sentinel:
     build: .
@@ -8,8 +10,14 @@ services:
     environment:
       - NODE_ENV=production
       - DB_PATH=data/db.sqlite
+    ports:
+      - "8080:8080"
+    expose:
+      - 8080
     volumes:
       - data:/app/data
+    networks:
+      - monitoring
     deploy:
       resources:
         limits:
@@ -17,6 +25,38 @@ services:
           memory: 300M
         reservations:
           memory: 50M
+  prometheus:
+    image: prom/prometheus:v2.36.1
+    container_name: prometheus
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    expose:
+      - 9090
+    networks:
+      - monitoring
+  grafana:
+      image: grafana/grafana:8.2.6
+      container_name: grafana
+      volumes:
+        - grafana_data:/var/lib/grafana
+        - ./grafana/provisioning:/etc/grafana/provisioning
+      environment:
+        - GF_AUTH_DISABLE_LOGIN_FORM=true
+        - GF_AUTH_ANONYMOUS_ENABLED=true
+        - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      ports:
+        - "3000:3000"
+      expose:
+        - 3000
+      networks:
+        - monitoring
+
 
 volumes:
+  prometheus_data: { }
+  grafana_data: { }
   data:
+

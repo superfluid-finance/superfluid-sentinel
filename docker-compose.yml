@@ -43,6 +43,8 @@ services:
       volumes:
         - grafana_data:/var/lib/grafana
         - ./grafana/provisioning:/etc/grafana/provisioning
+        - ./grafana/dashboards/:/etc/grafana/dashboards
+        - ./grafana/grafana.ini:/etc/grafana/grafana.ini
       environment:
         - GF_AUTH_DISABLE_LOGIN_FORM=true
         - GF_AUTH_ANONYMOUS_ENABLED=true

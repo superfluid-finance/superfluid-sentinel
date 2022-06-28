@@ -18,7 +18,7 @@ class EventTracker {
   }
 
   async getPastBlockAndParseEvents (oldBlock, newBlock) {
-    if(!oldBlock > newBlock) {
+    if(Number(oldBlock) <= Number(newBlock)) {
       let eventsFromBlocks = await this.app.client.web3.eth.getPastLogs({fromBlock: oldBlock,
         toBlock: newBlock,
         address: this.app.client.getSFAddresses()

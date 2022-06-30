@@ -1,8 +1,12 @@
+# Starts the Sentinel service and connected monitoring services: Prometheus and Grafana.
+
 version: '3'
 networks:
   monitoring:
     driver: bridge
+
 services:
+  # the sentinel image is built from source
   sentinel:
     build: .
     restart: unless-stopped
@@ -10,8 +14,10 @@ services:
     environment:
       - NODE_ENV=production
       - DB_PATH=data/db.sqlite
+      # hardcode the port inside the container
+      - METRICS_PORT=9100
     ports:
-      - "9100:9100"
+      - ${METRICS_PORT:-9100}:9100
     expose:
       - 9100
     volumes:
@@ -32,9 +38,9 @@ services:
       - ./prometheus:/etc/prometheus
       - prometheus_data:/prometheus
     ports:
-      - "9090:9090"
+      - ${PROMETHEUS_PORT:-9090}:9090
     expose:
-      - 9090
+      - ${PROMETHEUS_PORT:-9090}
     networks:
       - monitoring
   grafana:
@@ -50,12 +56,11 @@ services:
         - GF_AUTH_ANONYMOUS_ENABLED=true
         - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       ports:
-        - "3000:3000"
+        - ${GRAFANA_PORT:-3000}:3000
       expose:
-        - 3000
+        - ${GRAFANA_PORT:-3000}
       networks:
         - monitoring
-
 
 volumes:
   prometheus_data: { }

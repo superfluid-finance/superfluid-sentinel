@@ -103,19 +103,19 @@ add the network name to the start command, e.g. `ExecStart=/usr/bin/npm start xd
 This part of the guide assumes you have a recent version of Docker and docker-compose installed.  
 You also need to have an `.env` file with the wanted configuration in the project root directory.
 
-Build Docker image:
+If running with Docker, you can choose between a minimal and a default configuration.  
+The default configuration `docker-compose.yml` runs the sentinel together with [Prometheus](https://prometheus.io/) and [Grafana](https://grafana.com/) for monitoring.  
+The minimal configuration `docker-compose-minimal.yml` runs only the sentinel service. Choose this if you have a resource constrained environment and/or have your own monitoring solution.  
+You can switch to the minimal configuration by setting `COMPOSE_FILE=docker-compose-minimal.yml` in your `.env` file.
 
-```
-COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose build
-```
-
-Run Docker container:
+In order to start the container(s):
 
 ```
 docker-compose up
 ```
 
-This starts a sentinel in a container based on the image just built.  
+On first invocation, this builds a Docker image for the sentinel from source (which can take a while) and then starts it.
+On consecutive runs, the image is reused.  
 The sqlite DB is stored in a Docker volume named `superfluid-sentinel_data` (can differ based on the name of your local
 directory).
 
@@ -126,6 +126,9 @@ docker-compose up -d
 ``` 
 
 Use `docker-compose logs` in order to see the logs in this case (add `-f` to follow the live log).
+
+If you're running the default configuration, you can now access a Grafana dashboard at the configured port (default: 3000).  
+The initial credentials are admin:admin, you will be asked to change the password on first login.
 
 If you need to or want to rebuild the sentinel database from scratch, delete the volume:  
 First, destroy the container with `docker-compose rm`.  

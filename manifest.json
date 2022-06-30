@@ -38,6 +38,13 @@
       "cid": "QmavpZdKJeRN3zk2VWxP6dj8zKGfKxDWPcWiFBqgS4DoWq",
       "resolver": "0x851d3dd9dc97c1df1DA73467449B3893fc76D85B"
     },
+    "56": {
+      "name": "Binance",
+      "epoch": 18800000,
+      "batch": "0xe6C8d111337D0052b9D88BF5d7D55B7f8385ACd3",
+      "cid": "",
+      "resolver": "0x69604aA4e9e8BF44A73C680997205Edb03A92E41"
+    },
     "69": {
       "name": "Optimism (Kovan)",
       "epoch": 308821,

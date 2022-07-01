@@ -35,8 +35,10 @@ class Report {
     // TODO: add DB stats - size, nr table entries
     // TODO: add liquidation stats: past and future 1h, 24h, 30d
     // TODO add PIC status
+
     return {
       timestamp: Date.now(),
+      version: process.env.npm_package_version,
       healthy: overallHealthy,
       process: {
         uptime: Math.floor(process.uptime()),

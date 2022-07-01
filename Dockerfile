@@ -22,4 +22,4 @@ ENTRYPOINT ["/sbin/tini", "--"]
 
 # Don't run as root
 USER node
-CMD ["node", "main.js" ]
+CMD ["npm", "start" ]

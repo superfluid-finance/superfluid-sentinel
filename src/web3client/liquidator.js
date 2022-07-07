@@ -14,7 +14,7 @@ class Liquidator {
 
       if(this.app.isRPCDrifting()) {
         return {
-          error: "app.start() - RPC drifting",
+          error: "liquidation.start() - RPC drifting",
           msg: undefined
         }
       }

@@ -11,6 +11,13 @@ class Liquidator {
         this.app.logger.info(`app.shutdown() - closing liquidation`);
         return;
       }
+
+      if(this.app.isRPCDrifting()) {
+        return {
+          error: "liquidation.start() - RPC drifting",
+          msg: undefined
+        }
+      }
       this.app.logger.debug(`running liquidation job`);
       const checkDate = this.app.time.getTimeWithDelay(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
       let haveBatchWork = [];

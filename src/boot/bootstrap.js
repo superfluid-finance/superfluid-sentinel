@@ -82,8 +82,12 @@ class Bootstrap {
         process.exit(1);
       }
     } else {
-      this.app.logger.error(`epoch block number is from the future: ${systemInfo.blockNumber}`);
-      process.exit(1);
+      if(blockNumber === currentBlockNumber) {
+        this.app.logger.warn(`epoch block number is the same as current block: ${systemInfo.blockNumber}`);
+      } else {
+        this.app.logger.error(`epoch block number is from the future: ${systemInfo.blockNumber}`);
+        process.exit(1);
+      }
     }
   }
 }

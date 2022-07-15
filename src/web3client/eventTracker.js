@@ -17,34 +17,26 @@ class EventTracker {
     this.oldSeenBlock = oldSeenBlock;
   }
 
-  getPastBlockAndParseEvents (oldBlock, newBlock) {
-    this.app.client.web3.eth.getPastLogs({
-      fromBlock: oldBlock,
-      toBlock: newBlock,
-      address: this.app.client.getSFAddresses()
-    }).then((result) => {
-      for (const log of result) {
-        const tokenEvent = this._parseEvent(superTokenEvents, log);
-        if (tokenEvent) {
-          this.processSuperTokenEvent(tokenEvent);
-        } else {
-          const cfaEvent = this._parseEvent(CFAEvents, log);
-          if (cfaEvent) {
-            this.processAgreementEvent(cfaEvent);
-          } else {
-            const idaEvent = this._parseEvent(IDAEvents, log);
-            if (idaEvent) {
-              this.processIDAEvent(idaEvent);
-            } else {
-              const togaEvent = this._parseEvent(TOGAEvents, log);
-              if (togaEvent) {
-                this.processTOGAEvent(togaEvent);
-              }
-            }
-          }
-        }
+  async getPastBlockAndParseEvents (oldBlock, newBlock) {
+    if(Number(oldBlock) <= Number(newBlock)) {
+      let eventsFromBlocks = await this.app.client.web3.eth.getPastLogs({fromBlock: oldBlock,
+        toBlock: newBlock,
+        address: this.app.client.getSFAddresses()
+      });
+      // scan blocks from new tokens to subscribe before processing the remaining data
+      const newTokens = await this.findNewTokens(eventsFromBlocks);
+      if(newTokens) {
+        eventsFromBlocks = await this.app.client.web3.eth.getPastLogs({fromBlock: oldBlock,
+          toBlock: newBlock,
+          address: this.app.client.getSFAddresses()
+        });
       }
-    });
+      for (const log of eventsFromBlocks) {
+        this.processSuperTokenEvent(this._parseEvent(superTokenEvents, log));
+        this.processIDAEvent(this._parseEvent(IDAEvents, log));
+        await this.processTOGAEvent(this._parseEvent(TOGAEvents, log));
+      }
+    }
   }
 
   async start (oldBlock) {
@@ -61,7 +53,7 @@ class EventTracker {
     });
     const self = this;
     try {
-      this.blockTracker.on("sync", ({ newBlock }) => {
+      this.blockTracker.on("sync", async ({ newBlock }) => {
         self.lastTimeNewBlocks = new Date();
         const _newBlock = Number(newBlock);
         const _oldBlock = Number(self.oldSeenBlock);
@@ -69,11 +61,11 @@ class EventTracker {
         self.app.logger.debug(`[${self.app.config.BLOCK_OFFSET}] oldBlock:${_oldBlock} newBlock:${_newBlock} withOffset: ${newBlockWithOffset}`);
         if (_newBlock - _oldBlock + 1 >= self.app.config.BLOCK_OFFSET) {
           if (_oldBlock) {
-            self.getPastBlockAndParseEvents(_oldBlock + 1, newBlockWithOffset);
+            await self.getPastBlockAndParseEvents(_oldBlock + 1, newBlockWithOffset);
             self.updateBlockNumber(newBlockWithOffset);
             self.app.db.queries.updateBlockNumber(newBlockWithOffset);
           } else if (self.oldSeenBlock) {
-            self.getPastBlockAndParseEvents(_oldBlock, newBlockWithOffset);
+            await self.getPastBlockAndParseEvents(_oldBlock, newBlockWithOffset);
             self.updateBlockNumber(newBlockWithOffset);
           }
         } else {
@@ -90,85 +82,91 @@ class EventTracker {
 
   processSuperTokenEvent (event) {
     try {
-      if (event.removed) {
-        this.app.logger.warn(`Event removed: ${event.eventName}, blockNumber ${event.blockNumber}, tx ${event.transactionHash}`);
-      }
-      switch (event.eventName) {
-        case "AgreementStateUpdated" : {
-          this.app.logger.debug(`${event.eventName} [${event.address}] -  ${event.account}`);
-          this.app.queues.agreementUpdateQueue.push({
-            self: this,
-            account: event.account,
-            blockNumber: event.blockNumber,
-            blockHash: event.blockHash,
-            transactionHash: event.transactionHash,
-            parentCaller: "processSuperTokenEvent"
-          });
-          break;
+      if(event) {
+        if (event.removed) {
+          this.app.logger.warn(`Event removed: ${event.eventName}, blockNumber ${event.blockNumber}, tx ${event.transactionHash}`);
         }
-        case "Transfer" : {
-          this.app.logger.debug(`${event.eventName} [${event.address}] - sender ${event.from} receiver ${event.to}`);
-          this.app.queues.estimationQueue.push([
-            {
+        switch (event.eventName) {
+          case "AgreementStateUpdated" : {
+            this.app.logger.debug(`${event.eventName} [${event.address}] -  ${event.account}`);
+            this.app.queues.agreementUpdateQueue.push({
               self: this,
-              account: event.from,
-              token: event.address,
+              account: event.account,
               blockNumber: event.blockNumber,
               blockHash: event.blockHash,
               transactionHash: event.transactionHash,
               parentCaller: "processSuperTokenEvent"
-            },
-            {
-              self: this,
-              account: event.to,
-              token: event.address,
-              blockNumber: event.blockNumber,
-              blockHash: event.blockHash,
-              transactionHash: event.transactionHash,
-              parentCaller: "processSuperTokenEvent"
+            });
+            break;
+          }
+          case "Transfer" : {
+            this.app.logger.debug(`${event.eventName} [${event.address}] - sender ${event.from} receiver ${event.to}`);
+            this.app.queues.estimationQueue.push([
+              {
+                self: this,
+                account: event.from,
+                token: event.address,
+                blockNumber: event.blockNumber,
+                blockHash: event.blockHash,
+                transactionHash: event.transactionHash,
+                parentCaller: "processSuperTokenEvent"
+              },
+              {
+                self: this,
+                account: event.to,
+                token: event.address,
+                blockNumber: event.blockNumber,
+                blockHash: event.blockHash,
+                transactionHash: event.transactionHash,
+                parentCaller: "processSuperTokenEvent"
+              }
+            ]);
+            break;
+          }
+          case "AgreementLiquidatedBy": {
+            this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.penaltyAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
+            if (event.bailoutAmount.toString() !== "0") {
+              this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.bailoutAmount)}`);
             }
-          ]);
-          break;
-        }
-        case "AgreementLiquidatedBy": {
-          this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.penaltyAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
-          if (event.bailoutAmount.toString() !== "0") {
-            this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.bailoutAmount)}`);
+            break;
           }
-          break;
-        }
-        case "AgreementLiquidatedV2": {
-          this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.targetAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
-          const ramount = new BN(event.rewardAmount)
-          const delta = new BN(event.targetAccountBalanceDelta)
-          const isBailout = ramount.add(delta).lt(0);
-          if (isBailout) {
-            this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.targetAccountBalanceDelta)}`);
+          case "AgreementLiquidatedV2": {
+            this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.targetAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
+            const ramount = new BN(event.rewardAmount)
+            const delta = new BN(event.targetAccountBalanceDelta)
+            const isBailout = ramount.add(delta).lt(0);
+            if (isBailout) {
+              this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.targetAccountBalanceDelta)}`);
+            }
+            break;
           }
-          break;
         }
       }
+
+
     } catch (err) {
       this.app.logger.error(err);
       throw Error(`EventTracker.processSuperTokenEvent(): ${err}`);
     }
   }
 
-  processAgreementEvent (event) {
+  async processAgreementEvent (event) {
     try {
-      if (!this.app.client.isSuperTokenRegistered(event.token)) {
+      if(event && !this.app.client.isSuperTokenRegistered(event.token)) {
         this.app.logger.debug(`found a new token at ${event.token}`);
-        // TODO: if subscribe to all tokens add this one
+        await this.app.client.loadSuperToken(event.token, true);
+        return true;
       }
+      return false;
     } catch (err) {
       this.app.logger.error(err);
       throw Error(`EventTracker.processAgreementEvent(): ${err}`);
     }
   }
 
-  async processIDAEvent (event) {
+  processIDAEvent (event) {
     try {
-      if(event.eventName === "IndexUpdated") {
+      if(event && event.eventName === "IndexUpdated") {
         if (this.app.client.isSuperTokenRegistered(event.token)) {
           this.app.logger.debug(`[IndexUpdated] - ${event.eventName} [${event.token}] - publisher ${event.publisher}`);
           this.app.queues.estimationQueue.push([
@@ -194,10 +192,10 @@ class EventTracker {
 
   async processTOGAEvent (event) {
     try {
-      if(event.eventName === "NewPIC") {
+      if(event && event.eventName === "NewPIC") {
         if (this.app.client.isSuperTokenRegistered(event.token)) {
           this.app.logger.info(`[TOGA]: ${event.eventName} [${event.token}] new pic ${event.pic}`);
-          this.app.protocol.calculateAndSaveTokenDelay(event.token);
+          await this.app.protocol.calculateAndSaveTokenDelay(event.token);
         } else {
           this.app.logger.debug(`[TOGA]: token ${event.token} is not subscribed`);
         }
@@ -205,6 +203,12 @@ class EventTracker {
     } catch (err) {
       this.app.logger.error(err);
       throw Error(`EventTracker.processTOGAEvent(): ${err}`);
+    }
+  }
+
+  async findNewTokens(events) {
+    for (const log of events) {
+      return this.processAgreementEvent(this._parseEvent(CFAEvents, log));
     }
   }
 

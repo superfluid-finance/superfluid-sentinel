@@ -61,7 +61,7 @@ class Config {
       this.RETRY_GAS_MULTIPLIER = process.env.RETRY_GAS_MULTIPLIER || 1.15;
       this.PIC = process.env.PIC;
       this.METRICS = process.env.METRICS !== "false"; // default: true
-      this.METRICS_PORT = process.env.METRICS_PORT || 3000;
+      this.METRICS_PORT = process.env.METRICS_PORT || 9100;
       this.FASTSYNC = process.env.FASTSYNC !== "false";  // default: true
       this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://ipfs.io/ipfs/";
       this.PIRATE = process.env.PIRATE === "true"; // default: false

@@ -1,14 +1,14 @@
 const express = require("express");
-const proclient = require('prom-client');
+const promclient = require('prom-client');
 
 class HTTPServer {
   constructor (app) {
     this.app = app;
     this.server = express();
     this.port = this.app.config.METRICS_PORT;
-    const register = new proclient.Registry();
+    const register = new promclient.Registry();
     this.register = register;
-    proclient.collectDefaultMetrics({
+    promclient.collectDefaultMetrics({
       app: 'sentinel-monitoring-app',
       timeout: 10000,
       gcDurationBuckets: [0.001, 0.01, 0.1, 1, 2, 5],

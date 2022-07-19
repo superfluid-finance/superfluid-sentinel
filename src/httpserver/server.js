@@ -1,20 +1,12 @@
 const express = require("express");
-const promclient = require('prom-client');
+const Metrics = require("../metrics/metrics");
 
 class HTTPServer {
   constructor (app) {
     this.app = app;
     this.server = express();
     this.port = this.app.config.METRICS_PORT;
-    const register = new promclient.Registry();
-    this.register = register;
-    promclient.collectDefaultMetrics({
-      app: 'sentinel-monitoring-app',
-      timeout: 10000,
-      gcDurationBuckets: [0.001, 0.01, 0.1, 1, 2, 5],
-      register
-    });
-
+    this.metrics = new Metrics(app);
   }
 
   start () {
@@ -41,8 +33,8 @@ class HTTPServer {
     });
 
     this.server.get('/metrics', async (req, res) => {
-      res.setHeader('Content-Type', this.register.contentType);
-      res.send(await this.register.metrics());
+      res.setHeader('Content-Type', this.metrics.register.contentType);
+      res.send(await this.metrics.getMetrics());
     });
 
     this.runningInstance = this.server.listen(this.port, () => {

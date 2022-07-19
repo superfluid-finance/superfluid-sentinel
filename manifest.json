@@ -20,6 +20,7 @@
       "name": "Goerli",
       "epoch": 3500000,
       "batch": "0x48B6934B354666Daa1d9A4ccEE114873312acF55",
+      "toga": "0xa54FC15FC75693447d70a57262F37a70B614721b",
       "cid": "Qmf8U7cRZcvqW7J8WYaZGG7whEWJfhjdPCyMQdK7EaesfW",
       "resolver": "0x3710AB3fDE2B61736B8BB0CE845D6c61F667a78E"
 
@@ -42,7 +43,6 @@
       "name": "Binance",
       "epoch": 18800000,
       "batch": "0xe6C8d111337D0052b9D88BF5d7D55B7f8385ACd3",
-      "cid": "",
       "resolver": "0x69604aA4e9e8BF44A73C680997205Edb03A92E41"
     },
     "69": {
@@ -79,7 +79,6 @@
       "name": "Avalanche (Fuji)",
       "epoch": 3220231,
       "batch": "0xFabcf1239357D8051a8028222c28b0ffdc0F7398",
-      "cid": "",
       "resolver": "0x141920741bC45b962B59c833cd849bA617F7ef38"
     },
     "43114": {
@@ -87,7 +86,6 @@
       "epoch": 14700000,
       "batch": "0xcFE6382B33F2AdaFbE46e6A26A88E0182ae32b0c",
       "toga": "0x3D9A67D5ec1E72CEcA8157e028855056786b6159",
-      "cid": "",
       "resolver": "0x24a3F04F70B7f07B9673EadD3e146391BcfEa5c1"
     },
     "80001": {

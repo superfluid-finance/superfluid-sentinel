@@ -98,6 +98,27 @@ For example: `npm start xdai`will start an instance configured according to the 
 If you use systemd, create instance specific copies of the service file, e.g. `superfluid-sentinel-xdai.service`, and
 add the network name to the start command, e.g. `ExecStart=/usr/bin/npm start xdai`.
 
+#### Update
+
+In order to update to a new version, first go to https://github.com/superfluid-finance/superfluid-sentinel/releases in order to see recent releases and a brief description.  
+New releases may also add or change default configuration items, documented in this README and `.env-example`.
+
+Once you decided to do an update to the latest version, cd into the sentinel directory and do
+```
+git pull
+```
+in order to get the latest version of the code. Then do
+```
+NODE_ENV=production npm ci
+```
+in order to update dependencies if needed.
+Then restart the service(s). E.g. for a single instance running with systemd, do
+```
+systemctl restart superfluid-sentinel.service
+```
+
+Finally, you may check the logs in order to make sure the restart went well.
+
 ### Docker Setup
 
 This part of the guide assumes you have a recent version of Docker and docker-compose installed.  
@@ -128,11 +149,37 @@ docker-compose up -d
 Use `docker-compose logs` in order to see the logs in this case (add `-f` to follow the live log).
 
 If you're running the default configuration, you can now access a Grafana dashboard at the configured port (default: 3000).  
-The initial credentials are admin:admin, you will be asked to change the password on first login.
+The initial credentials are admin:admin, you will be asked to change the password on first login.  
+A sentinel specific dashboard is not yet included, but you can already select a generic dashboard for node.js applications.
+Work is in progress for adding more sentinel specific metrics to the prometheus exporter of the sentinel application which feeds Grafana.
 
 If you need to or want to rebuild the sentinel database from scratch, delete the volume:  
 First, destroy the container with `docker-compose rm`.  
 Then delete the volume with `docker volume rm superfluid-sentinel_data` (adapt the name if it differs on your system).
+
+### Update
+
+The process for updating docker based sentinel instances will be simplified soon.  
+
+Currently, after cd'ing into the sentinel directory, you need to first stop with
+```
+docker-compose down
+```
+Then get the latest code with
+```
+git pull
+```
+Then remove the sentinel docker container and image:
+```
+docker rm superfluid-sentinel_sentinel_1 && docker image rm superfluid-sentinel_sentinel
+```
+(the container and image name may differ if your directory is named differently)
+
+Now you can trigger a re-building of the sentinel image with
+```
+docker-compose up
+```
+After building the image, this will also create a new container based on it and start it.
 
 ## Control flow
 

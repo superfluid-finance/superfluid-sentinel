@@ -49,16 +49,21 @@ class Liquidator {
   }
 
   async isPossibleToClose (superToken, sender, receiver, pppmode) {
-    const checkFlow = await this.app.protocol.checkFlow(superToken, sender, receiver);
-    const isCritical = await this.app.protocol.isAccountCriticalNow(superToken, sender);
-    if(pppmode === this.app.protocol.PPPMode.Patrician) {
-      return checkFlow !== undefined && isCritical;
-    } else if(pppmode === this.app.protocol.PPPMode.Pleb) {
-      const isPatrician = await this.app.protocol.isPatricianPeriodNow(superToken, sender);
-      return checkFlow !== undefined && isCritical && !isPatrician.isPatricianPeriod;
-    } else {
-      const isSolvent = await this.app.protocol.isAccountSolventNow(superToken, sender);
-      return checkFlow !== undefined && isCritical && !isSolvent;
+    try {
+      const checkFlow = await this.app.protocol.checkFlow(superToken, sender, receiver);
+      const isCritical = await this.app.protocol.isAccountCriticalNow(superToken, sender);
+      if(pppmode === this.app.protocol.PPPMode.Patrician) {
+        return checkFlow !== undefined && isCritical;
+      } else if(pppmode === this.app.protocol.PPPMode.Pleb) {
+        const isPatrician = await this.app.protocol.isPatricianPeriodNow(superToken, sender);
+        return checkFlow !== undefined && isCritical && !isPatrician.isPatricianPeriod;
+      } else {
+        const isSolvent = await this.app.protocol.isAccountSolventNow(superToken, sender);
+        return checkFlow !== undefined && isCritical && !isSolvent;
+      }
+    } catch (err) {
+      this.app.logger.error(err);
+      return false;
     }
   }
 

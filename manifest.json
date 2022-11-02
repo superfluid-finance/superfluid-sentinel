@@ -2,20 +2,6 @@
   "schema-version": "2",
   "name": "sentinel-manifest",
   "networks": {
-    "3": {
-      "name": "Ropsten Testnet",
-      "epoch": 9400000,
-      "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "cid": "QmeXA7DXVjSi1m6AVgKfGXGoRmdzEVWtC61jiPG46CqgG4",
-      "resolver": "0x3b44e06D96BcA9412CBc23F80F41B9e30933571a"
-    },
-    "4": {
-      "name": "Rinkeby Testnet",
-      "epoch": 7400000,
-      "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "cid": "QmbjBccKM4KpULfauknMfruZCsMiJcgzmhqjyxLg6kUFha",
-      "resolver": "0x659635Fab0A0cef1293f7eb3c7934542B6A6B31A"
-    },
     "5": {
       "name": "Goerli Testnet",
       "epoch": 3500000,
@@ -31,26 +17,12 @@
       "toga": "0xA3c8502187fD7a7118eAD59dc811281448946C8f",
       "resolver": "0x743B5f46BC86caF41bE4956d9275721E0531B186"
     },
-    "42": {
-      "name": "Kovan Testnet",
-      "epoch": 23709362,
-      "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "cid": "QmavpZdKJeRN3zk2VWxP6dj8zKGfKxDWPcWiFBqgS4DoWq",
-      "resolver": "0x851d3dd9dc97c1df1DA73467449B3893fc76D85B"
-    },
     "56": {
       "name": "Binance Smart Chain",
       "epoch": 18800000,
       "batch": "0xe6C8d111337D0052b9D88BF5d7D55B7f8385ACd3",
       "cid": "",
       "resolver": "0x69604aA4e9e8BF44A73C680997205Edb03A92E41"
-    },
-    "69": {
-      "name": "Optimism Kovan Testnet",
-      "epoch": 308821,
-      "batch": "0x62C82F3b04705a8b54a60c6A9B782AFbe8081C40",
-      "cid": "Qmf1L2Lw3z4WzqQRRw8jV43JtgVzAfFEHR81bavCV3bRuL",
-      "resolver": "0x218B65780615Ff134f9Ad810CB98839534D3C0D6"
     },
     "100": {
       "name": "Gnosis Chain",
@@ -97,13 +69,6 @@
       "toga": "0xc301D28088d537E24c41A7AAd03896E7E16074f4",
       "cid": "QmXhmMyzf2p4hBwytqCdqZioihqApvRtk3mx4kBrn7B3BV",
       "resolver": "0x8C54C83FbDe3C59e59dd6E324531FB93d4F504d3"
-    },
-    "421611": {
-      "name": "Arbitrum Rinkeby Testnet",
-      "epoch": 7309284,
-      "batch": "0x00A1c6dB5287f09D9C3e99C2B74E03F4A7d2F545",
-      "cid": "QmREesEuHQXAi4FFkD36Wo1cca2pJPETjRfnZQ46BcyJUK",
-      "resolver": "0xa2C0C70A1E922f5f060ec20EE3aF002C163b4567"
     },
     "420": {
       "name": "Optimism Goerli Testnet",

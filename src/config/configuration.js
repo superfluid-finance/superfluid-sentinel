@@ -39,7 +39,7 @@ class Config {
       this.ONLY_LISTED_TOKENS = config.only_listed_tokens === "true";
       this.TOGA_CONTRACT = config.toga_contract;
       this.FASTSYNC = config.fastsync !== "false";
-      this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://ipfs.io/ipfs/"
+      this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://cloudflare-ipfs.com/ipfs/"
       this.PIRATE = config.pirate === "true";
     } else {
       this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
@@ -63,7 +63,7 @@ class Config {
       this.METRICS = process.env.METRICS !== "false"; // default: true
       this.METRICS_PORT = process.env.METRICS_PORT || 3000;
       this.FASTSYNC = process.env.FASTSYNC !== "false";  // default: true
-      this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://ipfs.io/ipfs/";
+      this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://cloudflare-ipfs.com/ipfs/";
       this.PIRATE = process.env.PIRATE === "true"; // default: false
 
       // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.

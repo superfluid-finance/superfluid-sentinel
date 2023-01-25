@@ -2,22 +2,15 @@
   "schema-version": "2",
   "name": "sentinel-manifest",
   "networks": {
-    "3": {
-      "name": "Ropsten",
-      "epoch": 9400000,
-      "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "cid": "QmeXA7DXVjSi1m6AVgKfGXGoRmdzEVWtC61jiPG46CqgG4",
-      "resolver": "0x3b44e06D96BcA9412CBc23F80F41B9e30933571a"
-    },
-    "4": {
-      "name": "Rinkeby",
-      "epoch": 7400000,
-      "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "cid": "QmbjBccKM4KpULfauknMfruZCsMiJcgzmhqjyxLg6kUFha",
-      "resolver": "0x659635Fab0A0cef1293f7eb3c7934542B6A6B31A"
+    "1": {
+      "name": "Ethereum",
+      "epoch": 15870000,
+      "batch": "0x24849C01F16DE01061D2eEA1678082d44D9a7F80",
+      "toga": "0x8B5a2CF69a56d7F8Fa027edcA23594cdDF544dDc",
+      "resolver": "0xeE4cD028f5fdaAdeA99f8fc38e8bA8A57c90Be53"
     },
     "5": {
-      "name": "Goerli",
+      "name": "Goerli Testnet",
       "epoch": 3500000,
       "batch": "0x48B6934B354666Daa1d9A4ccEE114873312acF55",
       "toga": "0xa54FC15FC75693447d70a57262F37a70B614721b",
@@ -32,25 +25,11 @@
       "toga": "0xA3c8502187fD7a7118eAD59dc811281448946C8f",
       "resolver": "0x743B5f46BC86caF41bE4956d9275721E0531B186"
     },
-    "42": {
-      "name": "Kovan",
-      "epoch": 23709362,
-      "batch": "0x6b878902A8648815e1E896515e25D985715bE485",
-      "cid": "QmavpZdKJeRN3zk2VWxP6dj8zKGfKxDWPcWiFBqgS4DoWq",
-      "resolver": "0x851d3dd9dc97c1df1DA73467449B3893fc76D85B"
-    },
     "56": {
-      "name": "Binance",
+      "name": "Binance Smart Chain",
       "epoch": 18800000,
       "batch": "0xe6C8d111337D0052b9D88BF5d7D55B7f8385ACd3",
       "resolver": "0x69604aA4e9e8BF44A73C680997205Edb03A92E41"
-    },
-    "69": {
-      "name": "Optimism (Kovan)",
-      "epoch": 308821,
-      "batch": "0x62C82F3b04705a8b54a60c6A9B782AFbe8081C40",
-      "cid": "Qmf1L2Lw3z4WzqQRRw8jV43JtgVzAfFEHR81bavCV3bRuL",
-      "resolver": "0x218B65780615Ff134f9Ad810CB98839534D3C0D6"
     },
     "100": {
       "name": "Gnosis Chain",
@@ -69,39 +48,42 @@
       "resolver": "0xE0cc76334405EE8b39213E620587d815967af39C"
     },
     "42161": {
-      "name": "arbitrum-one",
+      "name": "Arbitrum One",
       "epoch": 7600000,
       "batch": "0xA87F76e99f6C8Ff8996d14f550ceF47f193D9A09",
       "toga": "0xFC63B7C762B10670Eda15cF3ca3970bCDB28C9eF",
       "resolver": "0x609b9d9d6Ee9C3200745A79B9d3398DBd63d509F"
     },
+    "420": {
+      "name": "Optimism Goerli Testnet",
+      "epoch": 340000,
+      "resolver": "0x21d4E9fbB9DB742E6ef4f29d189a7C18B0b59136"
+    },
     "43113": {
-      "name": "Avalanche (Fuji)",
+      "name": "Avalanche Fuji Testnet",
       "epoch": 3220231,
       "batch": "0xFabcf1239357D8051a8028222c28b0ffdc0F7398",
       "resolver": "0x141920741bC45b962B59c833cd849bA617F7ef38"
     },
     "43114": {
-      "name": "Avalanche (C-Chain)",
+      "name": "Avalanche C-Chain",
       "epoch": 14700000,
       "batch": "0xcFE6382B33F2AdaFbE46e6A26A88E0182ae32b0c",
       "toga": "0x3D9A67D5ec1E72CEcA8157e028855056786b6159",
       "resolver": "0x24a3F04F70B7f07B9673EadD3e146391BcfEa5c1"
     },
     "80001": {
-      "name": "Mumbai (Polygon)",
+      "name": "Polygon Mumbai Testnet",
       "epoch": 7295264,
       "batch": "0xf8A70a8589c579D3C169812b050C2B4475784EA9",
       "toga": "0xc301D28088d537E24c41A7AAd03896E7E16074f4",
       "cid": "QmXhmMyzf2p4hBwytqCdqZioihqApvRtk3mx4kBrn7B3BV",
       "resolver": "0x8C54C83FbDe3C59e59dd6E324531FB93d4F504d3"
     },
-    "421611": {
-      "name": "Arbitrum (Rinkeby)",
-      "epoch": 7309284,
-      "batch": "0x00A1c6dB5287f09D9C3e99C2B74E03F4A7d2F545",
-      "cid": "QmREesEuHQXAi4FFkD36Wo1cca2pJPETjRfnZQ46BcyJUK",
-      "resolver": "0xa2C0C70A1E922f5f060ec20EE3aF002C163b4567"
+    "421613": {
+      "name": "Arbitrum Goerli Testnet",
+      "epoch": 93000,
+      "resolver": "0x21d4E9fbB9DB742E6ef4f29d189a7C18B0b59136"
     }
   }
 }

@@ -59,6 +59,11 @@
       "epoch": 340000,
       "resolver": "0x21d4E9fbB9DB742E6ef4f29d189a7C18B0b59136"
     },
+    "42220": {
+      "name": "Celo",
+      "epoch": 16393000,
+      "resolver": "0x05eE721BD4D803d6d477Aa7607395452B65373FF"
+    },
     "43113": {
       "name": "Avalanche Fuji Testnet",
       "epoch": 3220231,

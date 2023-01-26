@@ -1,5 +1,7 @@
-version: '3'
+# Minimal version which starts the sentinel service only, without additional monitoring services.
+# This is ideal for resource constrained environments or for use with custom monitoring setups.
 
+version: '3'
 services:
   sentinel:
     build: .
@@ -8,6 +10,10 @@ services:
     environment:
       - NODE_ENV=production
       - DB_PATH=data/db.sqlite
+      # hardcode the port inside the container
+      - METRICS_PORT=9100
+    ports:
+      - ${METRICS_PORT:-9100}:9100
     volumes:
       - data:/app/data
     deploy:

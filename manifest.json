@@ -14,9 +14,8 @@
       "epoch": 3500000,
       "batch": "0x48B6934B354666Daa1d9A4ccEE114873312acF55",
       "toga": "0xa54FC15FC75693447d70a57262F37a70B614721b",
-      "cid": "Qmf8U7cRZcvqW7J8WYaZGG7whEWJfhjdPCyMQdK7EaesfW",
+      "cid": "QmTbFmDLCECQHjVixnNb5RgWu19WYsh7xVTZGtpyYbjGdK",
       "resolver": "0x3710AB3fDE2B61736B8BB0CE845D6c61F667a78E"
-
     },
     "10": {
       "name": "Optimism",
@@ -36,7 +35,7 @@
       "epoch": 14845091,
       "batch": "0x7Ac49B1539C2580972D9B43b41a4ec93A4290cdF",
       "toga": "0xb7DE52F4281a7a276E18C40F94cd93159C4A2d22",
-      "cid": "QmYpvhjEw8jubkP9YMxmkiSf8Jbcthq3NV8auvcwZ4cTJR",
+      "cid": "QmbbfXAw8TMG3ttpX8EJ2RmQo3jJyuqKbJP5GhsGG9x9tQ",
       "resolver": "0xD2009765189164b495c110D61e4D301729079911"
     },
     "137": {
@@ -44,8 +43,13 @@
       "epoch": 11000000,
       "batch": "0xAB4075f621100563f4551C0Ca50944809b03E948",
       "toga": "0x6AEAeE5Fd4D05A741723D752D30EE4D72690A8f7",
-      "cid": "QmdcjBYuAZiW4Vm8TR6AEE6Ajt9LVLT5WvLL3Rqt5f46fC",
+      "cid": "QmdXtZQPeZ3FJAggMbpccqNLqWrqqWZpPJMeR9xKCcyeVK",
       "resolver": "0xE0cc76334405EE8b39213E620587d815967af39C"
+    },
+    "420": {
+      "name": "Optimism Goerli Testnet",
+      "epoch": 340000,
+      "resolver": "0x21d4E9fbB9DB742E6ef4f29d189a7C18B0b59136"
     },
     "42161": {
       "name": "Arbitrum One",
@@ -53,11 +57,6 @@
       "batch": "0xA87F76e99f6C8Ff8996d14f550ceF47f193D9A09",
       "toga": "0xFC63B7C762B10670Eda15cF3ca3970bCDB28C9eF",
       "resolver": "0x609b9d9d6Ee9C3200745A79B9d3398DBd63d509F"
-    },
-    "420": {
-      "name": "Optimism Goerli Testnet",
-      "epoch": 340000,
-      "resolver": "0x21d4E9fbB9DB742E6ef4f29d189a7C18B0b59136"
     },
     "42220": {
       "name": "Celo",
@@ -68,21 +67,23 @@
       "name": "Avalanche Fuji Testnet",
       "epoch": 3220231,
       "batch": "0xFabcf1239357D8051a8028222c28b0ffdc0F7398",
-      "resolver": "0x141920741bC45b962B59c833cd849bA617F7ef38"
+      "resolver": "0x141920741bC45b962B59c833cd849bA617F7ef38",
+      "cid": "QmXaVuUerFYPtdqmkq7gNG4xieRaMgQFoeeKwLsMGXgsx7"
     },
     "43114": {
       "name": "Avalanche C-Chain",
       "epoch": 14700000,
       "batch": "0xcFE6382B33F2AdaFbE46e6A26A88E0182ae32b0c",
       "toga": "0x3D9A67D5ec1E72CEcA8157e028855056786b6159",
-      "resolver": "0x24a3F04F70B7f07B9673EadD3e146391BcfEa5c1"
+      "resolver": "0x24a3F04F70B7f07B9673EadD3e146391BcfEa5c1",
+      "cid": "QmUKi3nkTm5Edbj1dE6HsE1uB3oU32MdtvhVxjhg2QEXVB"
     },
     "80001": {
       "name": "Polygon Mumbai Testnet",
       "epoch": 7295264,
       "batch": "0xf8A70a8589c579D3C169812b050C2B4475784EA9",
       "toga": "0xc301D28088d537E24c41A7AAd03896E7E16074f4",
-      "cid": "QmXhmMyzf2p4hBwytqCdqZioihqApvRtk3mx4kBrn7B3BV",
+      "cid": "QmcsQ2Da6MnhDB5U7wU5f7P2V54ApXx27c25Rmjo1NVSpb",
       "resolver": "0x8C54C83FbDe3C59e59dd6E324531FB93d4F504d3"
     },
     "421613": {

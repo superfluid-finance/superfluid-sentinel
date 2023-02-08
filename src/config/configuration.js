@@ -17,6 +17,9 @@ class Config {
       if (config.tokens !== undefined && config.tokens !== "") {
         this.TOKENS = config.tokens.split(",");
       }
+      if (config.excluded_tokens !== undefined && config.excluded_tokens !== "") {
+        this.EXCLUDED_TOKENS = config.excluded_tokens.split(",");
+      }
       this.DB = (config.db_path !== undefined && config.db_path !== "") ? config.db_path : "./db.sqlite";
       this.ADDITIONAL_LIQUIDATION_DELAY = config.additional_liquidation_delay || 0;
       this.TX_TIMEOUT = config.tx_timeout * 1000 || 60000;
@@ -48,10 +51,13 @@ class Config {
       this.MNEMONIC_INDEX = process.env.MNEMONIC_INDEX || 0;
       this.PRIVATE_KEY = process.env.PRIVATE_KEY;
       this.MAX_QUERY_BLOCK_RANGE = process.env.MAX_QUERY_BLOCK_RANGE || 2000;
+      this.TOKENS = undefined;
       if (process.env.TOKENS !== undefined && process.env.TOKENS !== "") {
         this.TOKENS = process.env.TOKENS.split(",");
-      } else {
-        this.TOKENS = undefined;
+      }
+      this.EXCLUDED_TOKENS = undefined;
+      if (process.env.EXCLUDED_TOKENS !== undefined && process.env.EXCLUDED_TOKENS !== "") {
+          this.EXCLUDED_TOKENS = process.env.EXCLUDED_TOKENS.split(",");
       }
       this.DB = (process.env.DB_PATH !== undefined && process.env.DB_PATH !== "") ? process.env.DB_PATH : "./db.sqlite";
       this.ADDITIONAL_LIQUIDATION_DELAY = process.env.ADDITIONAL_LIQUIDATION_DELAY || 0;
@@ -81,20 +87,27 @@ class Config {
       this.MAX_TX_NUMBER = process.env.MAX_TX_NUMBER || 100;
     }
 
-    // token filter also affects ONLY_LISTED_TOKENS
+    // token filter affects ONLY_LISTED_TOKENS and EXCLUDED_TOKENS
     if (this.TOKENS !== undefined) {
       this.ONLY_LISTED_TOKENS = false;
+      this.EXCLUDED_TOKENS = undefined;
     }
 
+    if (this.TOKENS !== undefined &&
+        Array.from(new Set(this.TOKENS.map(x => x.toLowerCase()))).length !== this.TOKENS.length
+    ) {
+      throw Error("Config.constructor(): duplicate tokens set from configuration: TOKENS");
+    }
+
+    if (this.EXCLUDED_TOKENS !== undefined &&
+        Array.from(new Set(this.EXCLUDED_TOKENS.map(x => x.toLowerCase()))).length !== this.EXCLUDED_TOKENS.length
+    ) {
+        throw Error("Config.constructor(): duplicate tokens set from configuration: EXCLUDED_TOKENS");
+    }
     if (this.HTTP_RPC_NODE === undefined) {
       throw Error("Config.constructor(): required configuration item missing: HTTP_RPC_NODE");
     }
 
-    if (this.TOKENS !== undefined &&
-      Array.from(new Set(this.TOKENS.map(x => x.toLowerCase()))).length !== this.TOKENS.length
-    ) {
-      throw Error("Config.constructor(): duplicate tokens set from configuration: TOKENS");
-    }
   }
 
   loadNetworkInfo (chainId) {
@@ -114,6 +127,7 @@ class Config {
       OBSERVER: this.OBSERVER,
       MAX_QUERY_BLOCK_RANGE: this.MAX_QUERY_BLOCK_RANGE,
       TOKENS: this.TOKENS,
+      EXCLUDED_TOKENS: this.EXCLUDED_TOKENS,
       DB_PATH: this.DB,
       ADDITIONAL_LIQUIDATION_DELAY: this.ADDITIONAL_LIQUIDATION_DELAY,
       TX_TIMEOUT: this.TX_TIMEOUT,

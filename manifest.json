@@ -56,7 +56,8 @@
       "epoch": 7600000,
       "batch": "0xA87F76e99f6C8Ff8996d14f550ceF47f193D9A09",
       "toga": "0xFC63B7C762B10670Eda15cF3ca3970bCDB28C9eF",
-      "resolver": "0x609b9d9d6Ee9C3200745A79B9d3398DBd63d509F"
+      "resolver": "0x609b9d9d6Ee9C3200745A79B9d3398DBd63d509F",
+      "cid": "QmYDiZ4Eb6FJsWCoBAX4EBH1Pfw9PVg54p3KoTJqrzj3Wc"
     },
     "42220": {
       "name": "Celo",

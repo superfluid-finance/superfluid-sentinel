@@ -31,7 +31,9 @@ class HTTPServer {
     this.server.get("/nextliquidations", async (req, res) => {
       const liquidations = await this.app.db.queries.getLiquidations(
         this.app.time.getTimeWithDelay(-3600),
-        this.app.config.TOKENS);
+        this.app.config.TOKENS,
+        this.app.config.EXCLUDED_TOKENS
+      );
       try {
         res.send(liquidations);
       } catch (e) {

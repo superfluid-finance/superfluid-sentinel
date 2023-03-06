@@ -215,7 +215,7 @@ describe("Integration scripts tests", () => {
       });
       await bootNode({batch_contract: batchContract._address, polling_interval: 1, max_tx_number: 10});
       // blockGasLimit random number picked lower than the gas limit of the tx needed for batch call
-      app.setTestFlag("REVERT_ON_BLOCK_GAS_LIMIT", { blockGasLimit: 6894439 });
+      app.setTestFlag("REVERT_ON_BLOCK_GAS_LIMIT", { blockGasLimit: 3847206 });
       await ganache.helper.timeTravelOnce(1000, app, true);
       const result1 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedV2", 5, tx.blockNumber);
       const result2 = await protocolHelper.waitForEventAtSameBlock(protocolVars, app, ganache, "AgreementLiquidatedV2", 5, result1 + 1);

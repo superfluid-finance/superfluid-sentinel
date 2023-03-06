@@ -113,6 +113,7 @@ class Liquidator {
       const streams = await this.app.db.queries.getLiquidations(
         checkDate,
         batch.superToken,
+        this.app.config.EXCLUDED_TOKENS,
         this.app.config.MAX_TX_NUMBER
       );
 

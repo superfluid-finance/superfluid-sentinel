@@ -115,6 +115,7 @@ class Config {
     const network = metadata.filter(x => x.chainId === chainId)[0];
     const contractsV1 = network.contractsV1 || {};
     this.EPOCH_BLOCK = contractsV1.startBlockV1 || 0;
+    this.BATCH_CONTRACT = contractsV1.batchLiquidator || undefined;
     this.TOGA_CONTRACT = contractsV1.toga || undefined;
     this.CID = manifest.networks[chainId].cid || undefined;
     if(this.RESOLVER === undefined) {

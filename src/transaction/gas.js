@@ -10,7 +10,7 @@ class Gas {
         to: txObject.target,
         data: txObject.tx
       });
-      result += Math.ceil(parseInt(result) * 1.2);
+      result += Math.ceil(parseInt(result) * 0.1);
       return {
         error: undefined,
         gasLimit: result

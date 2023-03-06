@@ -254,14 +254,13 @@ class Client {
   }
 
   async sendSignedTransaction (signed) {
-    if (this._testMode === "TIMEOUT_ON_LOW_GAS_PRICE") {
-      if (signed.tx.txObject.gasPrice <= this._testOption.minimumGas) {
-        // eslint-disable-next-line promise/param-names
-        const delay = ms => new Promise(res => setTimeout(res, ms));
-        await delay(signed.tx.timeout * 2);
-      } else {
-        return this.web3.eth.sendSignedTransaction(signed.tx.rawTransaction);
-      }
+    const gasPrice = signed.tx.txObject.gasPrice;
+    const gasLimit = signed.tx.txObject.gasLimit;
+
+    if (this._testMode === "TIMEOUT_ON_LOW_GAS_PRICE" && gasPrice <= this._testOption.minimumGas) {
+      await new Promise(resolve => setTimeout(resolve, signed.tx.timeout * 2));
+    } else if (this._testMode === "REVERT_ON_BLOCK_GAS_LIMIT" && gasLimit > this._testOption.blockGasLimit) {
+      throw new Error("block gas limit");
     } else {
       return this.web3.eth.sendSignedTransaction(signed.tx.rawTransaction);
     }

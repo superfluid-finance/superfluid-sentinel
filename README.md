@@ -31,7 +31,7 @@ Check `.env.example` for additional configuration items and their documentation.
 
 ### Native Setup
 
-Requires Node.js v14+ and npm already installed.
+Requires Node.js v16+ and npm already installed.
 
 First, check out this repository and cd into it:
 

@@ -95,7 +95,6 @@ WHERE out.estimation <= :dt ${inSnipped}
 ORDER BY out.estimation ASC ${inSnippedLimit}`;
 
         if (inSnipped !== "") {
-            console.log("filter tokens: ", tokenFilter)
             return this.app.db.query(sqlquery, {
                 replacements: {
                     dt: checkDate,

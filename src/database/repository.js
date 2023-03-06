@@ -68,11 +68,13 @@ class Repository {
         });
     }
 
-    async getLiquidations(checkDate, onlyTokens, limitRows) {
+    async getLiquidations(checkDate, onlyTokens, excludeTokens, limitRows) {
         let inSnipped = "";
         let inSnippedLimit = "";
-        if (onlyTokens !== undefined) {
-            inSnipped = "and out.superToken in (:tokens)";
+        // if configured onlyTokens we don't filter by excludeTokens
+        const tokenFilter = onlyTokens !== undefined ? onlyTokens : excludeTokens;
+        if (tokenFilter !== undefined) {
+            inSnipped = `and out.superToken ${ onlyTokens !== undefined ? "in" : "not in" } (:tokens)`;
         }
         if (limitRows !== undefined && limitRows > 0 && limitRows < 101) {
             inSnippedLimit = `LIMIT ${limitRows}`;
@@ -96,21 +98,24 @@ ORDER BY out.estimation ASC ${inSnippedLimit}`;
             return this.app.db.query(sqlquery, {
                 replacements: {
                     dt: checkDate,
-                    tokens: onlyTokens
+                    tokens: tokenFilter
                 },
                 type: QueryTypes.SELECT
             });
         }
+
         return this.app.db.query(sqlquery, {
             replacements: {dt: checkDate},
             type: QueryTypes.SELECT
         });
     }
 
-    async getNumberOfBatchCalls(checkDate, onlyTokens) {
+    async getNumberOfBatchCalls(checkDate, onlyTokens, excludeTokens) {
         let inSnipped = "";
-        if (onlyTokens !== undefined) {
-            inSnipped = "and out.superToken in (:tokens)";
+        // if configured onlyTokens we don't filter by excludeTokens
+        const tokenFilter = onlyTokens !== undefined ? onlyTokens : excludeTokens;
+        if (tokenFilter !== undefined) {
+            inSnipped = `and out.superToken ${ onlyTokens !== undefined ? "in" : "not in" } (:tokens)`;
         }
 
         const sqlquery = `SELECT superToken, count(*) as numberTxs  FROM (SELECT agr.superToken, agr.sender, agr.receiver,
@@ -132,7 +137,7 @@ order by count(*) desc`;
             return this.app.db.query(sqlquery, {
                 replacements: {
                     dt: checkDate,
-                    tokens: onlyTokens
+                    tokens: tokenFilter
                 },
                 type: QueryTypes.SELECT
             });

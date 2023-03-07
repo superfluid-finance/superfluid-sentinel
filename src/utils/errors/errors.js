@@ -76,7 +76,6 @@ function EVMErrorParser(err) {
     if(message.includes("already known")) {
       return new TxUnderpricedError("tx already known", err.message);
     }
-
     if(message.includes("execution reverted") ||
         err.message.toLowerCase().includes("reverted by the evm") ||
         err.message.toLowerCase().includes("vm exception"))

@@ -34,6 +34,7 @@ class Config {
       this.BLOCK_OFFSET = config.block_offset || 0;
       this.MAX_TX_NUMBER = config.max_tx_number || 100;
       this.EPOCH_BLOCK = config.epoch_block || 0;
+      this.BATCHV2_CONTRACT = config.batchV2_contract;
       this.BATCH_CONTRACT = config.batch_contract;
       this.CONCURRENCY = config.concurrency;
       this.COLD_BOOT = config.cold_boot;
@@ -130,6 +131,7 @@ async getCID (chainId) {
     const contractsV1 = network.contractsV1 || {};
     this.CID = await this.getCID(chainId);
     this.EPOCH_BLOCK = contractsV1.startBlockV1 || 0;
+    this.BATCHV2_CONTRACT = contractsV1.batchLiquidatorV2 || undefined;
     this.BATCH_CONTRACT = contractsV1.batchLiquidator || undefined;
     this.TOGA_CONTRACT = contractsV1.toga || undefined;
     //this.CID = localManifest.networks[chainId].cid || undefined;

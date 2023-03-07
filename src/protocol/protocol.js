@@ -180,13 +180,20 @@ class Protocol {
 
   generateMultiDeleteFlowABI (superToken, senders, receivers) {
     try {
-      return this.app.client.batch.methods.deleteFlows(
-        this.app.client.sf._address,
-        this.app.client.CFAv1._address,
-        superToken,
-        senders,
-        receivers
-      ).encodeABI();
+      return
+        this.app.config.BATCHV2_CONTRACT !== undefined ?
+        this.app.client.batch.methods.deleteFlows( // batch v2
+          superToken,
+          senders,
+          receivers
+        ).encodeABI() :
+        this.app.client.batch.methods.deleteFlows( // batch v1
+          this.app.client.sf._address,
+          this.app.client.CFAv1._address,
+          superToken,
+          senders,
+          receivers
+        ).encodeABI();
     } catch (err) {
       this.app.logger.error(err);
       throw Error(`Protocol.generateMultiDeleteFlowABI() : ${err}`);

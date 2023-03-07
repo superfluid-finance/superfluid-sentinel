@@ -154,6 +154,9 @@ class App {
             }
             // create all web3 infrastructure needed
             await this.client.init();
+            if (this.config.BATCHV2_CONTRACT !== undefined) {
+                await this.client.loadBatchContract();
+            }
             if (this.config.BATCH_CONTRACT !== undefined) {
                 await this.client.loadBatchContract();
             }

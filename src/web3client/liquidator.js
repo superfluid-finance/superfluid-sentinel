@@ -22,7 +22,7 @@ class Liquidator {
       const checkDate = this.app.time.getTimeWithDelay(this.app.config.ADDITIONAL_LIQUIDATION_DELAY);
       let haveBatchWork = [];
       // if we have a batchLiquidator contract, use batch calls
-      if (this.app.config.BATCH_CONTRACT !== undefined) {
+      if (this.app.config.BATCHV2_CONTRACT !== undefined || this.app.config.BATCH_CONTRACT !== undefined) {
         haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate, this.app.config.TOKENS, this.app.config.EXCLUDED_TOKENS);
         if(haveBatchWork.length > 0) {
           this.app.logger.debug(JSON.stringify(haveBatchWork));
@@ -160,7 +160,9 @@ class Liquidator {
       const txObject = {
         retry: 1,
         step: this.app.config.RETRY_GAS_MULTIPLIER,
-        target: this.app.config.BATCH_CONTRACT,
+        target: this.app.config.BATCHV2_CONTRACT !== undefined ?
+          this.app.config.BATCHV2_CONTRACT :
+          this.app.config.BATCH_CONTRACT,
         superToken: superToken,
         tx: tx,
         gasPrice: BaseGasPrice.gasPrice,

@@ -6,6 +6,7 @@ const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contra
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
 const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
 const BatchContract = require("@superfluid-finance/ethereum-contracts/build/contracts/BatchLiquidator.json");
+const BatchV2Contract = require("@superfluid-finance/ethereum-contracts/build/contracts/BatchLiquidatorV2.json");
 const TogaContract = require("@superfluid-finance/ethereum-contracts/build/contracts/TOGA.json");
 const { wad4human } = require("@decentral.ee/web3-helpers");
 
@@ -85,10 +86,12 @@ class Client {
 
   async loadBatchContract () {
     try {
-      if (this.app.config.BATCH_CONTRACT !== undefined) {
+      if (this.app.config.BATCHV2_CONTRACT !== undefined) {
+        this.batch = new this.web3.eth.Contract(BatchV2Contract.abi, this.app.config.BATCHV2_CONTRACT);
+      } else if (this.app.config.BATCH_CONTRACT !== undefined) {
         this.batch = new this.web3.eth.Contract(BatchContract.abi, this.app.config.BATCH_CONTRACT);
       } else {
-        this.app.logger.info("Batch Contract not found");
+        throw Error("Trying to load Batch Contract without one configured");
       }
     } catch (err) {
       this.app.logger.error(err);

@@ -245,7 +245,7 @@ class Client {
     return this.agentAccounts;
   }
 
-  async getCurrentBlockNumber (offset) {
+  async getCurrentBlockNumber (offset = 0) {
     return (await this.web3.eth.getBlockNumber()) - offset;
   }
 

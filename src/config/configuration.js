@@ -113,6 +113,9 @@ class Config {
 
   loadNetworkInfo (chainId) {
     const network = metadata.filter(x => x.chainId === chainId)[0];
+    if(network === undefined) {
+        throw Error(`Config.loadNetworkInfo(): unknown chainId: ${chainId}`);
+    }
     const contractsV1 = network.contractsV1 || {};
     this.EPOCH_BLOCK = contractsV1.startBlockV1 || 0;
     this.BATCH_CONTRACT = contractsV1.batchLiquidator || undefined;

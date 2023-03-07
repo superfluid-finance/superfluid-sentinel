@@ -1,5 +1,6 @@
 require("./loadCmdArgs");
 const manifest = require("../../manifest.json");
+const metadata = require("@superfluid-finance/metadata/networks.json");
 
 class Config {
   constructor (config) {
@@ -111,12 +112,14 @@ class Config {
   }
 
   loadNetworkInfo (chainId) {
-    this.EPOCH_BLOCK = manifest.networks[chainId].epoch || 0;
-    this.BATCH_CONTRACT = manifest.networks[chainId].batch;
-    this.TOGA_CONTRACT = manifest.networks[chainId].toga || undefined;
+    const network = metadata.filter(x => x.chainId === chainId)[0];
+    const contractsV1 = network.contractsV1 || {};
+    this.EPOCH_BLOCK = contractsV1.startBlockV1 || 0;
+    this.BATCH_CONTRACT = contractsV1.batchLiquidator || undefined;
+    this.TOGA_CONTRACT = contractsV1.toga || undefined;
     this.CID = manifest.networks[chainId].cid || undefined;
     if(this.RESOLVER === undefined) {
-      this.RESOLVER = manifest.networks[chainId].resolver || undefined;
+      this.RESOLVER = contractsV1.resolver || undefined;
     }
   }
 

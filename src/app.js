@@ -150,7 +150,7 @@ class App {
             await this.client.connect();
             // if we are running tests don't try to load network information
             if (!this.config.RUN_TEST_ENV) {
-                this.config.loadNetworkInfo(await this.client.getChainId());
+                await this.config.loadNetworkInfo(await this.client.getChainId());
             }
             // create all web3 infrastructure needed
             await this.client.init();

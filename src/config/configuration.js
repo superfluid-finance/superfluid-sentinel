@@ -1,6 +1,7 @@
 require("./loadCmdArgs");
-const manifest = require("../../manifest.json");
+const localManifest = require("../../manifest.json");
 const metadata = require("@superfluid-finance/metadata/networks.json");
+const axios = require("axios");
 
 class Config {
   constructor (config) {
@@ -111,16 +112,27 @@ class Config {
 
   }
 
-  loadNetworkInfo (chainId) {
+async getCID (chainId) {
+    const manifestUrl = "https://raw.githubusercontent.com/superfluid-finance/superfluid-sentinel/master/manifest.json";
+    try {
+      const response = await axios.get(manifestUrl);
+      return response?.data?.networks?.[chainId]?.cid;
+    } catch (error) {
+      return localManifest.networks[chainId]?.cid;
+    }
+  }
+
+  async loadNetworkInfo (chainId) {
     const network = metadata.filter(x => x.chainId === chainId)[0];
     if(network === undefined) {
         throw Error(`Config.loadNetworkInfo(): unknown chainId: ${chainId}`);
     }
     const contractsV1 = network.contractsV1 || {};
+    this.CID = await this.getCID(chainId);
     this.EPOCH_BLOCK = contractsV1.startBlockV1 || 0;
     this.BATCH_CONTRACT = contractsV1.batchLiquidator || undefined;
     this.TOGA_CONTRACT = contractsV1.toga || undefined;
-    this.CID = manifest.networks[chainId].cid || undefined;
+    //this.CID = localManifest.networks[chainId].cid || undefined;
     if(this.RESOLVER === undefined) {
       this.RESOLVER = contractsV1.resolver || undefined;
     }

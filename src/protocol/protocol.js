@@ -161,33 +161,31 @@ class Protocol {
     }
   }
 
-  generateDeleteFlowABI (superToken, sender, receiver) {
+  generateDeleteStreamTxData(superToken, sender, receiver) {
     try {
-      return this.app.client.sf.methods.callAgreement(
-        this.app.client.CFAv1._address,
-        this.app.client.CFAv1.methods.deleteFlow(
-          superToken,
-          sender,
-          receiver,
-          "0x").encodeABI(),
-        "0x"
-      ).encodeABI();
-    } catch (err) {
-      this.app.logger.error(err);
-      throw Error(`Protocol.generateDeleteFlowABI() : ${err}`);
+      const isBatchContractExist = this.app.client.batch !== undefined && this.app.config.NETWORK_TYPE === "evm-l2";
+      if (isBatchContractExist) {
+        return this.app.client.batch.deleteFlow(superToken, sender, receiver).encodeABI();
+      } else {
+        const CFAv1Address = this.app.client.CFAv1._address;
+        const deleteFlowABI = this.app.client.CFAv1.methods.deleteFlow(superToken, sender, receiver, "0x").encodeABI();
+        const callAgreementABI = this.app.client.sf.methods.callAgreement(CFAv1Address, deleteFlowABI, "0x").encodeABI();
+        return callAgreementABI;
+      }
+    } catch (error) {
+      this.app.logger.error(error);
+      throw new Error(`Protocol.generateDeleteStreamTxData(): ${error.message}`);
     }
   }
 
-  generateMultiDeleteFlowABI (superToken, senders, receivers) {
+  generateBatchLiquidationTxData(superToken, senders, receivers) {
     try {
-      return this.app.client.batch.methods.deleteFlows(
-        superToken,
-        senders,
-        receivers
-      ).encodeABI();
-    } catch (err) {
-      this.app.logger.error(err);
-      throw Error(`Protocol.generateMultiDeleteFlowABI() : ${err}`);
+      const batchMethods = this.app.client.batch.methods;
+      const deleteFlowsABI = batchMethods.deleteFlows(superToken, senders, receivers).encodeABI();
+      return deleteFlowsABI;
+    } catch (error) {
+      this.app.logger.error(error);
+      throw new Error(`Protocol.generateBatchLiquidationTxData(): ${error.message}`);
     }
   }
 

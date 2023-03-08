@@ -74,7 +74,7 @@ class Liquidator {
     for (const job of work) {
       if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver, job.pppmode)) {
         try {
-          const tx = this.app.protocol.generateDeleteFlowABI(job.superToken, job.sender, job.receiver);
+          const tx = this.app.protocol.generateDeleteStreamTxData(job.superToken, job.sender, job.receiver);
           const BaseGasPrice = await this.app.gasEstimator.getGasPrice();
           const txObject = {
             retry: 1,
@@ -155,7 +155,7 @@ class Liquidator {
     const chainId = await this.app.client.getChainId();
     const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
     try {
-      const tx = this.app.protocol.generateMultiDeleteFlowABI(superToken, senders, receivers);
+      const tx = this.app.protocol.generateBatchLiquidationTxData(superToken, senders, receivers);
       const BaseGasPrice = await this.app.gasEstimator.getGasPrice();
       const txObject = {
         retry: 1,

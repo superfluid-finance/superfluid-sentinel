@@ -181,8 +181,6 @@ class Protocol {
   generateMultiDeleteFlowABI (superToken, senders, receivers) {
     try {
       return this.app.client.batch.methods.deleteFlows(
-        this.app.client.sf._address,
-        this.app.client.CFAv1._address,
         superToken,
         senders,
         receivers

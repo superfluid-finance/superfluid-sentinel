@@ -27,7 +27,7 @@
     "@decentral.ee/web3-helpers": "^0.5.3",
     "@superfluid-finance/ethereum-contracts": "1.0.0",
     "@superfluid-finance/js-sdk": "0.5.12",
-    "@superfluid-finance/metadata": "git+https://github.com/superfluid-finance/metadata.git",
+    "@superfluid-finance/metadata": "github:superfluid-finance/metadata#BatchLiquidatorV2",
     "@truffle/contract": "^4.4.2",
     "async": "^3.2.2",
     "axios": "^0.24.0",

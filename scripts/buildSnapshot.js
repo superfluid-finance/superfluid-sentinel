@@ -16,7 +16,7 @@ const Bootstrap = require("./../src/boot/bootstrap");
 const LoadEvents = require("./../src/boot/loadEvents");
 const DB = require("./../src/database/db");
 const Repository = require("./../src/database/repository");
-const networkConfigs = require("./../manifest.json").networks;
+const metadata = require("@superfluid-finance/metadata/networks.json");
 /*
  * Build a fresh snapshot
  */
@@ -43,8 +43,11 @@ const networkConfigs = require("./../manifest.json").networks;
         app.client = new Client(app);
         await app.client.connect();
         const chainId = await app.client.getChainId();
-        //get resolver from manifest file
-        const resolver = networkConfigs[chainId].resolver;
+        const network = metadata.filter(x => x.chainId === chainId)[0];
+        if (network === undefined) {
+            throw Error(`unknown chainId: ${chainId}`);
+        }
+        const resolver = network.contractsV1.resolver;
         app.config.RESOLVER = resolver;
         await app.client.init();
         /*Set up database*/
@@ -64,7 +67,7 @@ const networkConfigs = require("./../manifest.json").networks;
             event: new EventModel()
         };
         db.queries = new Repository(app);
-        config.EPOCH_BLOCK = networkConfigs[chainId].epoch || 0;
+        config.EPOCH_BLOCK = network.startBlockV1 || 0;
         app.protocol = new Protocol(app);
         app.queues = new Queues(app);
         const loadEvents = new LoadEvents(app);

@@ -130,7 +130,6 @@ class Config {
       const response = await axios.get(manifestUrl);
       cid = response?.data?.networks?.[chainId]?.cid;
       networkType = response?.data?.networks?.[chainId]?.networkType;
-      return response?.data?.networks?.[chainId]?.cid;
     } catch (error) {
       cid = localManifest.networks[chainId]?.cid;
       networkType = localManifest.networks[chainId]?.networkType;

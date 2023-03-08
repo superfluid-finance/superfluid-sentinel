@@ -123,14 +123,19 @@ class Config {
     return Array.from(new Set(array.map(x => x.toLowerCase()))).length !== array.length;
   }
 
-  async getCID (chainId) {
+  async getManifestCIDAndNetworkType (chainId) {
     const manifestUrl = "https://raw.githubusercontent.com/superfluid-finance/superfluid-sentinel/master/manifest.json";
+    let cid, networkType;
     try {
       const response = await axios.get(manifestUrl);
+      cid = response?.data?.networks?.[chainId]?.cid;
+      networkType = response?.data?.networks?.[chainId]?.networkType;
       return response?.data?.networks?.[chainId]?.cid;
     } catch (error) {
-      return localManifest.networks[chainId]?.cid;
+      cid = localManifest.networks[chainId]?.cid;
+      networkType = localManifest.networks[chainId]?.networkType;
     }
+    return { cid, networkType };
   }
 
   async loadNetworkInfo (chainId) {
@@ -139,7 +144,10 @@ class Config {
         throw Error(`Config.loadNetworkInfo(): unknown chainId: ${chainId}`);
     }
     const contractsV1 = network.contractsV1 || {};
-    this.CID = await this.getCID(chainId);
+    const { cid, networkType } = await this.getManifestCIDAndNetworkType(chainId);
+    this.CID = cid;
+    this.NETWORK_TYPE = networkType;
+
     this.EPOCH_BLOCK = contractsV1.startBlockV1 || 0;
     this.BATCH_CONTRACT = contractsV1.batchLiquidator || undefined;
     this.TOGA_CONTRACT = contractsV1.toga || undefined;

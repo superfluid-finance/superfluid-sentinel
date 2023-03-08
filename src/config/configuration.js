@@ -124,16 +124,17 @@ class Config {
   }
 
   async getManifestCIDAndNetworkType (chainId) {
+    let cid = localManifest.networks[chainId]?.cid;
+    let networkType = localManifest.networks[chainId]?.network_type;
     const manifestUrl = "https://raw.githubusercontent.com/superfluid-finance/superfluid-sentinel/master/manifest.json";
-    let cid, networkType;
-    try {
-      const response = await axios.get(manifestUrl);
-      cid = response?.data?.networks?.[chainId]?.cid;
-      networkType = response?.data?.networks?.[chainId]?.networkType;
-      return response?.data?.networks?.[chainId]?.cid;
-    } catch (error) {
-      cid = localManifest.networks[chainId]?.cid;
-      networkType = localManifest.networks[chainId]?.networkType;
+    if (!process.env.NO_REMOTE_MANIFEST) {
+      try {
+        const response = await axios.get(manifestUrl);
+        cid = response?.data?.networks?.[chainId]?.cid;
+        networkType = response?.data?.networks?.[chainId]?.network_type;
+      } catch (error) {
+        //console.warn("getting remote manifest failed, using local one");
+      }
     }
     return { cid, networkType };
   }

@@ -103,6 +103,7 @@ class Config {
     this.POLLING_INTERVAL = process.env.POLLING_INTERVAL * 1000 || 30000;
     this.BLOCK_OFFSET = process.env.BLOCK_OFFSET || 12;
     this.MAX_TX_NUMBER = process.env.MAX_TX_NUMBER || 100;
+    this.NO_REMOTE_MANIFEST = this._parseToBool(process.env.NO_REMOTE_MANIFEST, true);
   }
 
   _parseToBool(value, defaultValue = false) {
@@ -127,7 +128,7 @@ class Config {
     let cid = localManifest.networks[chainId]?.cid;
     let networkType = localManifest.networks[chainId]?.network_type;
     const manifestUrl = "https://raw.githubusercontent.com/superfluid-finance/superfluid-sentinel/master/manifest.json";
-    if (!process.env.NO_REMOTE_MANIFEST) {
+    if (!this.NO_REMOTE_MANIFEST) {
       try {
         const response = await axios.get(manifestUrl);
         cid = response?.data?.networks?.[chainId]?.cid;
@@ -152,7 +153,6 @@ class Config {
     this.EPOCH_BLOCK = contractsV1.startBlockV1 || 0;
     this.BATCH_CONTRACT = contractsV1.batchLiquidator || undefined;
     this.TOGA_CONTRACT = contractsV1.toga || undefined;
-    //this.CID = localManifest.networks[chainId].cid || undefined;
     if(this.RESOLVER === undefined) {
       this.RESOLVER = contractsV1.resolver || undefined;
     }

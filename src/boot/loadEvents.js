@@ -104,7 +104,7 @@ class LoadEvents {
           let keepTrying = 10;
           while (true) {
             try {
-              await task.self.app.protocol.calculateAndSaveTokenDelay(task.token);
+              await task.self.app.protocol.calculateAndSaveTokenDelay(task.token, false);
               break;
             } catch (err) {
               keepTrying++;

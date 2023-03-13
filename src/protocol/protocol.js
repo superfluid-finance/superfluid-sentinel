@@ -123,7 +123,7 @@ class Protocol {
   async calculateAndSaveTokenDelay (superToken, sendNotification = false) {
     try {
 
-      if(!this.app.config.OBSERVER) {
+      if(this.app.config.OBSERVER) {
         this.app.logger.info("running as observer, ignoring PIC event");
         return;
       }

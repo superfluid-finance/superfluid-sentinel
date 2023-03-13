@@ -61,6 +61,7 @@ class App {
         this.timer = new Timer();
 
         this.notifier = new Notifier(this);
+        // at this stage we only work with slack
         if (this.config.SLACK_WEBHOOK_URL) {
             this._slackNotifier = new SlackNotifier(this, {timeout: 3000});
             this.notificationJobs = new NotifierJobs(this);

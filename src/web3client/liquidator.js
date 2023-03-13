@@ -79,6 +79,7 @@ class Liquidator {
           const txObject = {
             retry: 1,
             step: this.app.config.RETRY_GAS_MULTIPLIER,
+            // TODO: could also require BatchLiquidator address
             target: this.app.client.sf._address,
             flowSender: job.sender,
             flowReceiver: job.receiver,

@@ -18,6 +18,7 @@ const HTTPServer = require("./httpserver/server");
 const Report = require("./httpserver/report");
 const Notifier = require("./services/notifier");
 const SlackNotifier = require("./services/slackNotifier");
+const NotifierJobs = require("./services/notificationJobs");
 const Errors = require("./utils/errors/errors");
 
 class App {
@@ -62,6 +63,7 @@ class App {
         this.notifier = new Notifier(this);
         if (this.config.SLACK_WEBHOOK_URL) {
             this._slackNotifier = new SlackNotifier(this, {timeout: 3000});
+            this.notificationJobs = new NotifierJobs(this);
         }
 
         this._isShutdown = false;
@@ -205,6 +207,11 @@ class App {
             // start http server to serve node health reports and dashboard
             if (this.config.METRICS === true) {
                 this.timer.startAfter(this.server);
+            }
+            // Only start notification jobs if notifier is enabled
+            if (this.notificationJobs) {
+                this.logger.info(`Starting notification jobs`);
+                this.timer.startAfter(this.notificationJobs);
             }
             //from this point on, sentinel is considered initialized.
             this._isInitialized = true;

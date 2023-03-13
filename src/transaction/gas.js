@@ -46,6 +46,7 @@ class Gas {
         parseInt(originalGasPrice) >= this.app.config.MAX_GAS_PRICE
       ) {
         this.app.logger.debug(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
+        this.app.notifier.sendNotification(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
         gasPrice = this.app.config.MAX_GAS_PRICE;
       } else {
         gasPrice = Math.ceil(parseInt(gasPrice) * step);

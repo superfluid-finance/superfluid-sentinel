@@ -14,7 +14,7 @@ class Protocol {
     try {
       this.app.client.addTotalRequest();
       return this.app.client.superTokens[token.toLowerCase()].methods.realtimeBalanceOfNow(
-        address
+          address
       ).call();
     } catch (err) {
       console.error(err);
@@ -69,9 +69,9 @@ class Protocol {
       ];
       arrPromise = await Promise.all(arrPromise);
       return this._getLiquidationData(
-        new BN(arrPromise[0]),
-        new BN(arrPromise[1].availableBalance),
-        new BN(arrPromise[1].deposit),
+          new BN(arrPromise[0]),
+          new BN(arrPromise[1].availableBalance),
+          new BN(arrPromise[1].deposit),
           this.app.client.superTokens[token.toLowerCase()].liquidation_period,
           this.app.client.superTokens[token.toLowerCase()].patrician_period
       );
@@ -120,32 +120,43 @@ class Protocol {
     }
   }
 
-  async calculateAndSaveTokenDelay (superToken) {
+  async calculateAndSaveTokenDelay (superToken, sendNotification = false) {
     try {
-      if(!this.app.config.OBSERVER) {
-        const tokenInfo = this.app.client.superTokenNames[superToken.toLowerCase()];
-        const currentTokenPIC = await this.getCurrentPIC(superToken);
-        const rewardAccount = await this.getRewardAddress(superToken);
-        const token = await this.app.db.models.SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });
-        token.pic = currentTokenPIC === undefined ? undefined : currentTokenPIC.pic;
-        token.pppmode = this.app.config.PIRATE ? this.PPPMode.Pirate : this.PPPMode.Pleb;
 
-        if (this.app.config.PIC === undefined) {
-          this.app.logger.debug(`${tokenInfo}: no PIC configured, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`);
-        } else if (currentTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === currentTokenPIC.pic.toLowerCase()) {
-          token.pppmode = this.PPPMode.Patrician;
-          this.app.logger.info(`${tokenInfo}: PIC active`);
-        } else if (rewardAccount.toLowerCase() === this.app.config.PIC.toLowerCase()) {
-          token.pppmode = this.PPPMode.Patrician;
-          this.app.logger.debug(`${tokenInfo}: configured PIC match reward address directly, set as PIC`);
-        } else {
-          this.app.logger.debug(`${tokenInfo}: you are not the PIC, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`);
-        }
-        await token.save();
-      } else {
+      if(!this.app.config.OBSERVER) {
         this.app.logger.info("running as observer, ignoring PIC event");
+        return;
       }
 
+      const tokenInfo = this.app.client.superTokenNames[superToken.toLowerCase()];
+      const currentTokenPIC = await this.getCurrentPIC(superToken);
+      const rewardAccount = await this.getRewardAddress(superToken);
+      const token = await this.app.db.models.SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });
+      token.pic = currentTokenPIC === undefined ? undefined : currentTokenPIC.pic;
+      token.pppmode = this.app.config.PIRATE ? this.PPPMode.Pirate : this.PPPMode.Pleb;
+
+      let msg;
+      if (this.app.config.PIC === undefined) {
+        msg = `${tokenInfo}: no PIC configured, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`;
+        this.app.logger.debug(msg);
+      } else if (currentTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === currentTokenPIC.pic.toLowerCase()) {
+        token.pppmode = this.PPPMode.Patrician;
+        msg = `${tokenInfo}: PIC active`;
+        this.app.logger.info(msg);
+      } else if (rewardAccount.toLowerCase() === this.app.config.PIC.toLowerCase()) {
+        token.pppmode = this.PPPMode.Patrician;
+        msg = `${tokenInfo}: configured PIC match reward address directly, set as PIC`;
+        this.app.logger.debug(msg);
+      } else {
+        msg = `${tokenInfo}: you are not the PIC, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`;
+        this.app.logger.debug(msg);
+      }
+
+      if(sendNotification) {
+        this.app.notify(msg);
+      }
+
+      await token.save();
     } catch (err) {
       this.app.logger.error(err);
       throw Error(`Protocol.calculateAndSaveTokenDelay(): ${err}`);

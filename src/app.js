@@ -16,6 +16,8 @@ const Repository = require("./database/repository");
 const utils = require("./utils/utils.js");
 const HTTPServer = require("./httpserver/server");
 const Report = require("./httpserver/report");
+const Notifier = require("./services/notifier");
+const SlackNotifier = require("./services/slackNotifier");
 const Errors = require("./utils/errors/errors");
 
 class App {
@@ -56,6 +58,11 @@ class App {
         this.healthReport = new Report(this);
         this.server = new HTTPServer(this);
         this.timer = new Timer();
+
+        this.notifier = new Notifier(this);
+        if (this.config.SLACK_WEBHOOK_URL) {
+            this._slackNotifier = new SlackNotifier(this, {timeout: 3000});
+        }
 
         this._isShutdown = false;
         this._isInitialized = false;
@@ -146,6 +153,8 @@ class App {
         try {
             this.logger.debug(`booting sentinel`);
             this._isShutdown = false;
+            // send notification about time sentinel started including timestamp
+            this.notifier.sendNotification(`Sentinel started at ${new Date()}`);
             // connect to provided rpc
             await this.client.connect();
             // if we are running tests don't try to load network information
@@ -180,6 +189,9 @@ class App {
             this.logger.debug(JSON.stringify(userConfig));
             if (await this.isResyncNeeded(userConfig)) {
                 this.logger.error(`ATTENTION: Configuration changed since last run, please re-sync.`);
+                // send notification about configuration change, and exit
+                this.notifier.sendNotification(`Configuration changed since last run, please re-sync.`);
+                await this.timer.timeout(3500);
                 process.exit(1);
             }
             await this.db.queries.saveConfiguration(JSON.stringify(userConfig));

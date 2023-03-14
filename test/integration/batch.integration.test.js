@@ -1,4 +1,4 @@
-const BatchLiquidator = require("@superfluid-finance/ethereum-contracts/build/contracts/BatchLiquidator.json");
+const BatchLiquidator = require("../../src/abis/BatchLiquidator.json");
 
 const protocolHelper = require("../utils/protocolHelper");
 const expect = require("chai").expect;
@@ -20,7 +20,8 @@ const deployBatchContract = async () => {
   if (batchContract === undefined) {
     const contract = new web3.eth.Contract(BatchLiquidator.abi);
     const res = await contract.deploy({
-      data: BatchLiquidator.bytecode
+      data: BatchLiquidator.bytecode,
+      arguments: [protocolVars.host._address, protocolVars.cfa._address]
     }).send({
       from: accounts[0],
       gas: 1500000,

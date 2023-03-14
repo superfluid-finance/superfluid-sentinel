@@ -74,17 +74,16 @@ class Liquidator {
     for (const job of work) {
       if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver, job.pppmode)) {
         try {
-          const tx = this.app.protocol.generateDeleteStreamTxData(job.superToken, job.sender, job.receiver);
+          const txData = this.app.protocol.generateDeleteStreamTxData(job.superToken, job.sender, job.receiver);
           const BaseGasPrice = await this.app.gasEstimator.getGasPrice();
           const txObject = {
             retry: 1,
             step: this.app.config.RETRY_GAS_MULTIPLIER,
-            // TODO: could also require BatchLiquidator address
-            target: this.app.client.sf._address,
+            target: txData.target,
             flowSender: job.sender,
             flowReceiver: job.receiver,
             superToken: job.superToken,
-            tx: tx,
+            tx: txData.tx,
             gasPrice: BaseGasPrice.gasPrice,
             nonce: networkAccountNonce,
             chainId: chainId
@@ -156,14 +155,14 @@ class Liquidator {
     const chainId = await this.app.client.getChainId();
     const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
     try {
-      const tx = this.app.protocol.generateBatchLiquidationTxData(superToken, senders, receivers);
+      const txData = this.app.protocol.generateBatchLiquidationTxData(superToken, senders, receivers);
       const BaseGasPrice = await this.app.gasEstimator.getGasPrice();
       const txObject = {
         retry: 1,
         step: this.app.config.RETRY_GAS_MULTIPLIER,
-        target: this.app.config.BATCH_CONTRACT,
+        target: txData.target,
         superToken: superToken,
-        tx: tx,
+        tx: txData.tx,
         gasPrice: BaseGasPrice.gasPrice,
         nonce: networkAccountNonce,
         chainId: chainId

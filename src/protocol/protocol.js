@@ -164,14 +164,17 @@ class Protocol {
   generateDeleteStreamTxData(superToken, sender, receiver) {
     try {
       const isBatchContractExist = this.app.client.batch !== undefined && this.app.config.NETWORK_TYPE === "evm-l2";
+
       if (isBatchContractExist) {
         // on rollups, it's cheaper to always use the batch interface due to smaller calldata (which goes to L1)
-        return this.app.client.batch.methods.deleteFlow(superToken, sender, receiver).encodeABI();
+        const tx = this.app.client.batch.methods.deleteFlow(superToken, sender, receiver).encodeABI();
+        return { tx: tx, target: this.app.client.batch._address};
       } else {
         // on L1s, use the conventional host interface
         const CFAv1Address = this.app.client.CFAv1._address;
         const deleteFlowABI = this.app.client.CFAv1.methods.deleteFlow(superToken, sender, receiver, "0x").encodeABI();
-        return this.app.client.sf.methods.callAgreement(CFAv1Address, deleteFlowABI, "0x").encodeABI();
+        const tx = this.app.client.sf.methods.callAgreement(CFAv1Address, deleteFlowABI, "0x").encodeABI();
+        return { tx: tx, target: this.app.client.sf._address};
       }
     } catch (error) {
       this.app.logger.error(error);
@@ -181,9 +184,8 @@ class Protocol {
 
   generateBatchLiquidationTxData(superToken, senders, receivers) {
     try {
-      const batchMethods = this.app.client.batch.methods;
-      const deleteFlowsABI = batchMethods.deleteFlows(superToken, senders, receivers).encodeABI();
-      return deleteFlowsABI;
+      const tx = this.app.client.batch.methods.deleteFlows(superToken, senders, receivers).encodeABI();
+      return { tx: tx, target: this.app.client.batch._address};
     } catch (error) {
       this.app.logger.error(error);
       throw new Error(`Protocol.generateBatchLiquidationTxData(): ${error.message}`);

@@ -153,7 +153,7 @@ class Protocol {
       }
 
       if(sendNotification) {
-        this.app.notify(msg);
+        this.app.notifier.sendNotification(msg);
       }
 
       await token.save();

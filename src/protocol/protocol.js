@@ -14,7 +14,7 @@ class Protocol {
     try {
       this.app.client.addTotalRequest();
       return this.app.client.superTokens[token.toLowerCase()].methods.realtimeBalanceOfNow(
-          address
+        address
       ).call();
     } catch (err) {
       console.error(err);
@@ -69,11 +69,11 @@ class Protocol {
       ];
       arrPromise = await Promise.all(arrPromise);
       return this._getLiquidationData(
-          new BN(arrPromise[0]),
-          new BN(arrPromise[1].availableBalance),
-          new BN(arrPromise[1].deposit),
-          this.app.client.superTokens[token.toLowerCase()].liquidation_period,
-          this.app.client.superTokens[token.toLowerCase()].patrician_period
+        new BN(arrPromise[0]),
+        new BN(arrPromise[1].availableBalance),
+        new BN(arrPromise[1].deposit),
+        this.app.client.superTokens[token.toLowerCase()].liquidation_period,
+        this.app.client.superTokens[token.toLowerCase()].patrician_period
       );
     } catch (err) {
       console.error(err);

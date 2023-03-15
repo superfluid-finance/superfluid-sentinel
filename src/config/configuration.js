@@ -89,6 +89,7 @@ class Config {
     this.FASTSYNC = this._parseToBool(process.env.FASTSYNC, true);
     this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://cloudflare-ipfs.com/ipfs/";
     this.PIRATE = this._parseToBool(process.env.PIRATE, false);
+    this.SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL;
 
     // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
     this.CONCURRENCY = process.env.CONCURRENCY || 1;
@@ -186,7 +187,8 @@ class Config {
       LOG_LEVEL: this.LOG_LEVEL,
       POLLING_INTERVAL: this.POLLING_INTERVAL,
       BLOCK_OFFSET: this.BLOCK_OFFSET,
-      MAX_TX_NUMBER: this.MAX_TX_NUMBER
+      MAX_TX_NUMBER: this.MAX_TX_NUMBER,
+      SLACK_WEBHOOK_URL: this.SLACK_WEBHOOK_URL
     };
   }
 }

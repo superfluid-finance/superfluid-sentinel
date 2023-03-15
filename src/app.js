@@ -16,7 +16,11 @@ const Repository = require("./database/repository");
 const utils = require("./utils/utils.js");
 const HTTPServer = require("./httpserver/server");
 const Report = require("./httpserver/report");
+const Notifier = require("./services/notifier");
+const SlackNotifier = require("./services/slackNotifier");
+const NotifierJobs = require("./services/notificationJobs");
 const Errors = require("./utils/errors/errors");
+const { wad4human } = require("@decentral.ee/web3-helpers");
 
 class App {
     /*
@@ -56,6 +60,13 @@ class App {
         this.healthReport = new Report(this);
         this.server = new HTTPServer(this);
         this.timer = new Timer();
+
+        this.notifier = new Notifier(this);
+        // at this stage we only work with slack
+        if (this.config.SLACK_WEBHOOK_URL) {
+            this._slackNotifier = new SlackNotifier(this, {timeout: 3000});
+            this.notificationJobs = new NotifierJobs(this);
+        }
 
         this._isShutdown = false;
         this._isInitialized = false;
@@ -146,6 +157,8 @@ class App {
         try {
             this.logger.debug(`booting sentinel`);
             this._isShutdown = false;
+            // send notification about time sentinel started including timestamp
+            this.notifier.sendNotification(`Sentinel started at ${new Date()}`);
             // connect to provided rpc
             await this.client.connect();
             // if we are running tests don't try to load network information
@@ -154,6 +167,7 @@ class App {
             }
             // create all web3 infrastructure needed
             await this.client.init();
+            this.notifier.sendNotification(`RPC connected with chainId ${await this.client.getChainId()}, account ${this.client.agentAccounts?.address} has balance ${this.client.agentAccounts ? wad4human(await this.client.getAccountBalance()) : "N/A"}`);
             if (this.config.BATCH_CONTRACT !== undefined) {
                 await this.client.loadBatchContract();
             }
@@ -180,6 +194,9 @@ class App {
             this.logger.debug(JSON.stringify(userConfig));
             if (await this.isResyncNeeded(userConfig)) {
                 this.logger.error(`ATTENTION: Configuration changed since last run, please re-sync.`);
+                // send notification about configuration change, and exit
+                this.notifier.sendNotification(`Configuration changed since last run, please re-sync.`);
+                await this.timer.timeout(3500);
                 process.exit(1);
             }
             await this.db.queries.saveConfiguration(JSON.stringify(userConfig));
@@ -193,6 +210,11 @@ class App {
             // start http server to serve node health reports and dashboard
             if (this.config.METRICS === true) {
                 this.timer.startAfter(this.server);
+            }
+            // Only start notification jobs if notifier is enabled
+            if (this.notificationJobs) {
+                this.logger.info(`Starting notification jobs`);
+                this.timer.startAfter(this.notificationJobs);
             }
             //from this point on, sentinel is considered initialized.
             this._isInitialized = true;

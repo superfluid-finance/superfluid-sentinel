@@ -195,7 +195,7 @@ class EventTracker {
       if(event && event.eventName === "NewPIC") {
         if (this.app.client.isSuperTokenRegistered(event.token)) {
           this.app.logger.info(`[TOGA]: ${event.eventName} [${event.token}] new pic ${event.pic}`);
-          await this.app.protocol.calculateAndSaveTokenDelay(event.token);
+          await this.app.protocol.calculateAndSaveTokenDelay(event.token, true);
         } else {
           this.app.logger.debug(`[TOGA]: token ${event.token} is not subscribed`);
         }

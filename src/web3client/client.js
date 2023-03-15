@@ -214,7 +214,7 @@ class Client {
     });
     // use for runtime subscription
     if(setPIC) {
-      this.app.protocol.calculateAndSaveTokenDelay(newSuperToken);
+      this.app.protocol.calculateAndSaveTokenDelay(newSuperToken, false);
     }
   }
 

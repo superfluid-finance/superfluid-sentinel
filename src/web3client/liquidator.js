@@ -257,8 +257,8 @@ class Liquidator {
         };
       }
       if(error instanceof this.app.Errors.AccountFundsError) {
-        this.app.logger.warn(`insufficient funds agent account`);
-        this.app.notifier.sendNotification(`Insufficient funds agent account to send tx ${signed.tx.transactionHash}`);
+        this.app.logger.warn(`insufficient funds on sentinel account`);
+        this.app.notifier.sendNotification(`Sentinel account has insuffcient funds to send tx ${signed.tx.transactionHash}`);
         return {
           error: error.message,
           tx: undefined

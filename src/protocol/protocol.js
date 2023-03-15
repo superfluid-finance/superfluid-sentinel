@@ -141,11 +141,11 @@ class Protocol {
         this.app.logger.debug(msg);
       } else if (currentTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === currentTokenPIC.pic.toLowerCase()) {
         token.pppmode = this.PPPMode.Patrician;
-        msg = `${tokenInfo}: PIC active`;
+        msg = `${tokenInfo}: you are the active PIC now`;
         this.app.logger.info(msg);
       } else if (rewardAccount.toLowerCase() === this.app.config.PIC.toLowerCase()) {
         token.pppmode = this.PPPMode.Patrician;
-        msg = `${tokenInfo}: configured PIC match reward address directly, set as PIC`;
+        msg = `${tokenInfo}: your configured PIC matches the token's reward address (no TOGA set)`;
         this.app.logger.debug(msg);
       } else {
         msg = `${tokenInfo}: you are not the PIC, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`;

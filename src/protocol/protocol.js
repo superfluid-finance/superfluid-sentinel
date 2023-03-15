@@ -161,35 +161,34 @@ class Protocol {
     }
   }
 
-  generateDeleteFlowABI (superToken, sender, receiver) {
+  generateDeleteStreamTxData(superToken, sender, receiver) {
     try {
-      return this.app.client.sf.methods.callAgreement(
-        this.app.client.CFAv1._address,
-        this.app.client.CFAv1.methods.deleteFlow(
-          superToken,
-          sender,
-          receiver,
-          "0x").encodeABI(),
-        "0x"
-      ).encodeABI();
-    } catch (err) {
-      this.app.logger.error(err);
-      throw Error(`Protocol.generateDeleteFlowABI() : ${err}`);
+      const isBatchContractExist = this.app.client.batch !== undefined && this.app.config.NETWORK_TYPE === "evm-l2";
+
+      if (isBatchContractExist) {
+        // on rollups, it's cheaper to always use the batch interface due to smaller calldata (which goes to L1)
+        const tx = this.app.client.batch.methods.deleteFlow(superToken, sender, receiver).encodeABI();
+        return { tx: tx, target: this.app.client.batch._address};
+      } else {
+        // on L1s, use the conventional host interface
+        const CFAv1Address = this.app.client.CFAv1._address;
+        const deleteFlowABI = this.app.client.CFAv1.methods.deleteFlow(superToken, sender, receiver, "0x").encodeABI();
+        const tx = this.app.client.sf.methods.callAgreement(CFAv1Address, deleteFlowABI, "0x").encodeABI();
+        return { tx: tx, target: this.app.client.sf._address};
+      }
+    } catch (error) {
+      this.app.logger.error(error);
+      throw new Error(`Protocol.generateDeleteStreamTxData(): ${error.message}`);
     }
   }
 
-  generateMultiDeleteFlowABI (superToken, senders, receivers) {
+  generateBatchLiquidationTxData(superToken, senders, receivers) {
     try {
-      return this.app.client.batch.methods.deleteFlows(
-        this.app.client.sf._address,
-        this.app.client.CFAv1._address,
-        superToken,
-        senders,
-        receivers
-      ).encodeABI();
-    } catch (err) {
-      this.app.logger.error(err);
-      throw Error(`Protocol.generateMultiDeleteFlowABI() : ${err}`);
+      const tx = this.app.client.batch.methods.deleteFlows(superToken, senders, receivers).encodeABI();
+      return { tx: tx, target: this.app.client.batch._address};
+    } catch (error) {
+      this.app.logger.error(error);
+      throw new Error(`Protocol.generateBatchLiquidationTxData(): ${error.message}`);
     }
   }
 

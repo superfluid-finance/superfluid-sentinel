@@ -15,41 +15,37 @@ class LoadEvents {
       let blockNumber = lastEventBlockNumber === null
         ? parseInt(this.app.config.EPOCH_BLOCK)
         : lastEventBlockNumber.blockNumber;
+
       if (systemInfo !== null) {
-        if (systemInfo.superTokenBlockNumber > blockNumber) {
-          blockNumber = systemInfo.superTokenBlockNumber;
-        }
-        if ((await this.app.client.getChainId()) !== systemInfo.chainId) {
+        blockNumber = Math.max(blockNumber, systemInfo.superTokenBlockNumber);
+        const currentChainId = await this.app.client.getChainId();
+        if (currentChainId !== systemInfo.chainId) {
           throw new Error("different network than from the saved data");
         }
       }
+
       let pullCounter = blockNumber;
       const currentBlockNumber = await this.app.client.getCurrentBlockNumber(this.app.config.BLOCK_OFFSET);
-      const testBlockNumber = await this.app.client.getCurrentBlockNumber(0);
-      this.app.logger.info(`scanning blocks from ${pullCounter} to ${currentBlockNumber} - real ${testBlockNumber}`);
+      const realBlockNumber = await this.app.client.getCurrentBlockNumber();
+      this.app.logger.info(`scanning blocks from ${pullCounter} to ${currentBlockNumber} - real ${realBlockNumber}`);
+
       const queue = async.queue(async function (task) {
         let keepTrying = 1;
         while (true) {
           try {
             task.self.app.logger.info(`getting blocks: trying #${keepTrying} - from:${task.fromBlock} to:${task.toBlock}`);
-            let query = {
-              fromBlock: task.fromBlock,
-              toBlock: task.toBlock
-            };
-            if (task.self.app.config.TOKENS) {
-              query = {
-                filter: {
-                  token: task.self.app.config.TOKENS
-                },
-                fromBlock: task.fromBlock,
-                toBlock: task.toBlock
-              };
-            }
+
+            const query = task.self.app.config.TOKENS
+                ? { filter: { token: task.self.app.config.TOKENS }, fromBlock: task.fromBlock, toBlock: task.toBlock }
+                : { fromBlock: task.fromBlock, toBlock: task.toBlock };
+
             let result = await task.self.app.protocol.getAgreementEvents("FlowUpdated", query);
             result = result.map(task.self.app.models.event.transformWeb3Event);
+
             for (const event of result) {
               const agreementId = task.self.app.protocol.generateId(event.sender, event.receiver);
               const hashId = task.self.app.protocol.generateId(event.token, agreementId);
+
               await task.self.app.db.models.FlowUpdatedModel.create({
                 address: event.address,
                 blockNumber: event.blockNumber,
@@ -67,27 +63,27 @@ class LoadEvents {
             task.self.app.logger.error(err);
             // this often happens due to RPC rate limiting, thus it's wise to add some delay here
             await this.app.timer.timeout(keepTrying * 1000); // linear backoff
+
             if (keepTrying > task.self.app.config.NUM_RETRIES) {
               process.exit(1);
             }
           }
         }
       }, this.app.config.CONCURRENCY);
-
+      //
       while (pullCounter <= currentBlockNumber) {
         const end = (pullCounter + parseInt(this.app.config.MAX_QUERY_BLOCK_RANGE));
-        queue.push({
-          self: this,
-          fromBlock: pullCounter,
-          toBlock: end > currentBlockNumber ? currentBlockNumber : end
-        });
+        queue.push({self: this, fromBlock: pullCounter, toBlock: end > currentBlockNumber ? currentBlockNumber : end });
         pullCounter = end + 1;
       }
+
       await queue.drain();
+
       const tokens = await this.app.db.models.FlowUpdatedModel.findAll({
         attributes: ["superToken"],
         group: ["superToken"]
       });
+
       // fresh database
       if (systemInfo === null) {
         await this.app.db.models.SystemModel.create({

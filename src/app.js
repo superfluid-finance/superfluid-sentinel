@@ -20,6 +20,7 @@ const Notifier = require("./services/notifier");
 const SlackNotifier = require("./services/slackNotifier");
 const NotifierJobs = require("./services/notificationJobs");
 const Errors = require("./utils/errors/errors");
+const { wad4human } = require("@decentral.ee/web3-helpers");
 
 class App {
     /*
@@ -160,13 +161,13 @@ class App {
             this.notifier.sendNotification(`Sentinel started at ${new Date()}`);
             // connect to provided rpc
             await this.client.connect();
-            this.notifier.sendNotification(`RPC connected with chainId ${await this.client.getChainId()}`);
             // if we are running tests don't try to load network information
             if (!this.config.RUN_TEST_ENV) {
                 await this.config.loadNetworkInfo(await this.client.getChainId());
             }
             // create all web3 infrastructure needed
             await this.client.init();
+            this.notifier.sendNotification(`RPC connected with chainId ${await this.client.getChainId()}, account ${this.client.agentAccounts?.address} has balance ${this.client.agentAccounts ? wad4human(await this.client.getAccountBalance()) : "N/A"}`);
             if (this.config.BATCH_CONTRACT !== undefined) {
                 await this.client.loadBatchContract();
             }

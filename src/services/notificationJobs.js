@@ -21,7 +21,7 @@ class NotificationJobs {
 
   async start () {
     // run every hour ( value in ms)
-    this.run(this, 3600000);
+    this.run(this, 3600*1000);
   }
 
   async run (self, time) {

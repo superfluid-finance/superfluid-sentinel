@@ -160,6 +160,7 @@ class App {
             this.notifier.sendNotification(`Sentinel started at ${new Date()}`);
             // connect to provided rpc
             await this.client.connect();
+            this.notifier.sendNotification(`RPC connected with chainId ${await this.client.getChainId()}`);
             // if we are running tests don't try to load network information
             if (!this.config.RUN_TEST_ENV) {
                 await this.config.loadNetworkInfo(await this.client.getChainId());

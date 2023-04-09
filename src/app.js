@@ -66,9 +66,11 @@ class App {
         // at this stage we only work with slack or telegram
         if (this.config.SLACK_WEBHOOK_URL) {
             this._slackNotifier = new SlackNotifier(this, {timeout: 3000});
-            this.notificationJobs = new NotifierJobs(this);
-        } else if (this.config.TELEGRAM_BOT_TOKEN && this.config.TELEGRAM_CHAT_ID) {
+        }
+        if (this.config.TELEGRAM_BOT_TOKEN && this.config.TELEGRAM_CHAT_ID) {
             this._telegramNotifier = new TelegramNotfier(this);
+        }
+        if (this._slackNotifier || this._telegramNotifier) {
             this.notificationJobs = new NotifierJobs(this);
         }
 

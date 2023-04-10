@@ -26,7 +26,7 @@ class LoadEvents {
 
       let pullCounter = blockNumber;
       const currentBlockNumber = await this.app.client.getCurrentBlockNumber(this.app.config.BLOCK_OFFSET);
-      const realBlockNumber = await this.app.client.getCurrentBlockNumber();
+      const realBlockNumber = currentBlockNumber + this.app.config.BLOCK_OFFSET;
       this.app.logger.info(`scanning blocks from ${pullCounter} to ${currentBlockNumber} - real ${realBlockNumber}`);
 
       const queue = async.queue(async function (task) {

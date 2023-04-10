@@ -68,6 +68,9 @@ class Liquidator {
   }
 
   async singleTerminations (work) {
+    if (work.length === 0) {
+      return;
+    }
     const wallet = this.app.client.getAccount();
     const chainId = await this.app.client.getChainId();
     const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);

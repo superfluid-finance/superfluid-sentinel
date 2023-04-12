@@ -1,3 +1,5 @@
+const {Base} = require("mocha/lib/reporters");
+
 class Liquidator {
   constructor (app) {
     this.app = app;
@@ -86,7 +88,8 @@ class Liquidator {
             tx: txData.tx,
             gasPrice: BaseGasPrice.gasPrice,
             nonce: networkAccountNonce,
-            chainId: chainId
+            chainId: chainId,
+            hitGasPriceLimit: BaseGasPrice.hitGasPriceLimit
           };
           const result = await this.sendWithRetry(wallet, txObject, this.app.config.TX_TIMEOUT);
           if (result !== undefined && result.error !== undefined) {
@@ -165,7 +168,8 @@ class Liquidator {
         tx: txData.tx,
         gasPrice: BaseGasPrice.gasPrice,
         nonce: networkAccountNonce,
-        chainId: chainId
+        chainId: chainId,
+        hitGasPriceLimit: BaseGasPrice.hitGasPriceLimit
       };
       const result = await this.sendWithRetry(wallet, txObject, this.app.config.TX_TIMEOUT);
       if (result !== undefined && result.error !== undefined) {
@@ -181,6 +185,11 @@ class Liquidator {
 
   async sendWithRetry (wallet, txObject, ms) {
     await this.app.timer.timeout(1000);
+    // if txObject hit gas price limit we should timeout with additional time
+    if (txObject.hitGasPriceLimit) {
+      const extraTimeout = 1000 * txObject.retry;
+      await this.app.timer.timeout(extraTimeout);
+    }
     // When estimate gas we get a preview of what can happen when send the transaction. Depending on the error we should execute specific logic
     const gas = await this.app.gasEstimator.getGasLimit(wallet, txObject);
     if (gas.error !== undefined) {
@@ -196,6 +205,7 @@ class Liquidator {
 
     txObject.gasLimit = gas.gasLimit;
     const signed = await this.signTx(wallet, txObject);
+    txObject.hitGasPriceLimit = signed.tx.hitGasPriceLimit;
     if (signed.error !== undefined) {
       const error = this.app.Errors.EVMErrorParser(signed.error);
       if(error instanceof this.app.Errors.TxUnderpricedError) {
@@ -284,7 +294,8 @@ class Liquidator {
 
   async signTx (wallet, txObject) {
     try {
-      txObject.gasPrice = this.app.gasEstimator.getUpdatedGasPrice(txObject.gasPrice, txObject.retry, txObject.step);
+      const updatedGas = this.app.gasEstimator.getUpdatedGasPrice(txObject.gasPrice, txObject.retry, txObject.step);
+      txObject.gasPrice = updatedGas.gasPrice;
       const unsignedTx = {
         chainId: txObject.chainId,
         to: txObject.target,
@@ -294,11 +305,12 @@ class Liquidator {
         gasPrice: txObject.gasPrice,
         gasLimit: txObject.gasLimit
       };
-      const signed = await this.app.client.signTransaction(
+      let signed = await this.app.client.signTransaction(
         unsignedTx,
         wallet._privateKey.toString("hex")
       );
       signed.txObject = txObject;
+      signed.hitGasPriceLimit = updatedGas.hitGasPriceLimit;
       return {
         tx: signed,
         error: undefined

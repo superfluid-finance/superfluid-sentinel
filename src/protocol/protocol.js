@@ -218,8 +218,9 @@ class Protocol {
       result.estimation = this._calculateDatePoint(availableBalance, totalNetFlowRate);
       const liquidation_period = new BN(liqPeriod);
       const patrician_period = new BN(plebPeriod);
-      const propDeposit = patrician_period.mul(deposit).div(liquidation_period);
-      result.estimationPleb = this._calculateDatePoint((availableBalance.add(propDeposit)), totalNetFlowRate);
+      const zero = new BN(0);
+      const proportional_deposit = liquidation_period.eq(zero) ? zero : patrician_period.mul(deposit).div(liquidation_period);
+      result.estimationPleb = this._calculateDatePoint((availableBalance.add(proportional_deposit)), totalNetFlowRate);
       result.estimationPirate = this._calculateDatePoint(availableBalance.add(deposit), totalNetFlowRate);
     }
 

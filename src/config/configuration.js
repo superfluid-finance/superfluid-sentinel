@@ -90,6 +90,8 @@ class Config {
     this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://cloudflare-ipfs.com/ipfs/";
     this.PIRATE = this._parseToBool(process.env.PIRATE, false);
     this.SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL;
+    this.TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    this.TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
     // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
     this.CONCURRENCY = process.env.CONCURRENCY || 1;
@@ -147,11 +149,11 @@ class Config {
         throw Error(`Config.loadNetworkInfo(): unknown chainId: ${chainId}`);
     }
     const contractsV1 = network.contractsV1 || {};
+    this.EPOCH_BLOCK = network.startBlockV1 || 0;
     const { cid, networkType } = await this.getManifestCIDAndNetworkType(chainId);
     this.CID = cid;
     this.NETWORK_TYPE = networkType;
 
-    this.EPOCH_BLOCK = contractsV1.startBlockV1 || 0;
     this.BATCH_CONTRACT = contractsV1.batchLiquidator || undefined;
     this.TOGA_CONTRACT = contractsV1.toga || undefined;
     if(this.RESOLVER === undefined) {
@@ -188,7 +190,9 @@ class Config {
       POLLING_INTERVAL: this.POLLING_INTERVAL,
       BLOCK_OFFSET: this.BLOCK_OFFSET,
       MAX_TX_NUMBER: this.MAX_TX_NUMBER,
-      SLACK_WEBHOOK_URL: this.SLACK_WEBHOOK_URL
+      SLACK_WEBHOOK_URL: this.SLACK_WEBHOOK_URL,
+      TELEGRAM_BOT_TOKEN: this.TELEGRAM_BOT_TOKEN,
+      TELEGRAM_CHAT_ID: this.TELEGRAM_CHAT_ID
     };
   }
 }

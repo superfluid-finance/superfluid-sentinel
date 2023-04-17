@@ -77,6 +77,21 @@ If all is well, you may want to set the service to autostart:
 systemctl enable superfluid-sentinel.service
 ```
 
+### Monitoring & Alerting
+
+The sentinel can provide monitoring information. In the default configuration, this is available on port 9100 and json formatted.
+This includes a flag "healthy" which turns to `false` in case of malfunction, e.g. if there's a problem with the local DB or with the RPC connection.
+
+You can also set up notifications to Slack or Telegram. Events triggering a notification include
+* sentinel restarts
+* transactions held back to due the configured gas price limit
+* PIC changes relevant for your instance
+* insufficient funds for doing liquidations
+
+In order to set up notifications, see `.env-example` for the relevant configuration items.
+
+The notification system is modular. If you want support for more channels, consider adding it. See `src/services/slackNotifier.js` for a blueprint. PRs are welcome!
+
 #### Run multiple instances
 
 In order to run sentinels for multiple networks in parallel, create network specific env files which are

@@ -149,11 +149,11 @@ class Config {
         throw Error(`Config.loadNetworkInfo(): unknown chainId: ${chainId}`);
     }
     const contractsV1 = network.contractsV1 || {};
+    this.EPOCH_BLOCK = network.startBlockV1 || 0;
     const { cid, networkType } = await this.getManifestCIDAndNetworkType(chainId);
     this.CID = cid;
     this.NETWORK_TYPE = networkType;
 
-    this.EPOCH_BLOCK = contractsV1.startBlockV1 || 0;
     this.BATCH_CONTRACT = contractsV1.batchLiquidator || undefined;
     this.TOGA_CONTRACT = contractsV1.toga || undefined;
     if(this.RESOLVER === undefined) {

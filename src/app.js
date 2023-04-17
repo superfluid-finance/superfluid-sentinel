@@ -215,7 +215,7 @@ class App {
             if (this.config.METRICS === true) {
                 this.timer.startAfter(this.server);
             }
-            // start reporting services every 12 hours.
+            // start reporting services with the configured interval.
             if(this.config.TELEMETRY) {
                 this.logger.info(`Starting telemetry job`);
                 this._telemetryIntervalId = this.timer.triggerInterval(this.telemetry.start, this.config.TELEMETRY_INTERVAL);

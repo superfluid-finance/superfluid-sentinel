@@ -92,7 +92,7 @@ class Config {
     this.SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL;
     this.TELEMETRY = this._parseToBool(process.env.TELEMETRY, true);
     this.TELEMETRY_URL = process.env.TELEMETRY_URL || undefined //TODO: add default url when backend services ready;
-    this.TELEMETRY_INTERVAL = 43200000; // hardcoded to 12 hours
+    this.TELEMETRY_INTERVAL = 43200000; // defaults to 12 hours
 
     // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
     this.CONCURRENCY = process.env.CONCURRENCY || 1;

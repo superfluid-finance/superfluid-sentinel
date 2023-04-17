@@ -183,8 +183,8 @@ class Client {
     //get liquidation period
     const resp = await this.gov.methods.getPPPConfig(this.sf._address, newSuperToken).call();
     // if liquidation period and patrician period are not set
-    if(resp.liquidationPeriod === "0" && resp.patricianPeriod === "0") {
-      this.app.logger.error(`Liquidation period and patrician period are not set for ${tokenSymbol} - ${tokenName} (${newSuperToken})`);
+    if (resp.liquidationPeriod === "0" && resp.patricianPeriod === "0") {
+      this.app.logger.error(`Liquidation period and patrician period are 0 for ${tokenSymbol} - ${tokenName} (${newSuperToken})`);
     }
     superTokenHTTP.liquidation_period = parseInt(resp.liquidationPeriod);
     superTokenHTTP.patrician_period = parseInt(resp.patricianPeriod);

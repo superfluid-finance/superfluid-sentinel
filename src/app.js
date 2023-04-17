@@ -18,6 +18,7 @@ const HTTPServer = require("./httpserver/server");
 const Report = require("./httpserver/report");
 const Notifier = require("./services/notifier");
 const SlackNotifier = require("./services/slackNotifier");
+const TelegramNotfier = require("./services/telegramNotifier");
 const NotifierJobs = require("./services/notificationJobs");
 const Errors = require("./utils/errors/errors");
 const { wad4human } = require("@decentral.ee/web3-helpers");
@@ -62,9 +63,14 @@ class App {
         this.timer = new Timer();
 
         this.notifier = new Notifier(this);
-        // at this stage we only work with slack
+        // at this stage we only work with slack or telegram
         if (this.config.SLACK_WEBHOOK_URL) {
             this._slackNotifier = new SlackNotifier(this, {timeout: 3000});
+        }
+        if (this.config.TELEGRAM_BOT_TOKEN && this.config.TELEGRAM_CHAT_ID) {
+            this._telegramNotifier = new TelegramNotfier(this);
+        }
+        if (this._slackNotifier || this._telegramNotifier) {
             this.notificationJobs = new NotifierJobs(this);
         }
 

@@ -80,7 +80,11 @@ class Liquidator {
       if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver, job.pppmode)) {
         try {
           const txData = this.app.protocol.generateDeleteStreamTxData(job.superToken, job.sender, job.receiver);
-          const BaseGasPrice = await this.app.gasEstimator.getGasPrice();
+          const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice();
+          // if we hit the gas price limit, we stop the liquidation job
+          if(baseGasPrice.hitGasPriceLimit) {
+            return;
+          }
           const txObject = {
             retry: 1,
             step: this.app.config.RETRY_GAS_MULTIPLIER,
@@ -89,10 +93,9 @@ class Liquidator {
             flowReceiver: job.receiver,
             superToken: job.superToken,
             tx: txData.tx,
-            gasPrice: BaseGasPrice.gasPrice,
+            gasPrice: baseGasPrice.gasPrice,
             nonce: networkAccountNonce,
-            chainId: chainId,
-            hitGasPriceLimit: BaseGasPrice.hitGasPriceLimit
+            chainId: chainId
           };
           const result = await this.sendWithRetry(wallet, txObject, this.app.config.TX_TIMEOUT);
           if (result !== undefined && result.error !== undefined) {
@@ -162,17 +165,20 @@ class Liquidator {
     const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
     try {
       const txData = this.app.protocol.generateBatchLiquidationTxData(superToken, senders, receivers);
-      const BaseGasPrice = await this.app.gasEstimator.getGasPrice();
+      const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice();
+        // if we hit the gas price limit, we stop the liquidation job
+        if(baseGasPrice.hitGasPriceLimit) {
+            return;
+        }
       const txObject = {
         retry: 1,
         step: this.app.config.RETRY_GAS_MULTIPLIER,
         target: txData.target,
         superToken: superToken,
         tx: txData.tx,
-        gasPrice: BaseGasPrice.gasPrice,
+        gasPrice: baseGasPrice.gasPrice,
         nonce: networkAccountNonce,
-        chainId: chainId,
-        hitGasPriceLimit: BaseGasPrice.hitGasPriceLimit
+        chainId: chainId
       };
       const result = await this.sendWithRetry(wallet, txObject, this.app.config.TX_TIMEOUT);
       if (result !== undefined && result.error !== undefined) {
@@ -188,11 +194,6 @@ class Liquidator {
 
   async sendWithRetry (wallet, txObject, ms) {
     await this.app.timer.timeout(1000);
-    // if txObject hit gas price limit we should timeout with additional time
-    if (txObject.hitGasPriceLimit) {
-      const extraTimeout = 1000 * txObject.retry;
-      await this.app.timer.timeout(extraTimeout);
-    }
     // When estimate gas we get a preview of what can happen when send the transaction. Depending on the error we should execute specific logic
     const gas = await this.app.gasEstimator.getGasLimit(wallet, txObject);
     if (gas.error !== undefined) {
@@ -271,7 +272,7 @@ class Liquidator {
       }
       if(error instanceof this.app.Errors.AccountFundsError) {
         this.app.logger.warn(`insufficient funds on sentinel account`);
-        this.app.notifier.sendNotification(`Sentinel account has insuffcient funds to send tx ${signed.tx.transactionHash}`);
+        this.app.notifier.sendNotification(`Sentinel account has insufficient funds to send tx ${signed.tx.transactionHash}`);
         return {
           error: error.message,
           tx: undefined

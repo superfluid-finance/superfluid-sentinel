@@ -29,9 +29,8 @@ class Gas {
       let hitGasPriceLimit = false;
       if (this.app.config.MAX_GAS_PRICE !== undefined &&
           parseInt(gasPrice) >= this.app.config.MAX_GAS_PRICE
-      ) {
-          this.app.logger.warn(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
-          this.app.notifier.sendNotification(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
+      )
+      {
           hitGasPriceLimit = true;
       }
       return {
@@ -42,8 +41,7 @@ class Gas {
       };
     } catch (err) {
       return {
-        error: this.app.Errors.EVMErrorParser(err),
-        gasPrice: undefined
+        error: this.app.Errors.EVMErrorParser(err)
       };
     }
   }

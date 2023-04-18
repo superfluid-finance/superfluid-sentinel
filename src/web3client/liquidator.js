@@ -80,11 +80,19 @@ class Liquidator {
       if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver, job.pppmode)) {
         try {
           const txData = this.app.protocol.generateDeleteStreamTxData(job.superToken, job.sender, job.receiver);
-          const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice();
-          // if we hit the gas price limit, we stop the liquidation job
-          if(baseGasPrice.hitGasPriceLimit) {
+          const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice(); // will internally trhow and catch parse error a field
+
+          // if we hit the gas price limit or estimation error, we stop the liquidation job and return to main loop
+          if(baseGasPrice.error) {
+            this.app.logger.error(baseGasPrice.error);
             return;
           }
+          if(baseGasPrice.hitGasPriceLimit) {
+            this.app.logger.warn(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
+            this.app.notifier.sendNotification(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
+            return;
+          }
+
           const txObject = {
             retry: 1,
             step: this.app.config.RETRY_GAS_MULTIPLIER,
@@ -166,10 +174,16 @@ class Liquidator {
     try {
       const txData = this.app.protocol.generateBatchLiquidationTxData(superToken, senders, receivers);
       const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice();
-        // if we hit the gas price limit, we stop the liquidation job
-        if(baseGasPrice.hitGasPriceLimit) {
-            return;
-        }
+      // if we hit the gas price limit or estimation error, we stop the liquidation job and return to main loop
+      if(baseGasPrice.error) {
+        this.app.logger.error(baseGasPrice.error);
+        return;
+      }
+      if(baseGasPrice.hitGasPriceLimit) {
+        this.app.logger.warn(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
+        this.app.notifier.sendNotification(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
+        return;
+      }
       const txObject = {
         retry: 1,
         step: this.app.config.RETRY_GAS_MULTIPLIER,

@@ -16,6 +16,7 @@ const Bootstrap = require("./../src/boot/bootstrap");
 const LoadEvents = require("./../src/boot/loadEvents");
 const DB = require("./../src/database/db");
 const Repository = require("./../src/database/repository");
+const Timer = require("./../src/utils/timer");
 const metadata = require("@superfluid-finance/metadata/networks.json");
 /*
  * Build a fresh snapshot
@@ -37,6 +38,7 @@ const metadata = require("@superfluid-finance/metadata/networks.json");
         const app = {
             config: config,
             logger: console,
+            timer: new Timer(),
             genAccounts: genAccounts
         }
 

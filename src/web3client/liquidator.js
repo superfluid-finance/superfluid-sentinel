@@ -1,3 +1,5 @@
+const {Base} = require("mocha/lib/reporters");
+
 class Liquidator {
   constructor (app) {
     this.app = app;
@@ -78,7 +80,11 @@ class Liquidator {
       if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver, job.pppmode)) {
         try {
           const txData = this.app.protocol.generateDeleteStreamTxData(job.superToken, job.sender, job.receiver);
-          const BaseGasPrice = await this.app.gasEstimator.getGasPrice();
+          const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice();
+          // if we hit the gas price limit, we stop the liquidation job
+          if(baseGasPrice.hitGasPriceLimit) {
+            return;
+          }
           const txObject = {
             retry: 1,
             step: this.app.config.RETRY_GAS_MULTIPLIER,
@@ -87,7 +93,7 @@ class Liquidator {
             flowReceiver: job.receiver,
             superToken: job.superToken,
             tx: txData.tx,
-            gasPrice: BaseGasPrice.gasPrice,
+            gasPrice: baseGasPrice.gasPrice,
             nonce: networkAccountNonce,
             chainId: chainId
           };
@@ -159,14 +165,18 @@ class Liquidator {
     const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
     try {
       const txData = this.app.protocol.generateBatchLiquidationTxData(superToken, senders, receivers);
-      const BaseGasPrice = await this.app.gasEstimator.getGasPrice();
+      const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice();
+        // if we hit the gas price limit, we stop the liquidation job
+        if(baseGasPrice.hitGasPriceLimit) {
+            return;
+        }
       const txObject = {
         retry: 1,
         step: this.app.config.RETRY_GAS_MULTIPLIER,
         target: txData.target,
         superToken: superToken,
         tx: txData.tx,
-        gasPrice: BaseGasPrice.gasPrice,
+        gasPrice: baseGasPrice.gasPrice,
         nonce: networkAccountNonce,
         chainId: chainId
       };
@@ -199,6 +209,7 @@ class Liquidator {
 
     txObject.gasLimit = gas.gasLimit;
     const signed = await this.signTx(wallet, txObject);
+    txObject.hitGasPriceLimit = signed.tx.hitGasPriceLimit;
     if (signed.error !== undefined) {
       const error = this.app.Errors.EVMErrorParser(signed.error);
       if(error instanceof this.app.Errors.TxUnderpricedError) {
@@ -261,7 +272,7 @@ class Liquidator {
       }
       if(error instanceof this.app.Errors.AccountFundsError) {
         this.app.logger.warn(`insufficient funds on sentinel account`);
-        this.app.notifier.sendNotification(`Sentinel account has insuffcient funds to send tx ${signed.tx.transactionHash}`);
+        this.app.notifier.sendNotification(`Sentinel account has insufficient funds to send tx ${signed.tx.transactionHash}`);
         return {
           error: error.message,
           tx: undefined
@@ -287,7 +298,8 @@ class Liquidator {
 
   async signTx (wallet, txObject) {
     try {
-      txObject.gasPrice = this.app.gasEstimator.getUpdatedGasPrice(txObject.gasPrice, txObject.retry, txObject.step);
+      const updatedGas = this.app.gasEstimator.getUpdatedGasPrice(txObject.gasPrice, txObject.retry, txObject.step);
+      txObject.gasPrice = updatedGas.gasPrice;
       const unsignedTx = {
         chainId: txObject.chainId,
         to: txObject.target,
@@ -297,11 +309,12 @@ class Liquidator {
         gasPrice: txObject.gasPrice,
         gasLimit: txObject.gasLimit
       };
-      const signed = await this.app.client.signTransaction(
+      let signed = await this.app.client.signTransaction(
         unsignedTx,
         wallet._privateKey.toString("hex")
       );
       signed.txObject = txObject;
+      signed.hitGasPriceLimit = updatedGas.hitGasPriceLimit;
       return {
         tx: signed,
         error: undefined

@@ -23,12 +23,21 @@ class Gas {
     }
   }
 
-  async getGasPrice () {
+  async getCappedGasPrice () {
     try {
-      const price = await this.app.client.web3.eth.getGasPrice();
+      const gasPrice = await this.app.client.web3.eth.getCappedGasPrice();
+      let hitGasPriceLimit = false;
+      if (this.app.config.MAX_GAS_PRICE !== undefined &&
+          parseInt(gasPrice) >= this.app.config.MAX_GAS_PRICE
+      ) {
+          this.app.logger.warn(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
+          this.app.notifier.sendNotification(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
+          hitGasPriceLimit = true;
+      }
       return {
         error: undefined,
-        gasPrice: price
+        gasPrice: gasPrice,
+        hitGasPriceLimit: hitGasPriceLimit
 
       };
     } catch (err) {
@@ -41,19 +50,24 @@ class Gas {
 
   getUpdatedGasPrice (originalGasPrice, retryNumber, step) {
     let gasPrice = originalGasPrice;
+    let hitGasPriceLimit = false;
     if (retryNumber > 1) {
       if (this.app.config.MAX_GAS_PRICE !== undefined &&
         parseInt(originalGasPrice) >= this.app.config.MAX_GAS_PRICE
       ) {
-        this.app.logger.debug(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
+        this.app.logger.warn(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
         this.app.notifier.sendNotification(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
         gasPrice = this.app.config.MAX_GAS_PRICE;
+        hitGasPriceLimit = true;
       } else {
         gasPrice = Math.ceil(parseInt(gasPrice) * step);
       }
       this.app.logger.debug(`update gas price from ${originalGasPrice} to ${gasPrice}`);
     }
-    return gasPrice;
+    return {
+      gasPrice: gasPrice,
+      hitGasPriceLimit: hitGasPriceLimit
+    };
   }
 }
 

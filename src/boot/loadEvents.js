@@ -28,7 +28,6 @@ class LoadEvents {
       const currentBlockNumber = await this.app.client.getCurrentBlockNumber(this.app.config.BLOCK_OFFSET);
       const realBlockNumber = currentBlockNumber + this.app.config.BLOCK_OFFSET;
       this.app.logger.info(`scanning blocks from ${pullCounter} to ${currentBlockNumber} - real ${realBlockNumber}`);
-
       const queue = async.queue(async function (task) {
         let keepTrying = 1;
         while (true) {
@@ -62,8 +61,7 @@ class LoadEvents {
             keepTrying++;
             task.self.app.logger.error(err);
             // this often happens due to RPC rate limiting, thus it's wise to add some delay here
-            await this.app.timer.timeout(keepTrying * 1000); // linear backoff
-
+            await task.self.app.timer.timeout(keepTrying * 1000); // linear backoff
             if (keepTrying > task.self.app.config.NUM_RETRIES) {
               process.exit(1);
             }
@@ -100,7 +98,7 @@ class LoadEvents {
       if(!this.app.config.OBSERVER) {
         this.app.logger.info("start getting delays PIC system");
         // we need to query each supertoken to check pic address
-        const DelayChecker = async.queue(async function (task) {
+        const delayChecker = async.queue(async function (task) {
           let keepTrying = 10;
           while (true) {
             try {
@@ -118,14 +116,14 @@ class LoadEvents {
         }, this.app.config.CONCURRENCY);
         const superTokens = this.app.client.superTokensAddresses;
         for (const st of superTokens) {
-          DelayChecker.push({
+          delayChecker.push({
             self: this,
             token: st
           });
         }
 
         if (superTokens.length > 0 && !this.app.config.OBSERVER) {
-          await DelayChecker.drain();
+          await delayChecker.drain();
         }
         this.app.logger.info("finish getting delays PIC system");
       } else {

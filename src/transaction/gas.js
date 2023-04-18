@@ -25,7 +25,7 @@ class Gas {
 
   async getCappedGasPrice () {
     try {
-      const gasPrice = await this.app.client.web3.eth.getCappedGasPrice();
+      const gasPrice = await this.app.client.web3.eth.getGasPrice();
       let hitGasPriceLimit = false;
       if (this.app.config.MAX_GAS_PRICE !== undefined &&
           parseInt(gasPrice) >= this.app.config.MAX_GAS_PRICE

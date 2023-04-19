@@ -19,8 +19,7 @@
     },
     "56": {
       "name": "Binance Smart Chain",
-      "network_type": "evm",
-      "cid": "QmdoaYxpBw1td47wLcHUYwKwpMTE22Zo74RsxtmZ73V1AV"
+      "network_type": "evm"
     },
     "100": {
       "name": "Gnosis Chain",
@@ -48,8 +47,7 @@
     },
     "43113": {
       "name": "Avalanche Fuji Testnet",
-      "network_type": "evm",
-      "cid": "QmcEDXzuTRQqAQyPxKagJ6P2ZAvFHCZWgqLh2ztSzidY83"
+      "network_type": "evm"
     },
     "43114": {
       "name": "Avalanche C-Chain",

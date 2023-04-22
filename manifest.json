@@ -19,7 +19,8 @@
     },
     "56": {
       "name": "Binance Smart Chain",
-      "network_type": "evm"
+      "network_type": "evm",
+      "cid": "QmWqmhB4RDDCfW9uKp9SRmfSBKcJyrbgDpRdoQ5K4VGV4d"
     },
     "100": {
       "name": "Gnosis Chain",

@@ -209,16 +209,16 @@ class App {
             await this.db.queries.saveConfiguration(JSON.stringify(userConfig));
 
             // get json file with tokens and their thresholds limits. Check if it exists and loaded to json object
-            const thresholds = require("../thresholds.json");
-            if (thresholds) {
+
+            try {
+                const thresholds = require("../thresholds.json");
                 const tokensThresholds = thresholds.networks[await this.client.getChainId()];
                 // update thresholds on database
-               await this.db.queries.updateThresholds(tokensThresholds.thresholds);
-            } else {
-                this.logger.warn(`thresholds.json file not found, using default values`);
+                await this.db.queries.updateThresholds(tokensThresholds.thresholds);
+            } catch (err) {
+                this.logger.warn(`error loading thresholds.json`);
+                await this.db.queries.updateThresholds({});
             }
-
-
 
 
             // collect events to detect superTokens and accounts

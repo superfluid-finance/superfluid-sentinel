@@ -25,7 +25,8 @@ class Liquidator {
       let haveBatchWork = [];
       // if we have a batchLiquidator contract, use batch calls
       if (this.app.config.BATCH_CONTRACT !== undefined) {
-        haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate, this.app.config.TOKENS, this.app.config.EXCLUDED_TOKENS);
+        //haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate, this.app.config.TOKENS, this.app.config.EXCLUDED_TOKENS);
+        haveBatchWork = await this.app.db.queries.getNumberOfBatchCallsAboveThreshold(checkDate, this.app.config.TOKENS, this.app.config.EXCLUDED_TOKENS);
         if(haveBatchWork.length > 0) {
           this.app.logger.debug(JSON.stringify(haveBatchWork));
         }
@@ -33,7 +34,7 @@ class Liquidator {
       if (haveBatchWork.length > 0) {
         await this.multiTermination(haveBatchWork, checkDate);
       } else {
-        const work = await this.app.db.queries.getLiquidations(checkDate, this.app.config.TOKENS, this.app.config.EXCLUDED_TOKENS, this.app.config.MAX_TX_NUMBER);
+        const work = await this.app.db.queries.getLiquidationsAboveThreshold(checkDate, this.app.config.TOKENS, this.app.config.EXCLUDED_TOKENS, this.app.config.MAX_TX_NUMBER);
         await this.singleTerminations(work);
       }
     } catch (err) {
@@ -127,7 +128,7 @@ class Liquidator {
     for (const batch of batchWork) {
       let senders = [];
       let receivers = [];
-      const streams = await this.app.db.queries.getLiquidations(
+      const streams = await this.app.db.queries.getLiquidationsAboveThreshold(
         checkDate,
         batch.superToken,
         this.app.config.EXCLUDED_TOKENS,

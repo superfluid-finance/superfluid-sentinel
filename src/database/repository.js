@@ -86,12 +86,60 @@ WHEN 0 THEN est.estimation
 WHEN 1 THEN est.estimationPleb
 WHEN 2 THEN est.estimationPirate
 END as estimation,
-pppmode
+pppmode,
+flowRate
 FROM agreements agr
 INNER JOIN supertokens st on agr.superToken == st.address
 INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.estimation <> 0 AND agr.flowRate <> 0
 ) AS out
 WHERE out.estimation <= :dt ${inSnipped}
+ORDER BY out.estimation ASC ${inSnippedLimit}`;
+
+        if (inSnipped !== "") {
+            return this.app.db.query(sqlquery, {
+                replacements: {
+                    dt: checkDate,
+                    tokens: tokenFilter
+                },
+                type: QueryTypes.SELECT
+            });
+        }
+
+        return this.app.db.query(sqlquery, {
+            replacements: {dt: checkDate},
+            type: QueryTypes.SELECT
+        });
+    }
+
+    // liquidations where flowRate is above a certain threshold
+    async getLiquidationsAboveThreshold(checkDate, onlyTokens, excludeTokens, limitRows) {
+        let inSnipped = "";
+        let inSnippedLimit = "";
+
+        // if configured onlyTokens we don't filter by excludeTokens
+        const tokenFilter = onlyTokens !== undefined ? onlyTokens : excludeTokens;
+        if (tokenFilter !== undefined) {
+            inSnipped = `and out.superToken ${ onlyTokens !== undefined ? "in" : "not in" } (:tokens)`;
+        }
+        if (limitRows !== undefined && limitRows > 0 && limitRows < 101) {
+            inSnippedLimit = `LIMIT ${limitRows}`;
+        }
+
+        const sqlquery = `SELECT * FROM (SELECT agr.superToken, agr.sender, agr.receiver,
+CASE pppmode
+WHEN 0 THEN est.estimation
+WHEN 1 THEN est.estimationPleb
+WHEN 2 THEN est.estimationPirate
+END as estimation,
+pppmode,
+flowRate,
+COALESCE(thr.above, 0) as above
+FROM agreements agr
+INNER JOIN supertokens st on agr.superToken == st.address
+INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.estimation <> 0
+LEFT JOIN thresholds thr on agr.superToken = thr.address
+) AS out
+WHERE out.flowRate >= out.above AND out.estimation <= :dt ${inSnipped}
 ORDER BY out.estimation ASC ${inSnippedLimit}`;
 
         if (inSnipped !== "") {
@@ -129,6 +177,49 @@ INNER JOIN supertokens st on agr.superToken == st.address
 INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.estimation <> 0 AND agr.flowRate <> 0
 ) AS out
 WHERE out.estimation <= :dt ${inSnipped}
+group by out.superToken
+having count(*) > 1
+order by count(*) desc`;
+
+        if (inSnipped !== "") {
+            return this.app.db.query(sqlquery, {
+                replacements: {
+                    dt: checkDate,
+                    tokens: tokenFilter
+                },
+                type: QueryTypes.SELECT
+            });
+        }
+        return this.app.db.query(sqlquery, {
+            replacements: {dt: checkDate},
+            type: QueryTypes.SELECT
+        });
+    }
+
+
+    async getNumberOfBatchCallsAboveThreshold(checkDate, onlyTokens, excludeTokens) {
+        let inSnipped = "";
+        // if configured onlyTokens we don't filter by excludeTokens
+        const tokenFilter = onlyTokens !== undefined ? onlyTokens : excludeTokens;
+        if (tokenFilter !== undefined) {
+            inSnipped = `and out.superToken ${ onlyTokens !== undefined ? "in" : "not in" } (:tokens)`;
+        }
+
+        const sqlquery = `SELECT superToken, count(*) as numberTxs  FROM (SELECT agr.superToken, agr.sender, agr.receiver,
+CASE pppmode
+WHEN 0 THEN est.estimation
+WHEN 1 THEN est.estimationPleb
+WHEN 2 THEN est.estimationPirate
+END as estimation,
+pppmode,
+flowRate,
+COALESCE(thr.above, 0) as above
+FROM agreements agr
+INNER JOIN supertokens st on agr.superToken == st.address
+INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.estimation <> 0
+LEFT JOIN thresholds thr on agr.superToken = thr.address
+) AS out
+WHERE out.flowRate >= out.above AND out.estimation <= :dt ${inSnipped}
 group by out.superToken
 having count(*) > 1
 order by count(*) desc`;
@@ -199,10 +290,15 @@ order by count(*) desc`;
 
     async updateThresholds(thresholds) {
         await this.app.db.models.ThresholdModel.destroy({truncate: true});
-
-        // from json data save it to table
-        for (const threshold of thresholds) {
-            await this.app.db.models.ThresholdModel.create(threshold);
+        // check if thresholds is empty object
+        if(Object.keys(thresholds).length === 0) {
+            // create table without table data
+            return this.app.db.models.ThresholdModel.sync();
+        } else {
+            // from json data save it to table
+            for (const threshold of thresholds) {
+                await this.app.db.models.ThresholdModel.create(threshold);
+            }
         }
     }
 }

@@ -196,6 +196,15 @@ order by count(*) desc`;
             type: QueryTypes.SELECT
         });
     }
+
+    async updateThresholds(thresholds) {
+        await this.app.db.models.ThresholdModel.destroy({truncate: true});
+
+        // from json data save it to table
+        for (const threshold of thresholds) {
+            await this.app.db.models.ThresholdModel.create(threshold);
+        }
+    }
 }
 
 module.exports = Repository;

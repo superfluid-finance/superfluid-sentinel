@@ -1,5 +1,5 @@
+const BN = require("bn.js");
 const {wad4human} = require("@decentral.ee/web3-helpers/src/math-utils");
-
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function trigger (obj, ms) {
   await timeout(ms);
@@ -17,11 +17,16 @@ class NotificationJobs {
       const healthData = `Healthy: ${healthcheck.healthy}\nChainId: ${healthcheck.network.chainId}`;
       this.app.notifier.sendNotification(healthData);
     }
+    const accountBalance = await this.app.client.getAccountBalance();
+    if(new BN(accountBalance).lt(new BN(this.app.config.SENTINEL_BALANCE_THRESHOLD))) {
+      const balanceData = `Attention: Sentinel balance: ${wad4human(accountBalance)}`;
+       this.app.notifier.sendNotification(balanceData);
+    }
   }
 
   async start () {
-    // run every hour ( value in ms)
-    this.run(this, 3600*1000);
+    // run every 5 min ( value in ms)
+    this.run(this, 300000);
   }
 
   async run (self, time) {

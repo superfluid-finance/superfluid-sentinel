@@ -68,51 +68,8 @@ class Repository {
         });
     }
 
-    async getLiquidations(checkDate, onlyTokens, excludeTokens, limitRows) {
-        let inSnipped = "";
-        let inSnippedLimit = "";
-        // if configured onlyTokens we don't filter by excludeTokens
-        const tokenFilter = onlyTokens !== undefined ? onlyTokens : excludeTokens;
-        if (tokenFilter !== undefined) {
-            inSnipped = `and out.superToken ${ onlyTokens !== undefined ? "in" : "not in" } (:tokens)`;
-        }
-        if (limitRows !== undefined && limitRows > 0 && limitRows < 101) {
-            inSnippedLimit = `LIMIT ${limitRows}`;
-        }
-
-        const sqlquery = `SELECT * FROM (SELECT agr.superToken, agr.sender, agr.receiver,
-CASE pppmode
-WHEN 0 THEN est.estimation
-WHEN 1 THEN est.estimationPleb
-WHEN 2 THEN est.estimationPirate
-END as estimation,
-pppmode,
-flowRate
-FROM agreements agr
-INNER JOIN supertokens st on agr.superToken == st.address
-INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.estimation <> 0 AND agr.flowRate <> 0
-) AS out
-WHERE out.estimation <= :dt ${inSnipped}
-ORDER BY out.estimation ASC ${inSnippedLimit}`;
-
-        if (inSnipped !== "") {
-            return this.app.db.query(sqlquery, {
-                replacements: {
-                    dt: checkDate,
-                    tokens: tokenFilter
-                },
-                type: QueryTypes.SELECT
-            });
-        }
-
-        return this.app.db.query(sqlquery, {
-            replacements: {dt: checkDate},
-            type: QueryTypes.SELECT
-        });
-    }
-
     // liquidations where flowRate is above a certain threshold
-    async getLiquidationsAboveThreshold(checkDate, onlyTokens, excludeTokens, limitRows) {
+    async getLiquidations(checkDate, onlyTokens, excludeTokens, limitRows, useThresholds = true) {
         let inSnipped = "";
         let inSnippedLimit = "";
 
@@ -125,6 +82,9 @@ ORDER BY out.estimation ASC ${inSnippedLimit}`;
             inSnippedLimit = `LIMIT ${limitRows}`;
         }
 
+        const joinThresholds = useThresholds ? 'LEFT JOIN thresholds thr on agr.superToken = thr.address' : '';
+        const flowRateCondition = useThresholds ? 'out.flowRate >= COALESCE(out.above, 0)' : 'out.flowRate > 0';
+
         const sqlquery = `SELECT * FROM (SELECT agr.superToken, agr.sender, agr.receiver,
 CASE pppmode
 WHEN 0 THEN est.estimation
@@ -133,13 +93,13 @@ WHEN 2 THEN est.estimationPirate
 END as estimation,
 pppmode,
 flowRate,
-COALESCE(thr.above, 0) as above
+${useThresholds ? 'COALESCE(thr.above, 0) as above' : '0 as above'}
 FROM agreements agr
 INNER JOIN supertokens st on agr.superToken == st.address
 INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.estimation <> 0
-LEFT JOIN thresholds thr on agr.superToken = thr.address
+${joinThresholds}
 ) AS out
-WHERE out.flowRate >= out.above AND out.estimation <= :dt ${inSnipped}
+WHERE ${flowRateCondition} AND out.estimation <= :dt ${inSnipped}
 ORDER BY out.estimation ASC ${inSnippedLimit}`;
 
         if (inSnipped !== "") {
@@ -158,7 +118,7 @@ ORDER BY out.estimation ASC ${inSnippedLimit}`;
         });
     }
 
-    async getNumberOfBatchCalls(checkDate, onlyTokens, excludeTokens) {
+    async getNumberOfBatchCalls(checkDate, onlyTokens, excludeTokens, useThresholds = true) {
         let inSnipped = "";
         // if configured onlyTokens we don't filter by excludeTokens
         const tokenFilter = onlyTokens !== undefined ? onlyTokens : excludeTokens;
@@ -166,44 +126,8 @@ ORDER BY out.estimation ASC ${inSnippedLimit}`;
             inSnipped = `and out.superToken ${ onlyTokens !== undefined ? "in" : "not in" } (:tokens)`;
         }
 
-        const sqlquery = `SELECT superToken, count(*) as numberTxs  FROM (SELECT agr.superToken, agr.sender, agr.receiver,
-CASE pppmode
-WHEN 0 THEN est.estimation
-WHEN 1 THEN est.estimationPleb
-WHEN 2 THEN est.estimationPirate
-END as estimation
-FROM agreements agr
-INNER JOIN supertokens st on agr.superToken == st.address
-INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.estimation <> 0 AND agr.flowRate <> 0
-) AS out
-WHERE out.estimation <= :dt ${inSnipped}
-group by out.superToken
-having count(*) > 1
-order by count(*) desc`;
-
-        if (inSnipped !== "") {
-            return this.app.db.query(sqlquery, {
-                replacements: {
-                    dt: checkDate,
-                    tokens: tokenFilter
-                },
-                type: QueryTypes.SELECT
-            });
-        }
-        return this.app.db.query(sqlquery, {
-            replacements: {dt: checkDate},
-            type: QueryTypes.SELECT
-        });
-    }
-
-
-    async getNumberOfBatchCallsAboveThreshold(checkDate, onlyTokens, excludeTokens) {
-        let inSnipped = "";
-        // if configured onlyTokens we don't filter by excludeTokens
-        const tokenFilter = onlyTokens !== undefined ? onlyTokens : excludeTokens;
-        if (tokenFilter !== undefined) {
-            inSnipped = `and out.superToken ${ onlyTokens !== undefined ? "in" : "not in" } (:tokens)`;
-        }
+        const joinThresholds = useThresholds ? 'LEFT JOIN thresholds thr on agr.superToken = thr.address' : '';
+        const flowRateCondition = useThresholds ? 'out.flowRate >= COALESCE(out.above, 0)' : 'out.flowRate > 0';
 
         const sqlquery = `SELECT superToken, count(*) as numberTxs  FROM (SELECT agr.superToken, agr.sender, agr.receiver,
 CASE pppmode
@@ -213,13 +137,13 @@ WHEN 2 THEN est.estimationPirate
 END as estimation,
 pppmode,
 flowRate,
-COALESCE(thr.above, 0) as above
+${useThresholds ? 'COALESCE(thr.above, 0) as above' : '0 as above'}
 FROM agreements agr
 INNER JOIN supertokens st on agr.superToken == st.address
 INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.estimation <> 0
-LEFT JOIN thresholds thr on agr.superToken = thr.address
+${joinThresholds}
 ) AS out
-WHERE out.flowRate >= out.above AND out.estimation <= :dt ${inSnipped}
+WHERE ${flowRateCondition} AND out.estimation <= :dt ${inSnipped}
 group by out.superToken
 having count(*) > 1
 order by count(*) desc`;

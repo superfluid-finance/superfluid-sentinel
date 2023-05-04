@@ -42,6 +42,22 @@ class HTTPServer {
       }
     });
 
+    // get the count of liquidations for the next 7 days
+    this.server.get("/liquidationscount", async (req, res) => {
+        const liquidations = await this.app.db.queries.getEstimatedLiquidationsNextWeek(
+            this.app.time.getTimeWithDelay(0),
+            this.app.config.TOKENS,
+            this.app.config.EXCLUDED_TOKENS
+        );
+        console.log(liquidations);
+        try {
+            res.send(liquidations);
+        } catch (e) {
+            liquidations.message = e;
+            res.status(503).send();
+        }
+    });
+
     this.server.get('/metrics', async (req, res) => {
       res.setHeader('Content-Type', this.register.contentType);
       res.send(await this.register.metrics());

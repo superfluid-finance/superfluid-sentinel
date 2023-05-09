@@ -163,53 +163,6 @@ order by count(*) desc`;
         });
     }
 
-    async getEstimatedLiquidationsNextWeek(checkDate, onlyTokens, excludeTokens, useThresholds = true) {
-        const nextWeek = checkDate + 7 * 24 * 60 * 60 * 1000;
-        let inSnipped = "";
-
-        // if configured onlyTokens we don't filter by excludeTokens
-        const tokenFilter = onlyTokens !== undefined ? onlyTokens : excludeTokens;
-        if (tokenFilter !== undefined) {
-            inSnipped = `and out.superToken ${ onlyTokens !== undefined ? "in" : "not in" } (:tokens)`;
-        }
-
-        const joinThresholds = useThresholds ? 'LEFT JOIN thresholds thr on agr.superToken = thr.address' : '';
-        const flowRateCondition = useThresholds ? 'out.flowRate >= COALESCE(out.above, 0)' : 'out.flowRate > 0';
-
-        const sqlquery = `SELECT out.superToken, COUNT(*) as numberOfLiquidations FROM (SELECT agr.superToken, agr.sender, agr.receiver,
-CASE pppmode
-WHEN 0 THEN est.estimation
-WHEN 1 THEN est.estimationPleb
-WHEN 2 THEN est.estimationPirate
-END as estimation,
-pppmode,
-flowRate,
-${useThresholds ? 'COALESCE(thr.above, 0) as above' : '0 as above'}
-FROM agreements agr
-INNER JOIN supertokens st on agr.superToken == st.address
-INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.estimation <> 0
-${joinThresholds}
-) AS out
-WHERE ${flowRateCondition} AND out.estimation <= :dt ${inSnipped}
-GROUP BY out.superToken
-ORDER BY numberOfLiquidations DESC`;
-
-        if (inSnipped !== "") {
-            return this.app.db.query(sqlquery, {
-                replacements: {
-                    dt: nextWeek,
-                    tokens: tokenFilter
-                },
-                type: QueryTypes.SELECT
-            });
-        }
-
-        return this.app.db.query(sqlquery, {
-            replacements: {dt: checkDate},
-            type: QueryTypes.SELECT
-        });
-    }
-
     async healthCheck() {
         return this.app.db.query("SELECT 1", {
             type: QueryTypes.SELECT

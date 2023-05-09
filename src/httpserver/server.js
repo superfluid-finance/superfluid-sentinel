@@ -28,34 +28,51 @@ class HTTPServer {
       }
     });
 
+    // helper function for argument parsing
+    const parseTimeframe = (timeframe) => {
+      const units = {
+        'm': 60,
+        'h': 3600,
+        'd': 3600 * 24,
+        'w': 3600 * 24 * 7,
+        'M': 3600 * 24 * 30,
+        'y': 3600 * 24 * 365,
+      };
+
+      const regex = /^(\d+)([mhdwMy])$/;
+      const match = timeframe.match(regex);
+
+      if (match) {
+        const value = parseInt(match[1], 10);
+        const unit = match[2];
+        return value * units[unit];
+      }
+
+      return null;
+    };
+
+    // get a list of upcoming liquidations - configurable timeframe, defaults to 1h
     this.server.get("/nextliquidations", async (req, res) => {
+      const timeframeParam = req.query.timeframe || '1h';
+      const timeframeInSeconds = parseTimeframe(timeframeParam);
+
+      if (timeframeInSeconds === null) {
+        res.status(400).send({ message: 'Invalid timeframe format. Use a value like "2h", "5d", etc.' });
+        return;
+      }
+
       const liquidations = await this.app.db.queries.getLiquidations(
-        this.app.time.getTimeWithDelay(-3600),
+        this.app.time.getTimeWithDelay(-timeframeInSeconds),
         this.app.config.TOKENS,
         this.app.config.EXCLUDED_TOKENS
       );
+
       try {
         res.send(liquidations);
       } catch (e) {
         liquidations.message = e;
         res.status(503).send();
       }
-    });
-
-    // get the count of liquidations for the next 7 days
-    this.server.get("/liquidationscount", async (req, res) => {
-        const liquidations = await this.app.db.queries.getEstimatedLiquidationsNextWeek(
-            this.app.time.getTimeWithDelay(0),
-            this.app.config.TOKENS,
-            this.app.config.EXCLUDED_TOKENS
-        );
-        console.log(liquidations);
-        try {
-            res.send(liquidations);
-        } catch (e) {
-            liquidations.message = e;
-            res.status(503).send();
-        }
     });
 
     this.server.get('/metrics', async (req, res) => {

@@ -5,6 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "node main.js $1",
+    "query-metrics": "./scripts/query-metrics.sh $@",
     "toga-status": "node scripts/printTOGAstatus.js",
     "build-snap": "node scripts/buildSnapshot.js",
     "test-sync": "node scripts/testSync.js",

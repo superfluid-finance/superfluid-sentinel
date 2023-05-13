@@ -99,7 +99,7 @@ class LoadEvents {
         this.app.logger.info("start getting delays PIC system");
         // we need to query each supertoken to check pic address
         const delayChecker = async.queue(async function (task) {
-          let keepTrying = 10;
+          let keepTrying = 1;
           while (true) {
             try {
               await task.self.app.protocol.calculateAndSaveTokenDelay(task.token, false);

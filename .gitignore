@@ -17,3 +17,12 @@ datadir/
 snapshots/
 
 .npmrc
+
+tplan
+.terraform*
+tmp*
+credentials
+*plan
+out*
+.DS_Store
+.idea/

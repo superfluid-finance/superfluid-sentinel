@@ -1,0 +1,112 @@
+name: 'Sentinel ECS'
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - 'grafana/**'
+      - 'prometheus/**'
+      - 'test/**'
+
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - 'grafana/**'
+      - 'prometheus/**'
+      - 'test/**'
+
+env:
+  TF_VAR_image_tag: ${{ github.sha }}
+  TF_VAR_image_id: "mmdafegbua/balatinel"
+  TF_VAR_bucket_name: "sentinel-drop-test-bucket"
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    name: Build Personal Image
+    runs-on: ubuntu-latest
+    environment: sandbox
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          #CR e.g Dockerhub
+          username: ${{ secrets.CR_USERNAME }}
+          password: ${{ secrets.CR_ACCESS_TOKEN }}
+
+      - name: Build and Push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ecsfargate.Dockerfile
+          push: true
+          tags: ${{ env.TF_VAR_image_id }}:${{ env.TF_VAR_image_tag }}
+          build-args: |
+            TF_VAR_image_tag=${{ env.TF_VAR_image_tag }}
+            TF_VAR_image_id=${{ env.TF_VAR_image_id }}
+
+  terraform-plan:
+    name: 'Terraform Plan'
+    runs-on: ubuntu-latest
+    environment: sandbox
+    needs: docker
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: "us-east-1"
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.4.6
+
+      - name: Terraform Init
+        id: init
+        working-directory: ./terraform
+        run: |
+          terraform init
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: ./terraform
+        run: terraform plan --var-file=./environments/sandbox.tfvars -input=false -no-color -out tf.plan
+
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    environment: sandbox
+    if: github.ref == 'refs/heads/main'
+    needs: terraform-plan
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: "us-east-1"
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.4.6
+
+      - name: Terraform Init
+        id: init
+        working-directory: ./terraform
+        run: |
+          terraform init
+
+      - name: Apply
+        id: apply
+        working-directory: ./terraform
+        run: terraform apply --var-file=./environments/sandbox.tfvars --auto-approve

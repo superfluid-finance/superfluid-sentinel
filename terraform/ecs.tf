@@ -2,10 +2,10 @@ data "aws_availability_zones" "available" {}
 
 locals {
   region = "us-east-1"
-  name   = "momodu-sentinel"
+  name   = "sentinel"
 
   vpc_cidr = "10.0.0.0/16"
-  azs      = slice(data.aws_availability_zones.available.names, 0, 3)
+  azs      = slice(data.aws_availability_zones.available.names, 0, 2)
 
   container_name = "sentinel"
   container_port = 9100
@@ -18,7 +18,7 @@ locals {
 }
 
 ################################################################################
-# Cluster
+#ECS Cluster
 ################################################################################
 
 module "ecs_cluster" {
@@ -27,24 +27,17 @@ module "ecs_cluster" {
 
   cluster_name = local.name
 
-  # Capacity provider - autoscaling groups
-  default_capacity_provider_use_fargate = false
-  autoscaling_capacity_providers = {
-    # On-demand instances
-    ex-1 = {
-      auto_scaling_group_arn         = module.autoscaling["ex-1"].autoscaling_group_arn
-      managed_termination_protection = "ENABLED"
-
-      managed_scaling = {
-        maximum_scaling_step_size = 1
-        minimum_scaling_step_size = 1
-        status                    = "ENABLED"
-        target_capacity           = 60
-      }
-
+  # Capacity provider
+  fargate_capacity_providers = {
+    FARGATE = {
       default_capacity_provider_strategy = {
-        weight = 60
+        weight = 50
         base   = 20
+      }
+    }
+    FARGATE_SPOT = {
+      default_capacity_provider_strategy = {
+        weight = 50
       }
     }
   }
@@ -64,28 +57,27 @@ module "ecs_service" {
   name        = local.name
   cluster_arn = module.ecs_cluster.arn
 
+  # Role for task. Set to allow it pull .env from s3 bucket
   task_exec_iam_role_policies = {
     s3Access = aws_iam_policy.policy.arn
   }
 
-
-  # Task Definition
-  requires_compatibilities = ["EC2"]
-  desired_count            = 1
-  capacity_provider_strategy = {
-    # On-demand instances
-    ex-1 = {
-      capacity_provider = module.ecs_cluster.autoscaling_capacity_providers["ex-1"].name
-      weight            = 1
-      base              = 1
+  volume = {
+    efs_volume_configuration = {
+      name                    = "sentinel"
+      file_system_id          = aws_efs_file_system.sentinel.id
+      root_directory          = "data"
+      transit_encryption      = "ENABLED"
+      transit_encryption_port = 2999
+      authorization_config = {
+        access_point_id = aws_efs_access_point.sentinel.id
+        iam             = "ENABLED"
+      }
     }
   }
 
-  volume = {
-    data            = {},
-    prometheus_data = {},
-    grafana         = {}
-  }
+  cpu    = 1024
+  memory = 4096
 
   # Container definition(s)
   container_definitions = {
@@ -123,25 +115,32 @@ module "ecs_service" {
 
       mount_points = [
         {
-          sourceVolume  = "data",
+          sourceVolume  = "sentinel",
           containerPath = "/app/data"
+          readOnly      = false
         }
       ]
 
       readonly_root_filesystem = false
-    }
-
+    },
   }
 
-  load_balancer = {
+  # Service discovery
+  service_connect_configuration = {
+    namespace = aws_service_discovery_http_namespace.this.arn
     service = {
-      target_group_arn = element(module.alb.target_group_arns, 0)
-      container_name   = local.container_name
-      container_port   = local.container_port
+      client_alias = {
+        port     = local.container_port
+        dns_name = local.container_name
+      }
+      port_name      = local.container_name
+      discovery_name = local.container_name
     }
   }
 
-  subnet_ids = module.vpc.private_subnets
+  assign_public_ip = true
+
+  subnet_ids = module.vpc.public_subnets
   security_group_rules = {
     alb_http_ingress = {
       type                     = "ingress"
@@ -199,7 +198,28 @@ resource "aws_iam_policy" "policy" {
   })
 }
 
+resource "aws_service_discovery_http_namespace" "this" {
+  name        = local.name
+  description = "CloudMap namespace for ${local.name}"
+  tags        = local.tags
+}
 
+
+resource "aws_efs_file_system" "sentinel" {
+  creation_token = "sentinel"
+
+  tags = {
+    Name = "sentinel"
+  }
+
+  lifecycle_policy {
+    transition_to_ia = "AFTER_30_DAYS"
+  }
+}
+
+resource "aws_efs_access_point" "sentinel" {
+  file_system_id = aws_efs_file_system.sentinel.id
+}
 
 ################################################################################
 # Cluster
@@ -220,15 +240,6 @@ output "cluster_name" {
   value       = module.ecs_cluster.name
 }
 
-output "cluster_capacity_providers" {
-  description = "Map of cluster capacity providers attributes"
-  value       = module.ecs_cluster.cluster_capacity_providers
-}
-
-output "cluster_autoscaling_capacity_providers" {
-  description = "Map of capacity providers created and their attributes"
-  value       = module.ecs_cluster.autoscaling_capacity_providers
-}
 
 ################################################################################
 # Service
@@ -242,94 +253,4 @@ output "service_id" {
 output "service_name" {
   description = "Name of the service"
   value       = module.ecs_service.name
-}
-
-output "service_iam_role_name" {
-  description = "Service IAM role name"
-  value       = module.ecs_service.iam_role_name
-}
-
-output "service_iam_role_arn" {
-  description = "Service IAM role ARN"
-  value       = module.ecs_service.iam_role_arn
-}
-
-output "service_iam_role_unique_id" {
-  description = "Stable and unique string identifying the service IAM role"
-  value       = module.ecs_service.iam_role_unique_id
-}
-
-output "service_container_definitions" {
-  description = "Container definitions"
-  value       = module.ecs_service.container_definitions
-}
-
-output "service_task_definition_arn" {
-  description = "Full ARN of the Task Definition (including both `family` and `revision`)"
-  value       = module.ecs_service.task_definition_arn
-}
-
-output "service_task_definition_revision" {
-  description = "Revision of the task in a particular family"
-  value       = module.ecs_service.task_definition_revision
-}
-
-output "service_task_exec_iam_role_name" {
-  description = "Task execution IAM role name"
-  value       = module.ecs_service.task_exec_iam_role_name
-}
-
-output "service_task_exec_iam_role_arn" {
-  description = "Task execution IAM role ARN"
-  value       = module.ecs_service.task_exec_iam_role_arn
-}
-
-output "service_task_exec_iam_role_unique_id" {
-  description = "Stable and unique string identifying the task execution IAM role"
-  value       = module.ecs_service.task_exec_iam_role_unique_id
-}
-
-output "service_tasks_iam_role_name" {
-  description = "Tasks IAM role name"
-  value       = module.ecs_service.tasks_iam_role_name
-}
-
-output "service_tasks_iam_role_arn" {
-  description = "Tasks IAM role ARN"
-  value       = module.ecs_service.tasks_iam_role_arn
-}
-
-output "service_tasks_iam_role_unique_id" {
-  description = "Stable and unique string identifying the tasks IAM role"
-  value       = module.ecs_service.tasks_iam_role_unique_id
-}
-
-output "service_task_set_id" {
-  description = "The ID of the task set"
-  value       = module.ecs_service.task_set_id
-}
-
-output "service_task_set_arn" {
-  description = "The Amazon Resource Name (ARN) that identifies the task set"
-  value       = module.ecs_service.task_set_arn
-}
-
-output "service_task_set_stability_status" {
-  description = "The stability status. This indicates whether the task set has reached a steady state"
-  value       = module.ecs_service.task_set_stability_status
-}
-
-output "service_task_set_status" {
-  description = "The status of the task set"
-  value       = module.ecs_service.task_set_status
-}
-
-output "service_autoscaling_policies" {
-  description = "Map of autoscaling policies and their attributes"
-  value       = module.ecs_service.autoscaling_policies
-}
-
-output "service_autoscaling_scheduled_actions" {
-  description = "Map of autoscaling scheduled actions and their attributes"
-  value       = module.ecs_service.autoscaling_scheduled_actions
 }

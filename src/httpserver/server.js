@@ -27,13 +27,16 @@ class HTTPServer {
         res.status(503).send();
       }
     });
-
     this.server.get("/nextliquidations", async (req, res) => {
+      const timeframe = req.query.timeframe || 3600; // Default timeframe is 3600 seconds (1 hour)
+      const token = req.query.token || null; // Default token is null (all tokens)
+
       const liquidations = await this.app.db.queries.getLiquidations(
-        this.app.time.getTimeWithDelay(-3600),
-        this.app.config.TOKENS,
+        this.app.time.getTimeWithDelay(-timeframe),
+        token ? [token] : this.app.config.TOKENS,
         this.app.config.EXCLUDED_TOKENS
       );
+      
       try {
         res.send(liquidations);
       } catch (e) {

@@ -25,6 +25,7 @@ class Liquidator {
       let haveBatchWork = [];
       // if we have a batchLiquidator contract, use batch calls
       if (this.app.config.BATCH_CONTRACT !== undefined) {
+        //haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate, this.app.config.TOKENS, this.app.config.EXCLUDED_TOKENS);
         haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate, this.app.config.TOKENS, this.app.config.EXCLUDED_TOKENS);
         if(haveBatchWork.length > 0) {
           this.app.logger.debug(JSON.stringify(haveBatchWork));

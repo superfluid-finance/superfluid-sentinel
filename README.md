@@ -80,7 +80,13 @@ systemctl enable superfluid-sentinel.service
 ### Monitoring & Alerting
 
 The sentinel can provide monitoring information. In the default configuration, this is available on port 9100 and json formatted.
-This includes a flag "healthy" which turns to `false` in case of malfunction, e.g. if there's a problem with the local DB or with the RPC connection.
+
+The endpoint `/` returns a status summary, including a flag `healthy` which turns to `false` in case of malfunction, e.g. if there's a problem with the local DB or with the RPC connection.  
+The endpoint `/nextliquidations` returns a list accounts likely up for liquidation next. The timeframe for that preview defaults to 1h. You can set a custom timeframe by setting an url parameter `timeframe`. Supported units are m (minutes), h (hours), d(days), w(weeks), M(months), y(years). Example: `/nextliquidations?timeframe=3d`
+
+Using the json parsing tool `jq`, you can pretty-print the output of the metris endpoint and also run queries on it.
+There's also a convenience script available with a few potentially useful queries, see `scripts/query-metrics.sh --help`.
+(Note: this script doesn't use the ENV vars related to metrics from the .env file - you may need to set the HOST env var).
 
 You can also set up notifications to Slack or Telegram. Events triggering a notification include
 * sentinel restarts

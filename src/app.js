@@ -18,7 +18,7 @@ const HTTPServer = require("./httpserver/server");
 const Report = require("./httpserver/report");
 const Notifier = require("./services/notifier");
 const SlackNotifier = require("./services/slackNotifier");
-const TelegramNotfier = require("./services/telegramNotifier");
+const TelegramNotifier = require("./services/telegramNotifier");
 const NotifierJobs = require("./services/notificationJobs");
 const Errors = require("./utils/errors/errors");
 const { wad4human } = require("@decentral.ee/web3-helpers");
@@ -39,7 +39,8 @@ class App {
             FlowUpdatedModel: require("./database/models/flowUpdatedModel")(this.db),
             SuperTokenModel: require("./database/models/superTokenModel")(this.db),
             SystemModel: require("./database/models/systemModel")(this.db),
-            UserConfig: require("./database/models/userConfiguration")(this.db)
+            UserConfig: require("./database/models/userConfiguration")(this.db),
+            ThresholdModel: require("./database/models/thresholdModel")(this.db),
         }
         this.db.queries = new Repository(this);
         this.eventTracker = new EventTracker(this);
@@ -68,9 +69,10 @@ class App {
             this._slackNotifier = new SlackNotifier(this, {timeout: 3000});
         }
         if (this.config.TELEGRAM_BOT_TOKEN && this.config.TELEGRAM_CHAT_ID) {
-            this._telegramNotifier = new TelegramNotfier(this);
+            this._telegramNotifier = new TelegramNotifier(this);
         }
         if (this._slackNotifier || this._telegramNotifier) {
+            this.logger.info("initializing notification jobs")
             this.notificationJobs = new NotifierJobs(this);
         }
 
@@ -206,6 +208,19 @@ class App {
                 process.exit(1);
             }
             await this.db.queries.saveConfiguration(JSON.stringify(userConfig));
+            // get json file with tokens and their thresholds limits. Check if it exists and loaded to json object
+            try {
+                const thresholds = require("../thresholds.json");
+                const tokensThresholds = thresholds.networks[await this.client.getChainId()];
+                this.config.SENTINEL_BALANCE_THRESHOLD = tokensThresholds.minSentinelBalanceThreshold;
+                // update thresholds on database
+                await this.db.queries.updateThresholds(tokensThresholds.thresholds);
+            } catch (err) {
+                this.logger.warn(`error loading thresholds.json`);
+                await this.db.queries.updateThresholds({});
+            }
+
+
             // collect events to detect superTokens and accounts
             const currentBlock = await this.loadEvents.start();
             // query balances to make liquidations estimations

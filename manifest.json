@@ -61,6 +61,10 @@
       "network_type": "evm",
       "cid": "QmeU49JhrCETRcCvi76UEn6MLBEJg2Y4QYTdTFCeoZtFzP"
     },
+    "84531": {
+      "name": "Base Goerli Testnet",
+      "network_type": "evm"
+    },
     "421613": {
       "name": "Arbitrum Goerli Testnet",
       "network_type": "evm-l2"

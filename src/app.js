@@ -39,7 +39,7 @@ class App {
             FlowUpdatedModel: require("./database/models/flowUpdatedModel")(this.db),
             SuperTokenModel: require("./database/models/superTokenModel")(this.db),
             SystemModel: require("./database/models/systemModel")(this.db),
-            UserConfig: require("./database/models/userConfiguration")(this.db)      ,
+            UserConfig: require("./database/models/userConfiguration")(this.db),
             ThresholdModel: require("./database/models/thresholdModel")(this.db),
         }
         this.db.queries = new Repository(this);
@@ -72,7 +72,7 @@ class App {
             this._telegramNotifier = new TelegramNotifier(this);
         }
         if (this._slackNotifier || this._telegramNotifier) {
-            console.log("Initializing notification jobs")
+            this.logger.info("initializing notification jobs")
             this.notificationJobs = new NotifierJobs(this);
         }
 

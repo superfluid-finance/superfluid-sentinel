@@ -218,6 +218,7 @@ class App {
             } catch (err) {
                 this.logger.warn(`error loading thresholds.json`);
                 await this.db.queries.updateThresholds({});
+                this.config.SENTINEL_BALANCE_THRESHOLD = 0;
             }
 
 

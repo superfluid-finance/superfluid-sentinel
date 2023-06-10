@@ -8,6 +8,7 @@ const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/bui
 const BatchContract = require("../abis/BatchLiquidator.json");
 const TogaContract = require("@superfluid-finance/ethereum-contracts/build/contracts/TOGA.json");
 const { wad4human } = require("@decentral.ee/web3-helpers");
+const BN = require("bn.js");
 
 /*
  *   Web3 and superfluid client:
@@ -244,6 +245,14 @@ class Client {
       return this.web3.eth.getBalance(this.agentAccounts.address);
     }
   }
+
+    async isAccountBalanceBelowMinimum () {
+        const balance = await this.getAccountBalance();
+        return {
+          isBelow: new BN(balance).lt(new BN(this.app.config.SENTINEL_BALANCE_THRESHOLD)),
+          balance: balance
+        };
+    }
 
   getAccount () {
     return this.agentAccounts;

@@ -5,10 +5,13 @@ async function trigger (obj, ms) {
   await timeout(ms);
   await obj.sendReport();
 }
+// if balance report interval is <= 5 min will always send a balance alert because global report interval is 5 min
+const BALANCE_REPORT_INTERVAL = 12 * 1000 * 60 * 60; // 12 hours
 
 class NotificationJobs {
   constructor(app) {
     this.app = app;
+    this._lastBalanceReportTime = Date.now();
   }
 
   async sendReport () {
@@ -17,10 +20,14 @@ class NotificationJobs {
       const healthData = `Healthy: ${healthcheck.healthy}\nChainId: ${healthcheck.network.chainId}`;
       this.app.notifier.sendNotification(healthData);
     }
-    const accountBalance = await this.app.client.getAccountBalance();
-    if(new BN(accountBalance).lt(new BN(this.app.config.SENTINEL_BALANCE_THRESHOLD))) {
-      const balanceData = `Attention: Sentinel balance: ${wad4human(accountBalance)}`;
-       this.app.notifier.sendNotification(balanceData);
+    const currentTime = Date.now();
+    if(currentTime - this._lastBalanceReportTime >= BALANCE_REPORT_INTERVAL) {
+      const balanceQuery = await this.app.client.isAccountBalanceBelowMinimum();
+      if(balanceQuery.isBelow) {
+        this.app.notifier.sendNotification(`Attention: Sentinel balance: ${wad4human(balanceQuery.balance)}`);
+        // update the time of last balance report
+        this._lastBalanceReportTime = currentTime;
+      }
     }
   }
 

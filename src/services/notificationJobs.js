@@ -1,4 +1,3 @@
-const BN = require("bn.js");
 const {wad4human} = require("@decentral.ee/web3-helpers/src/math-utils");
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function trigger (obj, ms) {

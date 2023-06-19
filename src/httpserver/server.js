@@ -7,9 +7,7 @@ class HTTPServer {
     this.port = this.app.config.METRICS_PORT;
     this.register = register;
   }
-
-
-
+  
   async updateAccountBalance() {s
     try {
       const balance = await this.app.client.getAccountBalance();

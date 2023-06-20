@@ -8,7 +8,7 @@ class HTTPServer {
     this.register = register;
   }
   
-  async updateAccountBalance() {s
+  async updateAccountBalance() {
     try {
       const balance = await this.app.client.getAccountBalance();
       accountBalanceGauge.set(balance);

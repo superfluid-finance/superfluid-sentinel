@@ -42,6 +42,17 @@ class Protocol {
     }
   }
 
+  // getGDAgreementEvents
+  async getGDAgreementEvents (eventName, filter) {
+    try {
+      this.app.client.addTotalRequest();
+      return this.app.client.GDAv1.getPastEvents(eventName, filter);
+    } catch (err) {
+      console.error(err);
+      throw Error(`Protocol.getGDAgreementEvents(): ${err}`);
+    }
+  }
+
   async isAccountCriticalNow (superToken, account) {
     try {
       this.app.client.addTotalRequest();

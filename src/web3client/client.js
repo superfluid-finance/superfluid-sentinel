@@ -1,7 +1,7 @@
 const Web3 = require("web3");
 const IResolver = require("@superfluid-finance/ethereum-contracts/build/contracts/IResolver.json");
 const ICFA = require("@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json");
-const IGDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IGeneralDistributionAgreementV1.json");
+const IGDA = require("../abis/IGeneralDistributionAgreementV1.json");
 const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IInstantDistributionAgreementV1.json");
 const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
@@ -66,7 +66,7 @@ class Client {
         this.app.logger.info("using provided mnemonic");
         this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, this.app.config.MNEMONIC_INDEX);
       } else if(this.app.config.OBSERVER) {
-        this.app.logger.warn(`Configuration is set to be Observer.`);
+        this.app.logger.warn("Configuration is set to be Observer.");
       } else {
         throw Error("No account configured. Either PRIVATE_KEY or MNEMONIC needs to be set.");
       }
@@ -119,7 +119,6 @@ class Client {
       this.sf = new this.web3.eth.Contract(ISuperfluid.abi,superfluidAddress);
       const govAddress = await this.sf.methods.getGovernance().call();
       this.gov = new this.web3.eth.Contract(SuperfluidGovernance.abi, govAddress);
-
       // Agreements
       const cfaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
       const gdaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.GeneralDistributionAgreement.v1");

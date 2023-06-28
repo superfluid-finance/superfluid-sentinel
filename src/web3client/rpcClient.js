@@ -55,12 +55,12 @@ class RPCClient {
     async sendSignedTransaction(signed) {
         const gasPrice = signed.tx.txObject.gasPrice;
         const gasLimit = signed.tx.txObject.gasLimit;
-
+        // test mode options
         if (this._testMode === "TIMEOUT_ON_LOW_GAS_PRICE" && gasPrice <= this._testOption.minimumGas) {
             await new Promise((resolve) => setTimeout(resolve, signed.tx.timeout * 2));
         } else if (this._testMode === "REVERT_ON_BLOCK_GAS_LIMIT" && gasLimit > this._testOption.blockGasLimit) {
             throw new Error("block gas limit");
-        } else {
+        } else { // normal mode
             return this.web3.eth.sendSignedTransaction(signed.tx.rawTransaction);
         }
     }

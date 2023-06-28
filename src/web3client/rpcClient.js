@@ -7,6 +7,9 @@ const Web3 = require("web3");
 
 class RPCClient {
     constructor(app) {
+
+        if (!app) throw new Error("RPCClient: app is not defined");
+        
         this.app = app;
         this.isConnected = false;
     }

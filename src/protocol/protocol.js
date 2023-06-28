@@ -32,13 +32,13 @@ class Protocol {
     }
   }
 
-  async getAgreementEvents (eventName, filter) {
+  async getCFAAgreementEvents (eventName, filter) {
     try {
       this.app.client.addTotalRequest();
       return this.app.client.CFAv1.getPastEvents(eventName, filter);
     } catch (err) {
       console.error(err);
-      throw Error(`Protocol.getAgreementEvents(): ${err}`);
+      throw Error(`Protocol.getCFAAgreementEvents(): ${err}`);
     }
   }
 

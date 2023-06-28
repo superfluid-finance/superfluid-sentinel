@@ -27,6 +27,7 @@ class LoadEvents {
       let pullCounter = blockNumber;
       const currentBlockNumber = await this.app.client.getCurrentBlockNumber(this.app.config.BLOCK_OFFSET);
       const realBlockNumber = currentBlockNumber + this.app.config.BLOCK_OFFSET;
+
       this.app.logger.info(`scanning blocks from ${pullCounter} to ${currentBlockNumber} - real ${realBlockNumber}`);
       const queue = async.queue(async function (task) {
         let keepTrying = 1;
@@ -38,7 +39,7 @@ class LoadEvents {
                 ? { filter: { token: task.self.app.config.TOKENS }, fromBlock: task.fromBlock, toBlock: task.toBlock }
                 : { fromBlock: task.fromBlock, toBlock: task.toBlock };
 
-            let result = await task.self.app.protocol.getAgreementEvents("FlowUpdated", query);
+            let result = await task.self.app.protocol.getCFAAgreementEvents("FlowUpdated", query);
             result = result.map(task.self.app.models.event.transformWeb3Event);
 
             for (const event of result) {

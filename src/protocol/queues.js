@@ -94,7 +94,7 @@ class Queues {
             toBlock: task.blockNumber
           };
 
-          let allFlowUpdatedEvents = await task.self.app.protocol.getAgreementEvents(
+          let allFlowUpdatedEvents = await task.self.app.protocol.getCFAAgreementEvents(
             "FlowUpdated",
             senderFilter
           );

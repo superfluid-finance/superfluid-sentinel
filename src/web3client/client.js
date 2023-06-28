@@ -1,6 +1,7 @@
 const Web3 = require("web3");
 const IResolver = require("@superfluid-finance/ethereum-contracts/build/contracts/IResolver.json");
 const ICFA = require("@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json");
+const IGDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IGeneralDistributionAgreementV1.json");
 const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IInstantDistributionAgreementV1.json");
 const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
@@ -112,22 +113,34 @@ class Client {
 
   async _loadSuperfluidContracts () {
     try {
-      const superfluidIdent = `Superfluid.${this.version}`;
+
       this.resolver = new this.web3.eth.Contract(IResolver.abi,this.app.config.RESOLVER);
-      const superfluidAddress = await this.resolver.methods.get(superfluidIdent).call();
+      const superfluidAddress = await this.resolver.methods.get(`Superfluid.${this.version}`).call();
       this.sf = new this.web3.eth.Contract(ISuperfluid.abi,superfluidAddress);
       const govAddress = await this.sf.methods.getGovernance().call();
       this.gov = new this.web3.eth.Contract(SuperfluidGovernance.abi, govAddress);
+
+      // Agreements
       const cfaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
+      const gdaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.GeneralDistributionAgreement.v1");
       const idaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
-      const [cfaAddress, idaAddress] = await Promise.all([this.sf.methods.getAgreementClass(cfaIdent).call(), this.sf.methods.getAgreementClass(idaIdent).call()]);
+      const [cfaAddress, idaAddress, gdaAddress] = await Promise.all([
+          this.sf.methods.getAgreementClass(cfaIdent).call(),
+          this.sf.methods.getAgreementClass(idaIdent).call(),
+          this.sf.methods.getAgreementClass(gdaIdent).call()
+      ]);
+
       this.CFAv1 = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
       this.IDAv1 = new this.web3.eth.Contract(IIDA.abi, idaAddress);
+      this.GDAv1 = new this.web3.eth.Contract(IGDA.abi, gdaAddress);
+
       this.app.logger.info(`Resolver: ${this.app.config.RESOLVER}`);
       this.app.logger.info(`Superfluid: ${superfluidAddress}`);
       this.app.logger.info(`Superfluid Governance: ${govAddress}`);
       this.app.logger.info(`CFA address: ${cfaAddress}`);
+      this.app.logger.info(`GDA address: ${gdaAddress}`);
       this.app.logger.info(`IDA address: ${idaAddress}`);
+
     } catch (err) {
       this.app.logger.error(err);
       throw Error(`Client._loadSuperfluidContracts(): ${err}`);

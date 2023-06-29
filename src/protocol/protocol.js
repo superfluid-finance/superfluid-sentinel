@@ -22,14 +22,32 @@ class Protocol {
     }
   }
 
-  async getUserNetFlow (token, account) {
+  async getCFAUserNetFlow (token, account) {
     try {
       this.app.client.addTotalRequest();
       return this.app.client.CFAv1.methods.getNetFlow(token, account).call();
     } catch (err) {
       console.error(err);
-      throw Error(`Protocol.getUserNetFlow(): ${err}`);
+      throw Error(`Protocol.getCFAUserNetFlow(): ${err}`);
     }
+  }
+
+  // get GDA User Net Flow
+  async getGDAUserNetFlow (token, account) {
+    try {
+      this.app.client.addTotalRequest();
+      return this.app.client.GDAv1.methods.getNetFlow(token, account).call();
+    } catch (err) {
+      console.error(err);
+      throw Error(`Protocol.getGDAUserNetFlow(): ${err}`);
+    }
+  }
+
+  // get total net flow (CFA + GDA)
+  async getTotalNetFlow (token, account) {
+      const CFAUserNetFlow = new BN(await this.getCFAUserNetFlow(token, account));
+      const GDAUserNetFlow = new BN(await this.getGDAUserNetFlow(token, account));
+      return CFAUserNetFlow.add(GDAUserNetFlow).toString();
   }
 
   async getCFAAgreementEvents (eventName, filter) {
@@ -75,7 +93,7 @@ class Protocol {
     try {
       this.app.client.addTotalRequest(2);
       let arrPromise = [
-        this.getUserNetFlow(token, account),
+        this.getCFAUserNetFlow(token, account),
         this.getAccountRealtimeBalanceOfNow(token, account)
       ];
       arrPromise = await Promise.all(arrPromise);

@@ -17,6 +17,8 @@ class ContractLoader {
 
         this.web3 = web3;
         this.app = app;
+        // signal that the contracts have not been loaded yet
+        this.initialized = false;
     }
 
     async loadResolverContract (resolverAddress) {
@@ -37,7 +39,18 @@ class ContractLoader {
         this.GDAv1 = new this.web3.eth.Contract(IGDA.abi, gdaAddress);
     }
 
-    async loadSuperToken (superTokenAddress) {
+    // initialize all contracts
+    async initialize () {
+        loadResolverContract(this.app.config.RESOLVER_ADDRESS);
+        const superfluidAddress = await this.resolver.methods.get(`Superfluid.${this.version}`).call();
+
+        loadSuperfluidContract(this.app.config.SUPERFLUID_ADDRESS);
+        loadSuperfluidGovernanceContract(this.app.config.GOVERNANCE_ADDRESS);
+        loadAgreementContracts(this.app.config.CFA_ADDRESS, this.app.config.IDA_ADDRESS, this.app.config.GDA_ADDRESS);
+        this.initialized = true;
+    }
+
+    async getSuperToken (superTokenAddress) {
         const superToken = new this.web3.eth.Contract(ISuperToken.abi, superTokenAddress);
         const [tokenName, tokenSymbol] = await Promise.all(
             [

@@ -16,7 +16,7 @@ class SuperTokenManager {
         if (this.superTokens[newSuperToken.toLowerCase()] !== undefined) {
             return;
         }
-        const { superToken, tokenName, tokenSymbol } = this.app.contractLoader.getSuperToken(newSuperToken);
+        const { superToken, tokenName, tokenSymbol } = this.app.contractLoader.getSuperTokenInstance(newSuperToken);
         // get liquidation period
         const pppConfig = await this.app.contractLoader.gov.methods.getPPPConfig(this.app.contractLoader.sf._address, newSuperToken).call();
 

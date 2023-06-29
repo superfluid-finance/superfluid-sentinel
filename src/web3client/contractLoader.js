@@ -25,13 +25,15 @@ class ContractLoader {
     // initialize all contracts
     async initialize () {
 
-        await this.loadResolverContract(this.app.config.RESOLVER_ADDRESS);
+        if(this.initialized) return;
+
+        await this._loadResolverContract(this.app.config.RESOLVER_ADDRESS);
 
         const superfluidAddress = await this.resolver.methods.get(`Superfluid.${this.version}`).call();
-        await this.loadSuperfluidContract(superfluidAddress);
+        await this._loadSuperfluidContract(superfluidAddress);
 
         const governanceAddress = await this.sf.methods.getGovernance().call();
-        await this.loadSuperfluidGovernanceContract(governanceAddress);
+        await this._loadSuperfluidGovernanceContract(governanceAddress);
 
         const cfaHashID = this.web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
         const gdaHashID = this.web3.utils.sha3("org.superfluid-finance.agreements.GeneralDistributionAgreement.v1");
@@ -42,48 +44,14 @@ class ContractLoader {
             this.sf.methods.getAgreementClass(idaHashID).call(),
             this.sf.methods.getAgreementClass(gdaHashID).call()
         ]);
-        await this.loadAgreementContracts(cfaAddress, idaAddress, gdaAddress);
+        await this._loadAgreementContracts(cfaAddress, idaAddress, gdaAddress);
         // depending on the network/configuration we are using, we might not have a batch contract or a toga contract
-        await this.loadBatchContract(this.app.config.BATCH_ADDRESS);
-        await this.loadTogaContract(this.app.config.TOGA_ADDRESS);
+        await this._loadBatchContract(this.app.config.BATCH_ADDRESS);
+        await this._loadTogaContract(this.app.config.TOGA_ADDRESS);
         this.initialized = true;
     }
 
-    async loadResolverContract (resolverAddress) {
-        this.resolver = new this.web3.eth.Contract(IResolver.abi, resolverAddress);
-    }
-
-    async loadSuperfluidContract (superfluidAddress) {
-        this.sf = new this.web3.eth.Contract(ISuperfluid.abi, superfluidAddress);
-    }
-
-    async loadSuperfluidGovernanceContract (govAddress) {
-        this.gov = new this.web3.eth.Contract(SuperfluidGovernance.abi, govAddress);
-    }
-
-    async loadAgreementContracts (cfaAddress, idaAddress, gdaAddress) {
-        this.CFAv1 = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
-        this.IDAv1 = new this.web3.eth.Contract(IIDA.abi, idaAddress);
-        this.GDAv1 = new this.web3.eth.Contract(IGDA.abi, gdaAddress);
-    }
-
-    async loadBatchContract (batchAddress) {
-        if (batchAddress !== undefined) {
-            this.batch = new this.web3.eth.Contract(BatchContract.abi, batchAddress);
-        } else {
-            this.app.logger.info("ContractLoader: Batch Contract not found");
-        }
-    }
-
-    async loadTogaContract (togaAddress) {
-        if (togaAddress !== undefined) {
-            this.toga = new this.web3.eth.Contract(TogaContract.abi, togaAddress);
-        } else {
-            this.app.logger.info("ContractLoader: TOGA Contract not found");
-        }
-    }
-
-    async getSuperToken (superTokenAddress) {
+    async getSuperTokenInstance (superTokenAddress) {
         const superToken = new this.web3.eth.Contract(ISuperToken.abi, superTokenAddress);
         const [tokenName, tokenSymbol] = await Promise.all(
             [
@@ -93,6 +61,42 @@ class ContractLoader {
         );
         return {superToken, tokenName, tokenSymbol};
     }
+
+    async _loadResolverContract (resolverAddress) {
+        this.resolver = new this.web3.eth.Contract(IResolver.abi, resolverAddress);
+    }
+
+    async _loadSuperfluidContract (superfluidAddress) {
+        this.sf = new this.web3.eth.Contract(ISuperfluid.abi, superfluidAddress);
+    }
+
+    async _loadSuperfluidGovernanceContract (govAddress) {
+        this.gov = new this.web3.eth.Contract(SuperfluidGovernance.abi, govAddress);
+    }
+
+    async _loadAgreementContracts (cfaAddress, idaAddress, gdaAddress) {
+        this.CFAv1 = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
+        this.IDAv1 = new this.web3.eth.Contract(IIDA.abi, idaAddress);
+        this.GDAv1 = new this.web3.eth.Contract(IGDA.abi, gdaAddress);
+    }
+
+    async _loadBatchContract (batchAddress) {
+        if (batchAddress !== undefined) {
+            this.batch = new this.web3.eth.Contract(BatchContract.abi, batchAddress);
+        } else {
+            this.app.logger.info("ContractLoader: Batch Contract not found");
+        }
+    }
+
+    async _loadTogaContract (togaAddress) {
+        if (togaAddress !== undefined) {
+            this.toga = new this.web3.eth.Contract(TogaContract.abi, togaAddress);
+        } else {
+            this.app.logger.info("ContractLoader: TOGA Contract not found");
+        }
+    }
+
+
 }
 
 module.exports = ContractLoader;

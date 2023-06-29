@@ -5,6 +5,8 @@ const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/bui
 const ICFA = require("@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json");
 const IGDA = require("../abis/IGeneralDistributionAgreementV1.json");
 const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IInstantDistributionAgreementV1.json");
+const BatchContract = require("../abis/BatchLiquidator.json");
+const TogaContract = require("@superfluid-finance/ethereum-contracts/build/contracts/TOGA.json");
 
 /*
     ContractLoader is a class that loads all the contracts that are needed for the app to run
@@ -19,6 +21,32 @@ class ContractLoader {
         this.app = app;
         // signal that the contracts have not been loaded yet
         this.initialized = false;
+    }
+    // initialize all contracts
+    async initialize () {
+
+        await this.loadResolverContract(this.app.config.RESOLVER_ADDRESS);
+
+        const superfluidAddress = await this.resolver.methods.get(`Superfluid.${this.version}`).call();
+        await this.loadSuperfluidContract(superfluidAddress);
+
+        const governanceAddress = await this.sf.methods.getGovernance().call();
+        await this.loadSuperfluidGovernanceContract(governanceAddress);
+
+        const cfaHashID = this.web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
+        const gdaHashID = this.web3.utils.sha3("org.superfluid-finance.agreements.GeneralDistributionAgreement.v1");
+        const idaHashID = this.web3.utils.sha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
+
+        const [cfaAddress, idaAddress, gdaAddress] = await Promise.all([
+            this.sf.methods.getAgreementClass(cfaHashID).call(),
+            this.sf.methods.getAgreementClass(idaHashID).call(),
+            this.sf.methods.getAgreementClass(gdaHashID).call()
+        ]);
+        await this.loadAgreementContracts(cfaAddress, idaAddress, gdaAddress);
+        // depending on the network/configuration we are using, we might not have a batch contract or a toga contract
+        await this.loadBatchContract(this.app.config.BATCH_ADDRESS);
+        await this.loadTogaContract(this.app.config.TOGA_ADDRESS);
+        this.initialized = true;
     }
 
     async loadResolverContract (resolverAddress) {
@@ -39,16 +67,22 @@ class ContractLoader {
         this.GDAv1 = new this.web3.eth.Contract(IGDA.abi, gdaAddress);
     }
 
-    // initialize all contracts
-    async initialize () {
-        loadResolverContract(this.app.config.RESOLVER_ADDRESS);
-        const superfluidAddress = await this.resolver.methods.get(`Superfluid.${this.version}`).call();
-
-        loadSuperfluidContract(this.app.config.SUPERFLUID_ADDRESS);
-        loadSuperfluidGovernanceContract(this.app.config.GOVERNANCE_ADDRESS);
-        loadAgreementContracts(this.app.config.CFA_ADDRESS, this.app.config.IDA_ADDRESS, this.app.config.GDA_ADDRESS);
-        this.initialized = true;
+    async loadBatchContract (batchAddress) {
+        if (batchAddress !== undefined) {
+            this.batch = new this.web3.eth.Contract(BatchContract.abi, this.app.config.BATCH_CONTRACT);
+        } else {
+            this.app.logger.info("ContractLoader: Batch Contract not found");
+        }
     }
+
+    async loadTogaContract (togaAddress) {
+        if (togaAddress !== undefined) {
+            this.toga = new this.web3.eth.Contract(TogaContract.abi, this.app.config.TOGA_CONTRACT);
+        } else {
+            this.app.logger.info("ContractLoader: TOGA Contract not found");
+        }
+    }
+
 
     async getSuperToken (superTokenAddress) {
         const superToken = new this.web3.eth.Contract(ISuperToken.abi, superTokenAddress);

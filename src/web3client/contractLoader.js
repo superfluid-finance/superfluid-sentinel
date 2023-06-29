@@ -69,7 +69,7 @@ class ContractLoader {
 
     async loadBatchContract (batchAddress) {
         if (batchAddress !== undefined) {
-            this.batch = new this.web3.eth.Contract(BatchContract.abi, this.app.config.BATCH_CONTRACT);
+            this.batch = new this.web3.eth.Contract(BatchContract.abi, batchAddress);
         } else {
             this.app.logger.info("ContractLoader: Batch Contract not found");
         }
@@ -77,12 +77,11 @@ class ContractLoader {
 
     async loadTogaContract (togaAddress) {
         if (togaAddress !== undefined) {
-            this.toga = new this.web3.eth.Contract(TogaContract.abi, this.app.config.TOGA_CONTRACT);
+            this.toga = new this.web3.eth.Contract(TogaContract.abi, togaAddress);
         } else {
             this.app.logger.info("ContractLoader: TOGA Contract not found");
         }
     }
-
 
     async getSuperToken (superTokenAddress) {
         const superToken = new this.web3.eth.Contract(ISuperToken.abi, superTokenAddress);

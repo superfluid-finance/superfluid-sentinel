@@ -9,6 +9,7 @@ class LoadEvents {
     try {
       this.app.logger.info("getting past event to find SuperTokens");
       const systemInfo = await this.app.db.models.SystemModel.findOne();
+      //TODO: we should pick the last block number from the last event (CFA or GDA)
       const lastEventBlockNumber = await this.app.db.models.FlowUpdatedModel.findOne({
         order: [["blockNumber", "DESC"]]
       });
@@ -39,24 +40,42 @@ class LoadEvents {
                 ? { filter: { token: task.self.app.config.TOKENS }, fromBlock: task.fromBlock, toBlock: task.toBlock }
                 : { fromBlock: task.fromBlock, toBlock: task.toBlock };
 
-            let result = await task.self.app.protocol.getCFAAgreementEvents("FlowUpdated", query);
-            result = result.map(task.self.app.models.event.transformWeb3Event);
+            let CFAResult = await task.self.app.protocol.getCFAAgreementEvents("FlowUpdated", query);
+            let GDAResult = await task.self.app.protocol.getGDAgreementEvents("PoolCreated", query);
 
-            for (const event of result) {
-              const agreementId = task.self.app.protocol.generateId(event.sender, event.receiver);
-              const hashId = task.self.app.protocol.generateId(event.token, agreementId);
+            CFAResult = CFAResult.map(task.self.app.models.event.transformWeb3Event);
+            CFAResult.forEach(result => result.source = "CFA");
+            GDAResult = GDAResult.map(task.self.app.models.event.transformWeb3Event);
+            GDAResult.forEach(result => result.source = "GDA");
 
-              await task.self.app.db.models.FlowUpdatedModel.create({
-                address: event.address,
-                blockNumber: event.blockNumber,
-                superToken: event.token,
-                sender: event.sender,
-                receiver: event.receiver,
-                flowRate: event.flowRate,
-                agreementId: agreementId,
-                hashId: hashId
-              });
+            const events = [...CFAResult, ...GDAResult];
+
+            for (const event of events) {
+              if (event.source === "CFA") {
+                const agreementId = task.self.app.protocol.generateId(event.sender, event.receiver);
+                const hashId = task.self.app.protocol.generateId(event.token, agreementId);
+
+                await task.self.app.db.models.FlowUpdatedModel.create({
+                  address: event.address,
+                  blockNumber: event.blockNumber,
+                  superToken: event.token,
+                  sender: event.sender,
+                  receiver: event.receiver,
+                  flowRate: event.flowRate,
+                  agreementId: agreementId,
+                  hashId: hashId
+                });
+              } else {
+                await task.self.app.db.models.PoolCreatedModel.create({
+                  address: event.address,
+                  blockNumber: event.blockNumber,
+                  superToken: event.token,
+                  admin: event.admin,
+                  pool: event.pool,
+                });
+              }
             }
+
             break;
           } catch (err) {
             keepTrying++;

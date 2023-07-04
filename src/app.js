@@ -38,6 +38,7 @@ class App {
             AgreementModel: require("./database/models/agreementModel")(this.db),
             FlowUpdatedModel: require("./database/models/flowUpdatedModel")(this.db),
             SuperTokenModel: require("./database/models/superTokenModel")(this.db),
+            PoolCreatedModel: require("./database/models/poolCreatedModel")(this.db),
             SystemModel: require("./database/models/systemModel")(this.db),
             UserConfig: require("./database/models/userConfiguration")(this.db),
             ThresholdModel: require("./database/models/thresholdModel")(this.db),

@@ -36,7 +36,7 @@ class Protocol {
   async getGDAUserNetFlow (token, account) {
     try {
       this.app.client.addTotalRequest();
-      return this.app.client.GDAv1.methods.getNetFlow(token, account).call();
+      return this.app.client.GDAv1.methods.getNetFlowRate(token, account).call();
     } catch (err) {
       console.error(err);
       throw Error(`Protocol.getGDAUserNetFlow(): ${err}`);
@@ -89,18 +89,17 @@ class Protocol {
     }
   }
 
+  // TODO: periods
   async liquidationData (token, account) {
     try {
       this.app.client.addTotalRequest(2);
-      let arrPromise = [
-        this.getCFAUserNetFlow(token, account),
-        this.getAccountRealtimeBalanceOfNow(token, account)
-      ];
-      arrPromise = await Promise.all(arrPromise);
+      const totalNetFlow = await this.getTotalNetFlow(token, account);
+      const accountRealtimeBalanceOfNow = await this.getAccountRealtimeBalanceOfNow(token, account);
+
       return this._getLiquidationData(
-        new BN(arrPromise[0]),
-        new BN(arrPromise[1].availableBalance),
-        new BN(arrPromise[1].deposit),
+        new BN(totalNetFlow),
+        new BN(accountRealtimeBalanceOfNow.availableBalance),
+        new BN(accountRealtimeBalanceOfNow.deposit),
         this.app.client.superTokens[token.toLowerCase()].liquidation_period,
         this.app.client.superTokens[token.toLowerCase()].patrician_period
       );

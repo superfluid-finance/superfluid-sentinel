@@ -514,7 +514,7 @@
           "type": "address"
         }
       ],
-      "name": "getNetFlow",
+      "name": "getNetFlowRate",
       "outputs": [
         {
           "internalType": "int96",

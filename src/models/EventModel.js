@@ -37,6 +37,8 @@ class EventModel {
           rewardAccount: toChecksumAddress(event.returnValues.rewardAccount),
           to: toChecksumAddress(event.returnValues.to),
           from: toChecksumAddress(event.returnValues.from),
+          admin: toChecksumAddress(event.returnValues.admin),
+          pool: toChecksumAddress(event.returnValues.pool),
           publisher: toChecksumAddress(event.returnValues.publisher),
           indexId: event.returnValues.indexId,
           subscriber: toChecksumAddress(event.returnValues.subscriber),

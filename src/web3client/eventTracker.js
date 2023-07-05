@@ -1,6 +1,7 @@
 const { PollingBlockTracker } = require("eth-block-tracker");
 const superTokenEvents = require("../models/SuperTokensEventsAbi");
 const CFAEvents = require("../models/CFAEventsAbi");
+const GDAEvents = require("../models/GDAEventsAbi");
 const IDAEvents = require("../models/IDAEventsAbi");
 const TOGAEvents = require("../models/TOGAEventsAbi");
 const decoder = require("ethjs-abi");
@@ -34,6 +35,7 @@ class EventTracker {
       for (const log of eventsFromBlocks) {
         this.processSuperTokenEvent(this._parseEvent(superTokenEvents, log));
         this.processIDAEvent(this._parseEvent(IDAEvents, log));
+        this.processGDAEvent(this._parseEvent(GDAEvents, log));
         await this.processTOGAEvent(this._parseEvent(TOGAEvents, log));
       }
     }
@@ -182,6 +184,32 @@ class EventTracker {
           ]);
         } else {
           this.app.logger.debug(`[IDA]: token ${event.token} is not subscribed`);
+        }
+      }
+    } catch (err) {
+      this.app.logger.error(err);
+      throw Error(`EventTracker.processIDAEvent(): ${err}`);
+    }
+  }
+
+  processGDAEvent (event) {
+    try {
+      if(event && event.eventName === "InstantDistributionUpdated") {
+        if (this.app.client.isSuperTokenRegistered(event.token)) {
+          this.app.logger.debug(`[InstantDistributionUpdated] - ${event.eventName} [${event.token}] - publisher ${event.publisher}`);
+          this.app.queues.estimationQueue.push([
+            {
+              self: this,
+              account: event.from,
+              token: event.token,
+              blockNumber: event.blockNumber,
+              blockHash: event.blockHash,
+              transactionHash: event.transactionHash,
+              parentCaller: "processGDAEvent"
+            }
+          ]);
+        } else {
+          this.app.logger.debug(`[GDA]: token ${event.token} is not subscribed`);
         }
       }
     } catch (err) {

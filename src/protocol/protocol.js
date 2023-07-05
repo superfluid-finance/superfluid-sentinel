@@ -191,12 +191,22 @@ class Protocol {
     }
   }
 
-  generateId (sender, receiver) {
+  generateCFAId (sender, receiver) {
     try {
       return this.app.client.web3.utils.soliditySha3(sender, receiver);
     } catch (err) {
       this.app.logger.error(err);
-      throw Error(`Protocol.generateId(): ${err}`);
+      throw Error(`Protocol.generateCFAId(): ${err}`);
+    }
+  }
+
+  async generateGDAId (from, to) {
+    try {
+      const chainId = await this.app.client.getChainId();
+      return this.app.client.web3.utils.soliditySha3(chainId, "distributionFlow", from, to);
+    } catch (err) {
+      this.app.logger.error(err);
+      throw Error(`Protocol.generateGDAId(): ${err}`);
     }
   }
 

@@ -74,7 +74,7 @@ class Queues {
     }, this.app.config.CONCURRENCY);
   }
 
-  newAgreementQueue () {
+  newAgreementQueue() {
     if (this.estimationQueue === undefined) {
       throw Error("Queues.newAgreementQueue(): Need EstimationQueue to be set first");
     }
@@ -83,63 +83,33 @@ class Queues {
       if (task.account === "0x0000000000000000000000000000000000000000") {
         return;
       }
+
       while (true) {
         try {
           task.self.app.logger.debug(`EstimationQueue - Parent Caller ${task.parentCaller} TransactionHash: ${task.transactionHash}`);
-          const senderFilter = {
-            filter: {
-              sender: task.account
-            },
-            fromBlock: task.blockNumber,
-            toBlock: task.blockNumber
-          };
+          const senderFilter = task.self._buildFilter(task);
 
-          let allFlowUpdatedEvents = await task.self.app.protocol.getCFAAgreementEvents(
-            "FlowUpdated",
-            senderFilter
+          const flowUpdatedEvents = await task.self._handleAgreementEvents(
+              task,
+              senderFilter,
+              "CFA",
+              "FlowUpdated",
+              this.app.protocol.getCFAAgreementEvents,
+              this.app.protocol.generateCFAId
           );
 
-          allFlowUpdatedEvents = allFlowUpdatedEvents.map(
-            task.self.app.models.event.transformWeb3Event
+          const flowDistributionUpdatedEvents = await task.self._handleAgreementEvents(
+              task,
+              senderFilter,
+              "GDA",
+              "FlowDistributionUpdated",
+              task.self.app.protocol.getGDAgreementEvents,
+              task.self.app.protocol.generateGDAId
           );
 
-          allFlowUpdatedEvents.sort(function (a, b) {
-            return a.blockNumber > b.blockNumber;
-          }).forEach(e => {
-            e.agreementId = task.self.app.protocol.generateId(e.sender, e.receiver);
-          });
-
-          if (allFlowUpdatedEvents.length === 0) {
-            task.self.app.logger.debug(`Didn't find FlowUpdated for sender: ${task.account} in blockNumber: ${task.blockNumber} / blockHash ${task.blockHash}`);
-          }
-
-          for (const event of allFlowUpdatedEvents) {
-            await task.self.app.db.models.AgreementModel.upsert({
-              agreementId: event.agreementId,
-              superToken: event.token,
-              sender: event.sender,
-              receiver: event.receiver,
-              flowRate: event.flowRate,
-              blockNumber: event.blockNumber
-            });
-            task.self.app.queues.estimationQueue.push([{
-              self: task.self,
-              account: event.sender,
-              token: event.token,
-              blockNumber: event.blockNumber,
-              blockHash: event.blockHash,
-              transactionHash: event.transactionHash,
-              parentCaller: "agreementUpdateQueue"
-            }, {
-              self: task.self,
-              account: event.receiver,
-              token: event.token,
-              blockNumber: event.blockNumber,
-              blockHash: event.blockHash,
-              transactionHash: event.transactionHash,
-              parentCaller: "agreementUpdateQueue"
-            }]);
-          }
+          // merge both
+          const events = [...flowUpdatedEvents, ...flowDistributionUpdatedEvents];
+          await task.self._processEvents(task, events);
           break;
         } catch (err) {
           keepTrying++;
@@ -172,6 +142,84 @@ class Queues {
   getEstimationQueueLength () {
     return this.estimationQueue.length();
   }
+
+  _buildFilter (task) {
+    return {
+      filter: {
+        account: task.account
+      },
+      fromBlock: task.blockNumber,
+      toBlock: task.blockNumber
+    };
+  }
+  async _handleAgreementEvents(task, senderFilter, source, eventName, getAgreementEventsFunc, generateIdFunc) {
+    let allFlowUpdatedEvents = await getAgreementEventsFunc(
+        eventName,
+        senderFilter
+    );
+
+    allFlowUpdatedEvents = allFlowUpdatedEvents.map(
+        task.self.app.models.event.transformWeb3Event
+    );
+
+    allFlowUpdatedEvents.sort((a, b) => a.blockNumber - b.blockNumber)
+        .forEach(e => {
+          e.agreementId = generateIdFunc(e.sender, e.receiver);
+          e.source = source;
+        });
+
+    if (allFlowUpdatedEvents.length === 0) {
+      task.self.app.logger.debug(`Didn't find ${eventName} for sender: ${task.account} in blockNumber: ${task.blockNumber} / blockHash ${task.blockHash}`);
+    }
+
+    return allFlowUpdatedEvents;
+  }
+
+  async _processEvents(task, events) {
+
+    for (const event of events) {
+
+      await task.self.app.db.models.AgreementModel.upsert({
+        agreementId: event.agreementId,
+        superToken: event.token,
+        sender: event.sender,
+        receiver: event.receiver,
+        flowRate: event.flowRate,
+        blockNumber: event.blockNumber
+      });
+
+      if (event.source === "CFA") {
+        task.self.app.queues.estimationQueue.push([{
+          self: task.self,
+          account: event.sender,
+          token: event.token,
+          blockNumber: event.blockNumber,
+          blockHash: event.blockHash,
+          transactionHash: event.transactionHash,
+          parentCaller: "agreementUpdateQueue"
+        }, {
+          self: task.self,
+          account: event.receiver,
+          token: event.token,
+          blockNumber: event.blockNumber,
+          blockHash: event.blockHash,
+          transactionHash: event.transactionHash,
+          parentCaller: "agreementUpdateQueue"
+        }]);
+      } else if (event.source === "GDA") { // estimate only the distributor
+        task.self.app.queues.estimationQueue.push([{
+          self: task.self,
+          account: event.distributor,
+          token: event.token,
+          blockNumber: event.blockNumber,
+          blockHash: event.blockHash,
+          transactionHash: event.transactionHash,
+          parentCaller: "agreementUpdateQueue"
+        }]);
+      }
+    }
+  }
+
 }
 
 module.exports = Queues;

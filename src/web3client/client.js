@@ -300,7 +300,7 @@ class Client {
 
   getSFAddresses () {
     const togaAddress = this.toga !== undefined ? this.toga._address : undefined;
-    return [...this.superTokensAddresses, this.IDAv1._address, this.CFAv1._address, togaAddress].filter(n => n);
+    return [...this.superTokensAddresses, this.IDAv1._address, this.CFAv1._address, this.GDAv1._address, togaAddress].filter(n => n);
   }
 
   getTotalRequests () {

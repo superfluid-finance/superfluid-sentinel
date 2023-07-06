@@ -236,7 +236,7 @@ class EventTracker {
 
   async findNewTokens(events) {
     for (const log of events) {
-      return this.processAgreementEvent(this._parseEvent(CFAEvents, log));
+      return this.processAgreementEvent(this._parseEvent([CFAEvents.FlowUpdated, GDAEvents.FlowDistributionUpdated], log));
     }
   }
 

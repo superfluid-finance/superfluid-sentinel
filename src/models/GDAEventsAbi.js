@@ -179,7 +179,7 @@ module.exports = {
     },
     PoolCreated: {
         anonymous: false,
-        input: [
+        inputs: [
             {
                 indexed: true,
                 internalType: "contract ISuperfluidToken",

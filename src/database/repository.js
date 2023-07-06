@@ -27,6 +27,15 @@ class Repository {
           order by blockNumber desc , superToken, hashId
       ) AS O
       WHERE O.flowRate <> 0
+      UNION ALL
+      SELECT * FROM (
+          SELECT  superToken, distributor as account, newDistributorToPoolFlowRate as flowRate from flowdistributionupdateds
+          where blockNumber > :bn
+          GROUP BY agreementId
+          HAVING MAX(blockNumber)
+          order by blockNumber desc , superToken, agreementId
+      ) AS Y
+      WHERE Y.flowRate <> 0
       ) AS Z
       ORDER BY superToken`;
 

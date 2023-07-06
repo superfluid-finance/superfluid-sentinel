@@ -40,20 +40,38 @@ class LoadEvents {
                 ? { filter: { token: task.self.app.config.TOKENS }, fromBlock: task.fromBlock, toBlock: task.toBlock }
                 : { fromBlock: task.fromBlock, toBlock: task.toBlock };
 
-            let CFAResult = await task.self.app.protocol.getCFAAgreementEvents("FlowUpdated", query);
-            let GDAResult = await task.self.app.protocol.getGDAgreementEvents("PoolCreated", query);
+            let CFAFlowUpdated = await task.self.app.protocol.getCFAAgreementEvents("FlowUpdated", query);
+            let GDAFlowDistributionUpdated = await task.self.app.protocol.getGDAgreementEvents("FlowDistributionUpdated", query);
 
-            CFAResult = CFAResult.map(task.self.app.models.event.transformWeb3Event);
-            CFAResult.forEach(result => result.source = "CFA");
-            GDAResult = GDAResult.map(task.self.app.models.event.transformWeb3Event);
-            GDAResult.forEach(result => result.source = "GDA");
 
-            const events = [...CFAResult, ...GDAResult];
+            CFAFlowUpdated = CFAFlowUpdated.map(task.self.app.models.event.transformWeb3Event);
+            CFAFlowUpdated.forEach(result => result.source = "CFA");
+            GDAFlowDistributionUpdated = GDAFlowDistributionUpdated.map(task.self.app.models.event.transformWeb3Event);
+            GDAFlowDistributionUpdated.forEach(result => result.source = "GDA");
+
+            // debug only ----------------------------------
+            let GDAPoolCreated = await task.self.app.protocol.getGDAgreementEvents("PoolCreated", query);
+            GDAPoolCreated = GDAPoolCreated.map(task.self.app.models.event.transformWeb3Event);
+            GDAPoolCreated.forEach(result => result.source = "GDA-PoolCreated");
+            for(const event of GDAPoolCreated) {
+              const agreementId = task.self.app.protocol.generateGDAId(event.pool, event.pool);
+              await task.self.app.db.models.PoolCreatedModel.create({
+                agreementId: agreementId,
+                address: event.address,
+                blockNumber: event.blockNumber,
+                superToken: event.token,
+                admin: event.admin,
+                pool: event.pool,
+              });
+            }
+            // end debug only ----------------------------------
+
+            const events = [...CFAFlowUpdated, ...GDAFlowDistributionUpdated];
 
             for (const event of events) {
               if (event.source === "CFA") {
-                const agreementId = task.self.app.protocol.generateId(event.sender, event.receiver);
-                const hashId = task.self.app.protocol.generateId(event.token, agreementId);
+                const agreementId = task.self.app.protocol.generateCFAId(event.sender, event.receiver);
+                const hashId = task.self.app.protocol.generateCFAId(event.token, agreementId);
 
                 await task.self.app.db.models.FlowUpdatedModel.create({
                   address: event.address,
@@ -66,7 +84,9 @@ class LoadEvents {
                   hashId: hashId
                 });
               } else {
-                await task.self.app.db.models.PoolCreatedModel.create({
+                const agreementId = task.self.app.protocol.generateGDAId(event.pool, event.pool);
+                await task.self.app.db.models.FlowDistributionModel.create({
+                  agreementId: agreementId,
                   address: event.address,
                   blockNumber: event.blockNumber,
                   superToken: event.token,

@@ -1,5 +1,3 @@
-const {Base} = require("mocha/lib/reporters");
-
 class Liquidator {
   constructor (app) {
     this.app = app;

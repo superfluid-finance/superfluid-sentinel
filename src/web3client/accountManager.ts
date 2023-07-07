@@ -1,108 +1,78 @@
-import { ethers } from "ethers";
-import * as bip39 from "bip39";
-import BN from "bn.js";
-import Web3 from "web3";
-
-
-/*
-    AccountManager is responsible for managing multi accounts based on private key or mnemonic
-*/
-
-
-interface Account {
-    address: string;
-    signTransaction: (txParams: any) => any;
-}
+import { ethers, HDNodeWallet, Wallet } from "ethers";
 
 interface App {
-    web3: Web3;
+    provider: ethers.Provider;
 }
 
-class AccountManager {
-    constructor(app) {
+/*
+    WalletManager is responsible for managing multi Wallets based on private key or mnemonic
+*/
+class WalletManager {
+    private app: App;
+    private wallets: Wallet[];
 
-        if (!app) throw new Error("AccountManager: app is not defined");
-
+    constructor(app: App) {
+        if (!app) throw new Error("WalletManager: app is not defined");
         this.app = app;
-        this.accounts = [];
+        this.wallets = [];
     }
-    // add account from mnemonic
-    addAccountFromMnemonic(mnemonic, index = 0) {
-        if (typeof mnemonic !== 'string' || !bip39.validateMnemonic(mnemonic)) {
-            throw new Error("AccountManager: invalid mnemonic");
+
+    // add Wallet from mnemonic
+    addWalletFromMnemonic(mnemonic: string, index: number = 0): void {
+        if (index < 0) {
+            throw new Error("WalletManager: invalid index");
         }
-        if (typeof index !== 'number' || index < 0) {
-            throw new Error("AccountManager: invalid index");
+        const hdNodeWallet = HDNodeWallet.fromPhrase(mnemonic, "" , `m/44'/60'/0'/0/${index}`);
+        this.wallets.push(new ethers.Wallet(hdNodeWallet.privateKey, this.app.provider));
+    }
+
+    // add Wallet from private key
+    addWalletFromPrivateKey(privateKey: string): void {
+        const wallet = new ethers.Wallet(privateKey, this.app.provider);
+        this.wallets.push(wallet);
+    }
+
+    getWallet(walletIndex: number = 0): Wallet {
+        if (!this.wallets[walletIndex]) {
+            throw new Error("WalletManager: Wallet does not exist");
         }
-
-        const hdwallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic));
-        const hdpath = "m/44'/60'/0'/0/";
-        const wallet = hdwallet.derivePath(hdpath + index).getWallet();
-
-        this.addAccountFromPrivateKey(wallet.getPrivateKeyString())
+        return this.wallets[walletIndex];
     }
 
-    // add account from private key
-    addAccountFromPrivateKey(privateKey) {
-        const account = this.app.web3.eth.accounts.privateKeyToAccount(privateKey);
-        this.accounts.push({
-            address: account.address,
-            signTransaction: (txParams) => account.signTransaction(txParams)
-        });
+    getWalletAddress(walletIndex: number = 0): string {
+        return this.getWallet(walletIndex).address;
     }
 
-    getAccount(index = 0) {
-        if (!this.accounts[index]) {
-            throw new Error("AccountManager: account does not exist");
-        }
-
-        return this.accounts[index];
-    }
-
-    getAccountAddress(index = 0) {
-        return this.getAccount(index).address;
-    }
-
-    getAccountFromAddress(address) {
-        return this.accounts.find(account => account.address === address);
+    getWalletFromAddress(walletAddress: string): Wallet | undefined {
+        return this.wallets.find(wallet => wallet.address === walletAddress);
     }
 
     // get index from address
-    getAccountIndex(address) {
-        const account = this.getAccountFromAddress(address);
-        if (!account) {
-            throw new Error("AccountManager: account does not exist");
+    getWalletIndex(address: string): number {
+        const wallet = this.getWalletFromAddress(address);
+        if (!wallet) {
+            throw new Error("WalletManager: wallet does not exist");
         }
-
-        return this.accounts.indexOf(account);
+        return this.wallets.indexOf(wallet);
     }
 
-    async getAccountBalance(index = 0) {
-
-        if (!this.accounts[index]) {
-            throw new Error("AccountManager: account does not exist");
+    async getWalletBalance(walletIndex: number = 0): Promise<bigint> {
+        if (!this.wallets[walletIndex]) {
+            throw new Error("WalletManager: wallet does not exist");
         }
-
-        return this.app.web3.eth.getBalance(this.accounts[index].address);
-
+        return this.app.provider.getBalance(this.wallets[walletIndex].address);
     }
 
-    async isAccountBalanceBelowMinimum(index = 0, threshold) {
-        if (!this.accounts[index]) {
-            throw new Error("AccountManager: account does not exist");
+    async isWalletBalanceBelowMinimum(walletIndex: number = 0, threshold: bigint): Promise<{isBelow: boolean, balance: bigint}> {
+        if (!this.wallets[walletIndex]) {
+            throw new Error("WalletManager: Wallet does not exist");
         }
-        if (!BN.isBN(threshold)) {
-            throw new Error("AccountManager: invalid threshold");
-        }
-
-        const balance = new BN(await this.getAccountBalance(index));
+        const balance = await this.getWalletBalance(walletIndex);
         return {
-            isBelow: balance.lt(threshold),
-            balance: balance
+            isBelow: balance < threshold,
+            balance: balance,
         };
     }
-
-
 }
 
-module.exports = AccountManager;
+export default WalletManager;

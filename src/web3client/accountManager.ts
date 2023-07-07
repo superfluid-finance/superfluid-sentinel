@@ -1,10 +1,22 @@
-const { hdkey } = require("ethereumjs-wallet");
-const bip39 = require("bip39");
-const BN = require("bn.js");
+import { ethers } from "ethers";
+import * as bip39 from "bip39";
+import BN from "bn.js";
+import Web3 from "web3";
+
 
 /*
     AccountManager is responsible for managing multi accounts based on private key or mnemonic
 */
+
+
+interface Account {
+    address: string;
+    signTransaction: (txParams: any) => any;
+}
+
+interface App {
+    web3: Web3;
+}
 
 class AccountManager {
     constructor(app) {

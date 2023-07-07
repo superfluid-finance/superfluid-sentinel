@@ -17,3 +17,5 @@ datadir/
 snapshots/
 
 .npmrc
+
+dist/

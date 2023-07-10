@@ -36,7 +36,7 @@ class Protocol {
   async getGDAUserNetFlow (token, account) {
     try {
       this.app.client.addTotalRequest();
-      return this.app.client.GDAv1.methods.getNetFlowRate(token, account).call();
+      return this.app.client.GDAv1.methods.getNetFlow(token, account).call();
     } catch (err) {
       console.error(err);
       throw Error(`Protocol.getGDAUserNetFlow(): ${err}`);

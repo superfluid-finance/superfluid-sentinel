@@ -210,7 +210,7 @@ class Protocol {
     }
   }
 
-  generateDeleteStreamTxData(superToken, sender, receiver) {
+  generateDeleteCFAStreamTxData(superToken, sender, receiver) {
     try {
       const isBatchContractExist = this.app.client.batch !== undefined && this.app.config.NETWORK_TYPE === "evm-l2";
 
@@ -227,7 +227,19 @@ class Protocol {
       }
     } catch (error) {
       this.app.logger.error(error);
-      throw new Error(`Protocol.generateDeleteStreamTxData(): ${error.message}`);
+      throw new Error(`Protocol.generateDeleteCFAStreamTxData(): ${error.message}`);
+    }
+  }
+
+  generateDeleteGDAStreamTxData(superToken, sender, receiver) {
+    try {
+        const GDAv1Address = this.app.client.GDAv1._address;
+        const distributeFlowABI = this.app.client.GDAv1.methods.distributeFlow(superToken, sender, receiver, 0, "0x").encodeABI();
+        const tx = this.app.client.sf.methods.callAgreement(GDAv1Address, distributeFlowABI, "0x").encodeABI();
+        return { tx: tx, target: this.app.client.sf._address};
+    } catch (error) {
+      this.app.logger.error(error);
+      throw new Error(`Protocol.generateDeleteGDAStreamTxData(): ${error.message}`);
     }
   }
 

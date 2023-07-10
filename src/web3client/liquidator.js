@@ -78,7 +78,10 @@ class Liquidator {
     for (const job of work) {
       if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver, job.pppmode)) {
         try {
-          const txData = this.app.protocol.generateDeleteStreamTxData(job.superToken, job.sender, job.receiver);
+          const txData = (job.source === "CFA")
+              ? this.app.protocol.generateDeleteCFAStreamTxData(job.superToken, job.sender, job.receiver)
+              : this.app.protocol.generateDeleteGDAStreamTxData(job.superToken, job.sender, job.receiver);
+
           const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice(); // will internally trhow and catch parse error a field
 
           // if we hit the gas price limit or estimation error, we stop the liquidation job and return to main loop
@@ -99,6 +102,7 @@ class Liquidator {
             flowSender: job.sender,
             flowReceiver: job.receiver,
             superToken: job.superToken,
+            source: job.source,
             tx: txData.tx,
             gasPrice: baseGasPrice.gasPrice,
             nonce: networkAccountNonce,

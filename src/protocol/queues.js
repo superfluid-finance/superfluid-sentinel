@@ -188,35 +188,27 @@ class Queues {
         blockNumber: event.blockNumber
       });
 
-      if (event.source === "CFA") {
-        task.self.app.queues.estimationQueue.push([{
-          self: task.self,
-          account: event.sender,
-          token: event.token,
-          blockNumber: event.blockNumber,
-          blockHash: event.blockHash,
-          transactionHash: event.transactionHash,
-          parentCaller: "agreementUpdateQueue"
-        }, {
-          self: task.self,
-          account: event.receiver,
-          token: event.token,
-          blockNumber: event.blockNumber,
-          blockHash: event.blockHash,
-          transactionHash: event.transactionHash,
-          parentCaller: "agreementUpdateQueue"
-        }]);
-      } else if (event.source === "GDA") { // estimate only the distributor
-        task.self.app.queues.estimationQueue.push([{
-          self: task.self,
-          account: event.distributor,
-          token: event.token,
-          blockNumber: event.blockNumber,
-          blockHash: event.blockHash,
-          transactionHash: event.transactionHash,
-          parentCaller: "agreementUpdateQueue"
-        }]);
+      if (["CFA", "GDA"].includes(event.source)) {
+         const accounts = event.source === "CFA" ? [event.sender, event.receiver] : [event.distributor, event.pool];
+        accounts.forEach(account => {
+          task.self.app.queues.estimationQueue.push(
+              task.self.app.queues._createAgreementTask(account, event, task)
+          );
+        });
       }
+    }
+  }
+
+  // organize the task to be pushed to the queue
+  _createAgreementTask(account, event, task) {
+    return {
+      self: task.self,
+      account: account,
+      token: event.token,
+      blockNumber: event.blockNumber,
+      blockHash: event.blockHash,
+      transactionHash: event.transactionHash,
+      parentCaller: "agreementUpdateQueue"
     }
   }
 

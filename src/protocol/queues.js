@@ -54,7 +54,8 @@ class Queues {
               estimationHuman: estimationData.estimation,
               estimationHumanPleb:estimationData.estimationPleb,
               estimationHumanPirate: estimationData.estimationPirate,
-              blockNumber: task.blockNumber
+              blockNumber: task.blockNumber,
+              source: task.source
             });
             const estimationOutput = new Date(estimationData.estimation).getTime() > 0 ? estimationData.estimation : "no estimation found";
             task.self.app.logger.debug(`[${task.token}]: ${task.account} - ${estimationOutput}`);
@@ -208,7 +209,8 @@ class Queues {
       blockNumber: event.blockNumber,
       blockHash: event.blockHash,
       transactionHash: event.transactionHash,
-      parentCaller: "agreementUpdateQueue"
+      parentCaller: "agreementUpdateQueue",
+      source: event.source
     }
   }
 

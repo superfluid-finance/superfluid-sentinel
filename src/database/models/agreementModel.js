@@ -23,6 +23,10 @@ module.exports = (db) => { return db.define("agreements", {
   blockNumber: {
     type: Sequelize.INTEGER,
     allowNull: false
+  },
+  source: {
+    type: Sequelize.STRING,
+    allowNull: false
   }
 }, {
   indexes: [{

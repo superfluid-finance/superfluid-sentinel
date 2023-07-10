@@ -45,13 +45,28 @@ class Repository {
         });
     }
 
-    async getLastFlows(fromBlock = 0) {
+    async getLastCFAFlows(fromBlock = 0) {
         const sqlquery = `SELECT * FROM (
-    SELECT  agreementId, superToken, sender, receiver, flowRate from flowupdateds
+    SELECT  agreementId, superToken, sender, receiver, flowRate, "CFA" as source from flowupdateds
     WHERE blockNumber > :bn
     GROUP BY hashId
     HAVING MAX(blockNumber)
     order by blockNumber desc , superToken, hashId
+    ) AS P
+    WHERE P.flowRate <> 0`;
+        return this.app.db.query(sqlquery, {
+            replacements: {bn: fromBlock},
+            type: QueryTypes.SELECT
+        });
+    }
+
+    async getLastGDAFlows(fromBlock = 0) {
+        const sqlquery = `SELECT * FROM (
+    SELECT  agreementId, superToken, distributor as sender, pool as receiver, newDistributorToPoolFlowRate as flowRate, "GDA" as source from flowdistributionupdateds
+    WHERE blockNumber > :bn
+    GROUP BY agreementId
+    HAVING MAX(blockNumber)
+    order by blockNumber desc , superToken, agreementId
     ) AS P
     WHERE P.flowRate <> 0`;
         return this.app.db.query(sqlquery, {
@@ -102,6 +117,7 @@ WHEN 2 THEN est.estimationPirate
 END as estimation,
 pppmode,
 flowRate,
+source,
 ${useThresholds ? 'COALESCE(thr.above, 0) as above' : '0 as above'}
 FROM agreements agr
 INNER JOIN supertokens st on agr.superToken == st.address

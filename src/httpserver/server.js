@@ -11,7 +11,7 @@ class HTTPServer {
   async updateAccountBalance() {
     try {
       const balance = await this.app.client.getAccountBalance();
-      accountBalanceGauge.set(balance);
+      accountBalanceGauge.set(Number(balance));
     } catch (e) {
       console.error('Failed to update account balance:', e);
     }

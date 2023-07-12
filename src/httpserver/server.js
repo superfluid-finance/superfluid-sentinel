@@ -1,20 +1,20 @@
 const express = require("express");
-const promclient = require('prom-client');
-
+const { register, accountBalanceGauge } = require('./metrics/metrics'); // import the register and custom metrics
 class HTTPServer {
   constructor (app) {
     this.app = app;
     this.server = express();
     this.port = this.app.config.METRICS_PORT;
-    const register = new promclient.Registry();
     this.register = register;
-    promclient.collectDefaultMetrics({
-      app: 'sentinel-monitoring-app',
-      timeout: 10000,
-      gcDurationBuckets: [0.001, 0.01, 0.1, 1, 2, 5],
-      register
-    });
-
+  }
+  
+  async updateAccountBalance() {
+    try {
+      const balance = await this.app.client.getAccountBalance();
+      accountBalanceGauge.set(Number(balance));
+    } catch (e) {
+      console.error('Failed to update account balance:', e);
+    }
   }
 
   start () {
@@ -80,12 +80,21 @@ class HTTPServer {
       res.send(await this.register.metrics());
     });
 
+    this.balanceInterval = setInterval(() => {
+      this.updateAccountBalance();
+    }, 30 * 60 * 1000); // 30 minutes
+
     this.runningInstance = this.server.listen(this.port, () => {
       this.app.logger.info(`Metrics: listening via http on port ${this.port}`);
     });
+
+
+
   }
 
   close () {
+    // stop the balance interval
+    clearInterval(this.balanceInterval);
     this.runningInstance.close(() => {
       console.debug("HTTP server closed");
     });

@@ -1,4 +1,4 @@
-const Web3 = require("web3");
+const { Web3 } = require('web3');
 const IResolver = require("@superfluid-finance/ethereum-contracts/build/contracts/IResolver.json");
 const ICFA = require("@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json");
 const IGDA = require("../abis/IGeneralDistributionAgreementV1.json");
@@ -241,7 +241,7 @@ class Client {
 
   async getChainId () {
     if (this.chainId === undefined) {
-      this.chainId = await this.web3.eth.getChainId();
+      this.chainId = Number(await this.web3.eth.getChainId());
     }
     return this.chainId;
   }
@@ -271,7 +271,8 @@ class Client {
   }
 
   async getCurrentBlockNumber (offset = 0) {
-    return (await this.web3.eth.getBlockNumber()) - offset;
+    const blockNumber = await this.web3.eth.getBlockNumber();
+    return Number(blockNumber) - offset;
   }
 
   async disconnect () {

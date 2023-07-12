@@ -144,7 +144,7 @@ class Config {
   }
 
   async loadNetworkInfo (chainId) {
-    const network = metadata.filter(x => x.chainId === chainId)[0];
+    const network = metadata.filter(x => x.chainId === Number(chainId))[0];
     if(network === undefined) {
         throw Error(`Config.loadNetworkInfo(): unknown chainId: ${chainId}`);
     }

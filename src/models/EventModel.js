@@ -1,11 +1,11 @@
 const web3Utils = require("web3").utils;
 
 const toChecksumAddress = (address) => {
-  const result = web3Utils.toChecksumAddress(address);
-  if (result) {
-    return result;
+  if (address == null) {
+    return undefined;
   }
-  return undefined;
+  const result = web3Utils.toChecksumAddress(address);
+  return result ? result : undefined;
 };
 
 class EventModel {

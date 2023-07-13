@@ -1,12 +1,12 @@
 const { Web3 } = require('web3');
 const IResolver = require("@superfluid-finance/ethereum-contracts/build/contracts/IResolver.json");
 const ICFA = require("@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json");
-const IGDA = require("../abis/IGeneralDistributionAgreementV1.json");
+const IGDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IGeneralDistributionAgreementV1.json");
 const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IInstantDistributionAgreementV1.json");
 const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
 const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
-const BatchContract = require("../abis/BatchLiquidator.json");
+const BatchContract = require("@superfluid-finance/ethereum-contracts/build/contracts/BatchLiquidator.json");
 const TogaContract = require("@superfluid-finance/ethereum-contracts/build/contracts/TOGA.json");
 const { wad4human } = require("@decentral.ee/web3-helpers");
 const BN = require("bn.js");

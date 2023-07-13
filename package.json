@@ -25,6 +25,7 @@
   "license": "MIT",
   "dependencies": {
     "@decentral.ee/web3-helpers": "^0.5.3",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@slack/webhook": "^6.1.0",
     "@superfluid-finance/ethereum-contracts": "1.7.2-PR1357.faaaf1e.0",
     "@superfluid-finance/metadata": "https://github.com/superfluid-finance/metadata",

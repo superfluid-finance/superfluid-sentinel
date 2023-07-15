@@ -1,4 +1,4 @@
-const Web3 = require("web3");
+const { Web3 } = require("web3");
 
 /*
     RPCClient is a wrapper class for web3
@@ -6,32 +6,35 @@ const Web3 = require("web3");
 */
 
 class RPCClient {
-    constructor(app) {
-
+    constructor(app, web3Instance = null) {
         if (!app) throw new Error("RPCClient: app is not defined");
-        
+
         this.app = app;
+        this.web3 = web3Instance || this.createWeb3Instance(app.config.HTTP_RPC_NODE);
         this.isConnected = false;
+    }
+
+    createWeb3Instance(rpcNode) {
+        if (!rpcNode) {
+            throw new Error(`RPCClient: no HTTP RPC set`);
+        }
+
+        const web3Provider = new Web3.providers.HttpProvider(rpcNode, {
+            keepAlive: true,
+        });
+
+        const web3 = new Web3(web3Provider);
+        web3.eth.currentProvider.sendAsync = function (payload, callback) {
+            return this.send(payload, callback);
+        };
+
+        return web3;
     }
 
     // initialize the RPCClient
     async connect() {
         try {
             this.app.logger.info(`RPC Client connecting to RPC...`);
-            if (!this.app.config.HTTP_RPC_NODE) {
-                throw new Error(`RPCClient.connect(): no HTTP RPC set`);
-            }
-            
-            const web3Provider = new Web3.providers.HttpProvider(
-                this.app.config.HTTP_RPC_NODE, {
-                keepAlive: true,
-            });
-
-            this.web3 = new Web3(web3Provider);
-            this.web3.eth.currentProvider.sendAsync = function (payload, callback) {
-                return this.send(payload, callback);
-            };
-
             this.isConnected = true;
             this.app.logger.info(`RPC Client connected to RPC`);
         } catch (err) {

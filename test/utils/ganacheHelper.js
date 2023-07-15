@@ -25,37 +25,12 @@ async function timeTravelUntil (time, ticks, app, setAppTime) {
   }
 }
 
-async function takeEvmSnapshot () {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send({
-      jsonrpc: "2.0",
-      method: "evm_snapshot"
-      // id: new Date().getTime()
-    }, (err, snapshotId) => {
-      if (err) {
-        return reject(err);
-      }
-      return resolve(snapshotId);
-    });
-  });
+async function takeEvmSnapshot (provider) {
+  return await provider.send("evm_snapshot");
 }
 
-async function revertToSnapShot (evmSnapshotId) {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send({
-      jsonrpc: "2.0",
-      method: "evm_revert",
-      params: [evmSnapshotId]
-    }, (err, result) => {
-      if (err) {
-        return reject(err);
-      }
-      if (!result.result) {
-        throw new Error("revertToEvmSnapShot failed: ", result);
-      }
-      this.takeEvmSnapshot().then(resolve).catch(reject);
-    });
-  });
+async function revertToSnapShot (provider, snapshotId) {
+  return await provider.send("evm_revert", [snapshotId] );
 }
 
 module.exports = {

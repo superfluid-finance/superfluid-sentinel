@@ -51,7 +51,6 @@
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
     "chai": "^4.2.0",
     "ganache": "^7.9.0",
-    "ganache-time-traveler": "^1.0.16",
     "hardhat": "^2.17.0",
     "husky": "^8.0.3",
     "mocha": "^10.2.0",

@@ -13,8 +13,6 @@ async function setup(provider, agentAccount) {
     const accounts = await web3.eth.getAccounts();
     const providerEthers = new ethers.JsonRpcProvider("http://127.0.0.1:8545",null,{polling: true});
     const account = await providerEthers.getSigner();
-    console.log("Sending funds to ", account.address)
-    console.log("From account ", accounts[1]);
     await web3.eth.sendTransaction({
         from: accounts[1],
         to: account.address,

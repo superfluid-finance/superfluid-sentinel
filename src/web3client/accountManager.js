@@ -26,16 +26,19 @@ class AccountManager {
         const hdwallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic));
         const hdpath = "m/44'/60'/0'/0/";
         const wallet = hdwallet.derivePath(hdpath + index).getWallet();
-
         this.addAccountFromPrivateKey(wallet.getPrivateKeyString())
     }
 
     // add account from private key
     addAccountFromPrivateKey(privateKey) {
-        const account = this.app.web3.eth.accounts.privateKeyToAccount(privateKey);
+        const newAccount = this.app.web3.eth.accounts.privateKeyToAccount(privateKey);
+        // reject if account already exists
+        if (this.accounts.find(account => account.address === newAccount.address)) {
+            throw new Error("AccountManager: account already exists : " + newAccount.address);
+        }
         this.accounts.push({
-            address: account.address,
-            signTransaction: (txParams) => account.signTransaction(txParams)
+            address: newAccount.address,
+            signTransaction: (txParams) => newAccount.signTransaction(txParams)
         });
     }
 

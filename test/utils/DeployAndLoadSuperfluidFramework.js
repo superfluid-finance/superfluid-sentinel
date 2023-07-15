@@ -19,6 +19,7 @@ const IInstantDistributionAgreementV1 = require("@superfluid-finance/ethereum-co
 const IGeneralDistributionAgreementV1 = require("@superfluid-finance/ethereum-contracts/build/contracts/IGeneralDistributionAgreementV1.json");
 const Governance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
+const TestToken = require("@superfluid-finance/ethereum-contracts/build/contracts/TestToken.json");
 
 async function DeployAndLoadSuperfluidFramework(web3, provider) {
 
@@ -37,16 +38,21 @@ async function DeployAndLoadSuperfluidFramework(web3, provider) {
 
     const resolver = new web3.eth.Contract(IResolver.abi, contractsFramework[8]);
     const superfluid = new web3.eth.Contract(ISuperfluid.abi, contractsFramework[1]);
-    const fDAIxAddress = await resolver.methods.get("supertokens.test.fDAIx");
-    const fUSDCxAddress = await resolver.methods.get("supertokens.test.fUSDCx");
+    const fDAIxAddress = await resolver.methods.get("supertokens.test.fDAIx").call();
+    const fUSDCxAddress = await resolver.methods.get("supertokens.test.fUSDCx").call();
+
+    const fDAIx = new web3.eth.Contract(ISuperToken.abi, fDAIxAddress);
+    const fUSDCx = new web3.eth.Contract(ISuperToken.abi, fUSDCxAddress);
     const superTokens = {
-        fDAIx: new web3.eth.Contract(ISuperToken.abi, fDAIxAddress),
-        fUSDCx: new web3.eth.Contract(ISuperToken.abi, fUSDCxAddress)
+        fDAIx: fDAIx,
+        fUSDCx: fUSDCx
     };
 
+    const fDAIAddress = await superTokens.fDAIx.methods.getUnderlyingToken().call();
+    const fUSDCAddress = await superTokens.fUSDCx.methods.getUnderlyingToken().call();
     const tokens = {
-        fDAI: await superTokens.fDAIx.methods.getUnderlyingToken(),
-        fUSDC: await superTokens.fUSDCx.methods.getUnderlyingToken()
+        fDAI: new web3.eth.Contract(TestToken.abi, fDAIAddress),
+        fUSDC: new web3.eth.Contract(TestToken.abi, fUSDCAddress)
     }
 
     const cfa = new web3.eth.Contract(IConstantFlowAgreementV1.abi, contractsFramework[2]);

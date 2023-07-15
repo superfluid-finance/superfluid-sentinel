@@ -5,6 +5,9 @@ const { Web3 } = require("web3");
 const ethers = require("ethers");
 const expect = require("chai").expect;
 
+
+let sf;
+
 async function setup(provider, agentAccount) {
     const MIN_BOND_DURATION = 3600 * 24 * 7; // 604800
 
@@ -21,17 +24,15 @@ async function setup(provider, agentAccount) {
 
     const sf = await DeployAndLoadSuperfluidFramework(web3, account);
 
-    // const accounts = await web3.eth.getAccounts();
-/*
     for (const account of accounts) {
-        await token.methods.mint(account, "10000000000000000000000").send({from: account});
-        await token.methods.approve(superTokenAddress, "10000000000000000000000").send({from: account});
-        await superToken.methods.upgrade("10000000000000000000000").send({
+        await sf.tokens.fDAI.methods.mint(account, "10000000000000000000000").send({from: account});
+        await sf.tokens.fDAI.methods.approve(sf.superTokens.fDAIx.options.address, "10000000000000000000000").send({from: account});
+        await sf.superTokens.fDAIx.methods.upgrade("10000000000000000000000").send({
             from: account,
             gas: 400000
         });
     }
-*/
+
     await web3.eth.sendTransaction({
         to: agentAccount,
         from: accounts[9],

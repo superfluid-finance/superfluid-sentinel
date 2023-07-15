@@ -1,54 +1,30 @@
-const Environment = require("@superfluid-finance/ethereum-contracts/scripts/deploy-test-environment");
-const IResolver = require("@superfluid-finance/ethereum-contracts/build/contracts/IResolver.json");
-const ICFA = require("@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json");
-const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IInstantDistributionAgreementV1.json");
-const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
-const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
-const IToken = require("@superfluid-finance/ethereum-contracts/build/contracts/TestToken.json");
-const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
-const TOGA = require("@superfluid-finance/ethereum-contracts/build/contracts/TOGA.json");
-const TokenCustodian = require("@superfluid-finance/ethereum-contracts/build/contracts/TokenCustodian.json");
 
-const Web3 = require("web3");
+
+const DeployAndLoadSuperfluidFramework = require("../utils/DeployAndLoadSuperfluidFramework");
+const { Web3 } = require("web3");
+const ethers = require("ethers");
 const expect = require("chai").expect;
 
 async function setup(provider, agentAccount) {
+    const MIN_BOND_DURATION = 3600 * 24 * 7; // 604800
 
-    const MIN_BOND_DURATION = 3600 * 24 * 7; // 604800 s
-
-    const web3 = new Web3(provider);
+    const httpProvider = new Web3.providers.HttpProvider("http://127.0.0.1:8545");
+    const web3 = new Web3(httpProvider);
     const accounts = await web3.eth.getAccounts();
-    await Environment((error) => {
-            if (error) {
-                console.log(error);
-            }
-        }, [":", "fTUSD"], {web3: web3}
-    );
+    const providerEthers = new ethers.JsonRpcProvider("http://127.0.0.1:8545",null,{polling: true});
+    const account = await providerEthers.getSigner();
+    console.log("Sending funds to ", account.address)
+    console.log("From account ", accounts[1]);
+    await web3.eth.sendTransaction({
+        from: accounts[1],
+        to: account.address,
+        value: web3.utils.toWei("10", "ether")
+    });
 
-    const resolverAddress = process.env.RESOLVER_ADDRESS;
-    const superfluidIdent = `Superfluid.test`;
-    const resolver = new web3.eth.Contract(IResolver.abi, resolverAddress);
-    const superfluidAddress = await resolver.methods.get(superfluidIdent).call();
-    const host = new web3.eth.Contract(ISuperfluid.abi, superfluidAddress);
-    const govAddress = await host.methods.getGovernance().call();
-    const gov = new web3.eth.Contract(SuperfluidGovernance.abi, govAddress);
-    await gov.methods.setPPPConfig(host._address,"0x0000000000000000000000000000000000000000", 3600, 900).send({from:accounts[0]});
-    const cfaIdent = web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
-    const idaIdent = web3.utils.sha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
-    const cfaAddress = await host.methods.getAgreementClass(cfaIdent).call();
-    const idaAddress = await host.methods.getAgreementClass(idaIdent).call();
-    const cfa = new web3.eth.Contract(ICFA.abi, cfaAddress);
-    const ida = new web3.eth.Contract(IIDA.abi, idaAddress);
-    const superTokenAddress = await resolver.methods.get("supertokens.test.fTUSDx").call();
-    const superToken = new web3.eth.Contract(ISuperToken.abi, superTokenAddress);
-    const tokenAddress = await superToken.methods.getUnderlyingToken().call();
-    const token = new web3.eth.Contract(IToken.abi, tokenAddress);
-    /*Deploy TOGA contract*/
-    const custodianContract = new web3.eth.Contract(TokenCustodian.abi);
-    const custodian = await custodianContract.deploy({data: TokenCustodian.bytecode}).send({from: accounts[0], gas: 500000})
-    const togaContract = new web3.eth.Contract(TOGA.abi);
-    const toga = await togaContract.deploy({data: TOGA.bytecode, arguments: [superfluidAddress, MIN_BOND_DURATION, custodian._address]}).send({from: accounts[1], gas: 2000000})
+    const sf = await DeployAndLoadSuperfluidFramework(web3, account);
 
+    // const accounts = await web3.eth.getAccounts();
+/*
     for (const account of accounts) {
         await token.methods.mint(account, "10000000000000000000000").send({from: account});
         await token.methods.approve(superTokenAddress, "10000000000000000000000").send({from: account});
@@ -57,7 +33,7 @@ async function setup(provider, agentAccount) {
             gas: 400000
         });
     }
-
+*/
     await web3.eth.sendTransaction({
         to: agentAccount,
         from: accounts[9],
@@ -66,14 +42,15 @@ async function setup(provider, agentAccount) {
     return {
         web3: web3,
         accounts: accounts,
-        ida: ida,
-        cfa: cfa,
-        host: host,
-        gov: gov,
-        superToken: superToken,
-        token: token,
-        resolver: resolver,
-        toga: toga
+        ida: sf.agreements.ida,
+        cfa: sf.agreements.cfa,
+        gda: sf.agreements.gda,
+        host: sf.host,
+        gov: sf.governance,
+        superToken: sf.superTokens.fDAIx,
+        token: sf.tokens.fDAI,
+        resolver: sf.resolver,
+        toga: () => {throw new Error("TODO: implement TOGA")},
     };
 }
 

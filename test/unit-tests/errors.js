@@ -8,7 +8,7 @@ const exitWithError = (error) => {
 };
 
 describe("Custom errors", () => {
-  it("Should parse to right exception", async () => {
+  it("#1.1 - should parse to right exception", async () => {
     try {
       expect(Errors.EVMErrorParser(new Error("block gas limit"))).to.be.an.instanceof(Errors.GasBlockLimitError);
       expect(Errors.EVMErrorParser(new Error("insufficient funds"))).to.be.an.instanceof(Errors.AccountFundsError);
@@ -25,7 +25,7 @@ describe("Custom errors", () => {
     }
   });
 
-  it("Should maintain instances of exception parsed", async () => {
+  it("#1.2 - should maintain instances of exception parsed", async () => {
     try {
       const myParsedError = new Error("block gas limit");
       expect(Errors.EVMErrorParser(myParsedError)).to.be.an.instanceof(Errors.GasBlockLimitError);

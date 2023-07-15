@@ -53,7 +53,6 @@ describe("Agent configurations tests", () => {
 
     it("Should use delay paramater when sending liquidation", async () => {
         try {
-            console.log("EHRUHAEKLRHAEKRH")
             expect(false).eq(false);
             /*
             const data = protocolVars.cfa.methods.createFlow(

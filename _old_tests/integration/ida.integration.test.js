@@ -1,6 +1,6 @@
-const protocolHelper = require("../utils/protocolHelper");
+const protocolHelper = require("../../test/utils/protocolHelper");
 const expect = require("chai").expect;
-const ganache = require("../utils/ganache");
+const ganache = require("../../test/utils/ganache");
 const App = require("../../src/app");
 
 const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";

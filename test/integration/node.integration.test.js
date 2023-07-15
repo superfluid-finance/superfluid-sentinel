@@ -53,30 +53,26 @@ describe("Agent configurations tests", () => {
 
     it("Should use delay paramater when sending liquidation", async () => {
         try {
-            expect(false).eq(false);
-            /*
             const data = protocolVars.cfa.methods.createFlow(
-                protocolVars.superToken._address,
+                protocolVars.superToken.options.address,
                 accounts[2],
                 "100000000000",
                 "0x"
             ).encodeABI();
-            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({
+            await protocolVars.host.methods.callAgreement(protocolVars.cfa.options.address, data, "0x").send({
                 from: accounts[0],
                 gas: 1000000
             });
-            await ganache.helper.timeTravelOnce(1);
+            await ganache.helper.timeTravelOnce(provider, web3, 1);
             await bootNode({additional_liquidation_delay: 2700});
             const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({
                 from: accounts[0],
                 gas: 1000000
             });
-            await ganache.helper.timeTravelOnce(3580, app, true);
+            await ganache.helper.timeTravelOnce(provider,3580, app, true);
             const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
             await app.shutdown();
             expect(result[0].returnValues.liquidatorAccount).to.equal(AGENT_ACCOUNT);
-
-             */
         } catch (err) {
             protocolHelper.exitWithError(err);
         }

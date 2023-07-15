@@ -3,9 +3,9 @@ const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contra
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
 const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
 const ICFA = require("@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json");
-const IGDA = require("../abis/IGeneralDistributionAgreementV1.json");
+const IGDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IGeneralDistributionAgreementV1.json");
 const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IInstantDistributionAgreementV1.json");
-const BatchContract = require("../abis/BatchLiquidator.json");
+const BatchContract = require("@superfluid-finance/ethereum-contracts/build/contracts/BatchLiquidator.json");
 const TogaContract = require("@superfluid-finance/ethereum-contracts/build/contracts/TOGA.json");
 
 /*
@@ -95,8 +95,6 @@ class ContractLoader {
             this.app.logger.info("ContractLoader: TOGA Contract not found");
         }
     }
-
-
 }
 
 module.exports = ContractLoader;

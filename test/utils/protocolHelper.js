@@ -128,7 +128,7 @@ async function waitForEvent(protocolVars, sentinel, ganache, eventName, blockNum
                 return events;
             }
             await timeout(1000);
-            await ganache.helper.timeTravelOnce(1, sentinel, true);
+            await ganache.helper.timeTravelOnce(protocolVars.web3,1, sentinel, true);
         } catch (err) {
             exitWithError(err);
         }

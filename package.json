@@ -25,7 +25,6 @@
   "license": "MIT",
   "dependencies": {
     "@decentral.ee/web3-helpers": "^0.5.3",
-    "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@slack/webhook": "^6.1.0",
     "@superfluid-finance/ethereum-contracts": "1.7.2-PR1357.cc099b3.0",
     "@superfluid-finance/metadata": "https://github.com/superfluid-finance/metadata",
@@ -40,7 +39,6 @@
     "ethers": "^6.4.0",
     "ethjs-abi": "^0.2.1",
     "express": "^4.18.2",
-    "hardhat": "^2.14.0",
     "node-telegram-bot-api": "^0.61.0",
     "prom-client": "^14.2.0",
     "sequelize": "^6.32.1",
@@ -50,20 +48,13 @@
     "winston": "^3.10.0"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
-    "@nomicfoundation/hardhat-ethers": "^3.0.0",
-    "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
-    "@nomicfoundation/hardhat-verify": "^1.0.0",
-    "@typechain/ethers-v6": "^0.4.0",
-    "@typechain/hardhat": "^8.0.0",
     "chai": "^4.2.0",
     "ganache": "^7.9.0",
     "ganache-time-traveler": "^1.0.16",
-    "hardhat-gas-reporter": "^1.0.8",
+    "hardhat": "^2.17.0",
     "husky": "^8.0.3",
     "mocha": "^10.2.0",
-    "solidity-coverage": "^0.8.0",
     "typechain": "^8.1.0"
   },
   "husky": {

@@ -1,3 +1,9 @@
+const { FMT_NUMBER, FMT_BYTES } = require("web3");
+
+const dataFormat = {
+  number: FMT_NUMBER.NUMBER
+}
+
 class Liquidator {
   constructor (app) {
     this.app = app;
@@ -74,7 +80,8 @@ class Liquidator {
     }
     const wallet = this.app.client.getAccount();
     const chainId = await this.app.client.getChainId();
-    const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
+    //TODO: shouldn't call web3 directly
+    const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address, undefined, dataFormat);
     for (const job of work) {
       if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver, job.pppmode)) {
         try {
@@ -86,7 +93,7 @@ class Liquidator {
 
           // if we hit the gas price limit or estimation error, we stop the liquidation job and return to main loop
           if(baseGasPrice.error) {
-            this.app.logger.error(baseGasPrice.error);
+            this.app.logger.error(`Liquidator.baseGasPrice - ${baseGasPrice.error}`);
             return;
           }
           if(baseGasPrice.hitGasPriceLimit) {
@@ -97,25 +104,25 @@ class Liquidator {
 
           const txObject = {
             retry: 1,
-            step: this.app.config.RETRY_GAS_MULTIPLIER,
+            step: Number(this.app.config.RETRY_GAS_MULTIPLIER),
             target: txData.target,
             flowSender: job.sender,
             flowReceiver: job.receiver,
             superToken: job.superToken,
             source: job.source,
             tx: txData.tx,
-            gasPrice: baseGasPrice.gasPrice,
-            nonce: networkAccountNonce,
-            chainId: chainId
+            gasPrice: Number(baseGasPrice.gasPrice),
+            nonce: Number(networkAccountNonce),
+            chainId: Number(chainId)
           };
           const result = await this.sendWithRetry(wallet, txObject, this.app.config.TX_TIMEOUT);
           if (result !== undefined && result.error !== undefined) {
-            this.app.logger.error(result.error);
+            this.app.logger.error(`Liquidator.sendWithRetry: ${result.error}`);
           } else {
             this.app.logger.debug(JSON.stringify(result));
           }
         } catch (err) {
-          this.app.logger.error(err);
+          this.app.logger.error(`liquidator.singleTerminations() - ${err}`);
           process.exit(1);
         }
       } else {
@@ -173,7 +180,8 @@ class Liquidator {
   async sendBatch (superToken, senders, receivers) {
     const wallet = this.app.client.getAccount();
     const chainId = await this.app.client.getChainId();
-    const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
+    //TODO: shouldn't call web3 directly
+    const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address, undefined, dataFormat);
     try {
       const txData = this.app.protocol.generateBatchLiquidationTxData(superToken, senders, receivers);
       const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice();
@@ -199,7 +207,7 @@ class Liquidator {
       };
       const result = await this.sendWithRetry(wallet, txObject, this.app.config.TX_TIMEOUT);
       if (result !== undefined && result.error !== undefined) {
-        this.app.logger.error(result.error);
+        this.app.logger.error(`Liquidation.sendBatch - ${result.error}`);
       } else {
         this.app.logger.debug(JSON.stringify(result));
       }
@@ -223,7 +231,6 @@ class Liquidator {
         tx: undefined
       };
     }
-
     txObject.gasLimit = gas.gasLimit;
     const signed = await this.signTx(wallet, txObject);
     txObject.hitGasPriceLimit = signed.tx.hitGasPriceLimit;

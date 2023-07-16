@@ -77,7 +77,7 @@ class EventTracker {
         self.app.client.addTotalRequest();
       });
     } catch (err) {
-      this.app.logger.error(err);
+      this.app.logger.error(`BlockTracker.start() - ${err}`);
       // retry how many times? - process.exit(1) || this.start(oldBlock);
     }
   }

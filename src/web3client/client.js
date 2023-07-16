@@ -11,6 +11,12 @@ const TogaContract = require("@superfluid-finance/ethereum-contracts/build/contr
 const { wad4human } = require("@decentral.ee/web3-helpers");
 const BN = require("bn.js");
 
+const { FMT_NUMBER, FMT_BYTES } = require("web3");
+
+const dataFormat = {
+  number: FMT_NUMBER.NUMBER
+}
+
 /*
  *   Web3 and superfluid client:
  * - Create web3 connections
@@ -288,7 +294,7 @@ class Client {
     } else if (this._testMode === "REVERT_ON_BLOCK_GAS_LIMIT" && gasLimit > this._testOption.blockGasLimit) {
       throw new Error("block gas limit");
     } else {
-      return this.web3.eth.sendSignedTransaction(signed.tx.rawTransaction);
+      return this.web3.eth.sendSignedTransaction(signed.tx.rawTransaction, dataFormat);
     }
   }
 

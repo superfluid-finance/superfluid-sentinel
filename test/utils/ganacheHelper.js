@@ -14,9 +14,9 @@ async function timeTravelOnce (provider, web3, time, app, setAppTime = false) {
   const block2 = await web3.eth.getBlock("latest");
   console.log("new block time", block2.timestamp.toString());
   if (setAppTime) {
-    app.setTime(block2.timestamp * 1000);
+    app.setTime(Number(block2.timestamp) * 1000);
   }
-  return block2.timestamp;
+  return Number(block2.timestamp);
 }
 
 async function timeTravelUntil (time, ticks, app, setAppTime) {

@@ -1,19 +1,28 @@
+const { FMT_NUMBER, FMT_BYTES } = require("web3");
+
+const dataFormat = {
+  number: FMT_NUMBER.NUMBER
+}
+
 class Gas {
   constructor (app) {
     this.app = app;
   }
 
+  //TODO: This method shouldn't call web3 directly.
   async getGasLimit (wallet, txObject) {
     try {
+
       let result = await this.app.client.web3.eth.estimateGas({
         from: wallet.address,
         to: txObject.target,
         data: txObject.tx
-      });
-      result += Math.ceil(parseInt(result) * 0.1);
+      }, undefined, dataFormat );
+
+      result += Math.ceil(Number(result) * 0.1);
       return {
         error: undefined,
-        gasLimit: result
+        gasLimit: Number(result)
       };
     } catch (err) {
       return {
@@ -23,9 +32,10 @@ class Gas {
     }
   }
 
+  //TODO: This method shouldn't call web3 directly.
   async getCappedGasPrice () {
     try {
-      const gasPrice = await this.app.client.web3.eth.getGasPrice();
+      const gasPrice = await this.app.client.web3.eth.getGasPrice(dataFormat);
       let hitGasPriceLimit = false;
       if (this.app.config.MAX_GAS_PRICE !== undefined &&
           parseInt(gasPrice) >= this.app.config.MAX_GAS_PRICE

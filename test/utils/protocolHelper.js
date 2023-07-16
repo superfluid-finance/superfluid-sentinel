@@ -58,9 +58,6 @@ async function setup(provider, agentAccount) {
             if(helper === undefined) {
                 throw new Error("helper is undefined");
             }
-            console.log("createStream")
-            console.log("Input superTokenAddress: " + superTokenAddress + " sender: " + sender + " receiver: " + receiver + " flowRate: " + flowRate);
-            console.log("SF Addresses superToken: " + helper.sf.superToken.options.address + " host: " + helper.sf.host.options.address + " cfa: " + helper.sf.cfa.options.address);
             const data = helper.sf.cfa.methods.createFlow(superTokenAddress, receiver, flowRate, "0x").encodeABI();
             await helper.sf.host.methods.callAgreement(helper.sf.cfa.options.address, data, "0x").send({from: sender,gas: 1000000});
         }

@@ -14,6 +14,11 @@ const option = {
   miner: {
     blockTime: 0,
     callGasLimit : 0x1fffffffffffff
+  },
+  logging: {
+    logger: {
+      log: () => {} // don't do anything
+    }
   }
 };
 

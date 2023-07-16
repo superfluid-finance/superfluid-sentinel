@@ -63,7 +63,7 @@ class Liquidator {
         return checkFlow !== undefined && isCritical && !isSolvent;
       }
     } catch (err) {
-      this.app.logger.error(err);
+      this.app.logger.error(`liquidator.isPossibleToClose() - ${err}`);
       return false;
     }
   }

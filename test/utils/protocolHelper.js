@@ -6,7 +6,7 @@ const ethers = require("ethers");
 const expect = require("chai").expect;
 
 
-let sf;
+let helper;
 
 async function setup(provider, agentAccount) {
     const MIN_BOND_DURATION = 3600 * 24 * 7; // 604800
@@ -38,9 +38,10 @@ async function setup(provider, agentAccount) {
         from: accounts[9],
         value: web3.utils.toWei("10", "ether")
     });
-    return {
-        web3: web3,
-        accounts: accounts,
+    helper = {};
+    helper.web3 = web3;
+    helper.accounts = accounts;
+    helper.sf = {
         ida: sf.agreements.ida,
         cfa: sf.agreements.cfa,
         gda: sf.agreements.gda,
@@ -50,7 +51,22 @@ async function setup(provider, agentAccount) {
         token: sf.tokens.fDAI,
         resolver: sf.resolver,
         toga: () => {throw new Error("TODO: implement TOGA")},
-    };
+    }
+
+    helper.operations = {
+        createStream: async (superTokenAddress, sender, receiver, flowRate) => {
+            if(helper === undefined) {
+                throw new Error("helper is undefined");
+            }
+            console.log("createStream")
+            console.log("Input superTokenAddress: " + superTokenAddress + " sender: " + sender + " receiver: " + receiver + " flowRate: " + flowRate);
+            console.log("SF Addresses superToken: " + helper.sf.superToken.options.address + " host: " + helper.sf.host.options.address + " cfa: " + helper.sf.cfa.options.address);
+            const data = helper.sf.cfa.methods.createFlow(superTokenAddress, receiver, flowRate, "0x").encodeABI();
+            await helper.sf.host.methods.callAgreement(helper.sf.cfa.options.address, data, "0x").send({from: sender,gas: 1000000});
+        }
+    }
+
+    return helper;
 }
 
 function expectLiquidation(event, node, account) {
@@ -120,7 +136,7 @@ async function waitForEvent(protocolVars, sentinel, ganache, eventName, blockNum
         try {
             const newBlockNumber = await protocolVars.web3.eth.getBlockNumber();
             console.log(`${blockNumber} - ${newBlockNumber}`);
-            const events = await protocolVars.superToken.getPastEvents(eventName, {
+            const events = await protocolVars.sf.superToken.getPastEvents(eventName, {
                 fromBlock: blockNumber,
                 toBlock: newBlockNumber
             });
@@ -128,7 +144,7 @@ async function waitForEvent(protocolVars, sentinel, ganache, eventName, blockNum
                 return events;
             }
             await timeout(1000);
-            await ganache.helper.timeTravelOnce(protocolVars.web3,1, sentinel, true);
+            await ganache.helper.timeTravelOnce(protocolVars.provider, protocolVars.web3, 1, sentinel, true);
         } catch (err) {
             exitWithError(err);
         }
@@ -140,7 +156,7 @@ async function waitForEventAtSameBlock(protocolVars, sentinel, ganache, eventNam
     while (true) {
         try {
             console.log(`checking block: ${blockNumber}`);
-            const events = await protocolVars.superToken.getPastEvents(eventName, {
+            const events = await protocolVars.sf.superToken.getPastEvents(eventName, {
                 fromBlock: blockNumber,
                 toBlock: blockNumber
             });
@@ -158,6 +174,7 @@ async function waitForEventAtSameBlock(protocolVars, sentinel, ganache, eventNam
 async function timeout(ms) {
     return new Promise(res => setTimeout(res, ms));
 }
+
 
 module.exports = {
     setup,

@@ -18,6 +18,7 @@ class Report {
     // not available on all networks
     if(this._isSyncingMethodExist) {
       try {
+        //TODO: shouldn't call web3 directly
         rpcIsSyncing = await this.app.client.web3.eth.isSyncing();
       } catch(err) {
         this._isSyncingMethodExist = false;

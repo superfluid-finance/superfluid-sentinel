@@ -20,6 +20,7 @@ class EventTracker {
 
   async getPastBlockAndParseEvents (oldBlock, newBlock) {
     if(Number(oldBlock) <= Number(newBlock)) {
+      //TODO: shouldn't call web3 directly
       let eventsFromBlocks = await this.app.client.web3.eth.getPastLogs({fromBlock: oldBlock,
         toBlock: newBlock,
         address: this.app.client.getSFAddresses()
@@ -27,6 +28,7 @@ class EventTracker {
       // scan blocks from new tokens to subscribe before processing the remaining data
       const newTokens = await this.findNewTokens(eventsFromBlocks);
       if(newTokens) {
+        //TODO: shouldn't call web3 directly
         eventsFromBlocks = await this.app.client.web3.eth.getPastLogs({fromBlock: oldBlock,
           toBlock: newBlock,
           address: this.app.client.getSFAddresses()
@@ -48,6 +50,7 @@ class EventTracker {
     if (oldBlock) {
       this.oldSeenBlock = oldBlock;
     }
+    //TODO: shouldn't call web3 directly
     const provider = this.app.client.web3.eth.currentProvider;
     this.blockTracker = new PollingBlockTracker({
       provider,

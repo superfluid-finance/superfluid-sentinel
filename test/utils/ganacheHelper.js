@@ -19,10 +19,10 @@ async function timeTravelOnce (provider, web3, time, app, setAppTime = false) {
   return Number(block2.timestamp);
 }
 
-async function timeTravelUntil (time, ticks, app, setAppTime) {
+async function timeTravelUntil (provider, web3, time, ticks, app, setAppTime) {
   while (ticks > 0) {
     await delay(1000);
-    await timeTravelOnce(time, app, setAppTime);
+    await timeTravelOnce(provider, web3, time, app, setAppTime);
     ticks--;
   }
 }

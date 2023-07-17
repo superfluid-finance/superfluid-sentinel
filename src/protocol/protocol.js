@@ -50,23 +50,25 @@ class Protocol {
       return CFAUserNetFlow.add(GDAUserNetFlow).toString();
   }
 
-  async getCFAAgreementEvents (eventName, filter) {
+  async getCFAAgreementEvents (eventName, filter, app = undefined) {
     try {
-      this.app.client.addTotalRequest();
-      return this.app.client.CFAv1.getPastEvents(eventName, filter);
+      app = app || this.app;
+      app.client.addTotalRequest();
+      return app.client.CFAv1.getPastEvents(eventName, filter);
     } catch (err) {
-      console.error(err);
+      console.error("getCFAAgreementEvents " + err);
       throw Error(`Protocol.getCFAAgreementEvents(): ${err}`);
     }
   }
 
   // getGDAgreementEvents
-  async getGDAgreementEvents (eventName, filter) {
+  async getGDAgreementEvents (eventName, filter, app = undefined) {
     try {
-      this.app.client.addTotalRequest();
-      return this.app.client.GDAv1.getPastEvents(eventName, filter);
+      app = app || this.app;
+      app.client.addTotalRequest();
+      return app.client.GDAv1.getPastEvents(eventName, filter);
     } catch (err) {
-      console.error(err);
+      console.error("getGDAgreementEvents" + err);
       throw Error(`Protocol.getGDAgreementEvents(): ${err}`);
     }
   }
@@ -191,18 +193,20 @@ class Protocol {
     }
   }
 
-  generateCFAId (sender, receiver) {
+  generateCFAId (sender, receiver, app) {
     try {
-      return this.app.client.web3.utils.soliditySha3(sender, receiver);
+      app = app || this.app;
+      return app.client.web3.utils.soliditySha3(sender, receiver);
     } catch (err) {
       this.app.logger.error(err);
       throw Error(`Protocol.generateCFAId(): ${err}`);
     }
   }
 
-  async generateGDAId (from, to) {
+  async generateGDAId (from, to, app) {
     try {
-      const chainId = await this.app.client.getChainId();
+      app = app || this.app;
+      const chainId = await app.client.getChainId();
       return this.app.client.web3.utils.soliditySha3(chainId, "distributionFlow", from, to);
     } catch (err) {
       this.app.logger.error(err);

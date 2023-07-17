@@ -60,6 +60,20 @@ async function setup(provider, agentAccount) {
             }
             const data = helper.sf.cfa.methods.createFlow(superTokenAddress, receiver, flowRate, "0x").encodeABI();
             await helper.sf.host.methods.callAgreement(helper.sf.cfa.options.address, data, "0x").send({from: sender,gas: 1000000});
+        },
+        updateStream: async (superTokenAddress, sender, receiver, flowRate) => {
+            if(helper === undefined) {
+                throw new Error("helper is undefined");
+            }
+            const data = helper.sf.cfa.methods.updateFlow(superTokenAddress, receiver, flowRate, "0x").encodeABI();
+            await helper.sf.host.methods.callAgreement(helper.sf.cfa.options.address, data, "0x").send({from: sender,gas: 1000000});
+        },
+        deleteStream: async (superTokenAddress, sender, receiver) => {
+            if(helper === undefined) {
+                throw new Error("helper is undefined");
+            }
+            const data = helper.sf.cfa.methods.deleteFlow(superTokenAddress, sender, receiver, "0x").encodeABI();
+            await helper.sf.host.methods.callAgreement(helper.sf.cfa.options.address, data, "0x").send({from: sender,gas: 1000000});
         }
     }
 

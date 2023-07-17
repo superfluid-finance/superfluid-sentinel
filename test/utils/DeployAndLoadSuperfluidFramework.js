@@ -30,8 +30,8 @@ async function DeployAndLoadSuperfluidFramework(web3, provider) {
 
     const MINT_AMOUNT = ethers.parseEther("100000000").toString();
 
-    sfDeployer = await SuperfluidFrameworkDeployer.deployTestFramework(provider);
-    contractsFramework = await sfDeployer.frameworkDeployer.getFramework();
+    const sfDeployer = await SuperfluidFrameworkDeployer.deployTestFramework(provider);
+    const contractsFramework = await sfDeployer.frameworkDeployer.getFramework();
 
     await sfDeployer.frameworkDeployer.deployWrapperSuperToken("Fake DAI Token", "fDAI", 18, MINT_AMOUNT);
     await sfDeployer.frameworkDeployer.deployWrapperSuperToken("Fake USDC Token", "fUSDC", 18, MINT_AMOUNT);

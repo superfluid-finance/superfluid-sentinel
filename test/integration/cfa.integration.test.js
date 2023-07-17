@@ -40,7 +40,10 @@ describe("CFA tests", () => {
 
   afterEach(async () => {
     try {
-      await ganache.helper.revertToSnapShot(provider, snapId);
+      console.log("loading snapshot...");
+      const result = await ganache.helper.revertToSnapShot(provider, snapId);
+      snapId = await ganache.helper.takeEvmSnapshot(provider);
+      expect(result).to.be.true;
     } catch (err) {
       protocolHelper.exitWithError(err);
     }

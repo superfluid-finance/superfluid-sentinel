@@ -1,19 +1,21 @@
 node_modules
-.env
-database.sqlite
+datadir/
+.idea/
 .vscode
+snapshots/
+coverage
+typechain
 
+# Hardhat files
+cache
+artifacts
+
+database.sqlite
+.env
 .env*
 !.env-example
-
 .DS_Store
-
-datadir/
-
 *.sqlite
-
-.idea/
-
-snapshots/
-
 .npmrc
+coverage.json
+typechain-types

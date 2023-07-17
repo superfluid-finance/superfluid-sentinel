@@ -74,6 +74,34 @@ async function setup(provider, agentAccount) {
             }
             const data = helper.sf.cfa.methods.deleteFlow(superTokenAddress, sender, receiver, "0x").encodeABI();
             return await helper.sf.host.methods.callAgreement(helper.sf.cfa.options.address, data, "0x").send({from: sender,gas: 1000000});
+        },
+        createIDAIndex: async (superTokenAddress, sender, indexId) => {
+            if(helper === undefined) {
+                throw new Error("helper is undefined");
+            }
+            const data = helper.sf.ida.methods.createIndex(superTokenAddress, indexId, "0x").encodeABI();
+            return await helper.sf.host.methods.callAgreement(helper.sf.ida.options.address, data, "0x").send({from: sender,gas: 1000000});
+        },
+        updateIDASubscription: async (superTokenAddress, sender, receiver, indexId, amount) => {
+            if(helper === undefined) {
+                throw new Error("helper is undefined");
+            }
+            const data = helper.sf.ida.methods.updateSubscription(superTokenAddress, indexId, receiver, amount, "0x").encodeABI();
+            return await helper.sf.host.methods.callAgreement(helper.sf.ida.options.address, data, "0x").send({from: sender,gas: 1000000});
+        },
+        approveIDASubscription: async (superTokenAddress, sender, receiver, indexId) => {
+            if(helper === undefined) {
+                throw new Error("helper is undefined");
+            }
+            const data = helper.sf.ida.methods.approveSubscription(superTokenAddress, sender, indexId, "0x").encodeABI();
+            return await helper.sf.host.methods.callAgreement(helper.sf.ida.options.address, data, "0x").send({from: receiver,gas: 1000000});
+        },
+        distributeIDA: async (superTokenAddress, sender, indexId, sendAmount) => {
+            if(helper === undefined) {
+                throw new Error("helper is undefined");
+            }
+            const data = helper.sf.ida.methods.distribute(superTokenAddress, indexId, sendAmount, "0x").encodeABI();
+            return await helper.sf.host.methods.callAgreement(helper.sf.ida.options.address, data, "0x").send({from: sender,gas: 1000000});
         }
     }
 

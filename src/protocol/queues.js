@@ -65,7 +65,7 @@ class Queues {
           break;
         } catch (err) {
           keepTrying++;
-          task.self.app.logger.error(err);
+          task.self.app.logger.error("newEstimationQueue: " +  err);
           if (keepTrying > task.self.app.config.NUM_RETRIES) {
             task.self.app.logger.error("Queues.estimationQueue(): exhausted number of retries");
             process.exit(1);
@@ -88,33 +88,50 @@ class Queues {
       while (true) {
         try {
           task.self.app.logger.debug(`EstimationQueue - Parent Caller ${task.parentCaller} TransactionHash: ${task.transactionHash}`);
-          const senderFilter = task.self._buildFilter(task);
+          const senderFilterCFA = {
+            filter: {
+              sender: task.account
+            },
+            fromBlock: task.blockNumber,
+            toBlock: task.blockNumber
+          };
 
-          const flowUpdatedEvents = await task.self._handleAgreementEvents(
+          const senderFilerGDA = {
+            filter: {
+              distributor: task.account
+            },
+            fromBlock: task.blockNumber,
+            toBlock: task.blockNumber
+          };
+          const flowUpdatedEvents = await task.self.app.queues._handleAgreementEvents(
               task,
-              senderFilter,
+              senderFilterCFA,
               "CFA",
               "FlowUpdated",
-              this.app.protocol.getCFAAgreementEvents,
-              this.app.protocol.generateCFAId
+              task.self.app.protocol.getCFAAgreementEvents,
+              task.self.app.protocol.generateCFAId
           );
-
-          const flowDistributionUpdatedEvents = await task.self._handleAgreementEvents(
+          const flowDistributionUpdatedEvents = await task.self.app.queues._handleAgreementEvents(
               task,
-              senderFilter,
+              senderFilerGDA,
               "GDA",
               "FlowDistributionUpdated",
               task.self.app.protocol.getGDAgreementEvents,
               task.self.app.protocol.generateGDAId
           );
+          // flowDistributionUpdatedEvents needs to set distributor as sender and pool as receiver
+          flowDistributionUpdatedEvents.forEach((event) => {
+            event.sender = event.distributor;
+            event.receiver = event.pool;
+          });
 
           // merge both
           const events = [...flowUpdatedEvents, ...flowDistributionUpdatedEvents];
-          await task.self._processEvents(task, events);
+          await task.self.app.queues._processEvents(task, events);
           break;
         } catch (err) {
           keepTrying++;
-          task.self.app.logger.error(err);
+          task.self.app.logger.error("newAgreementQueue " + err);
           if (keepTrying > task.self.app.config.NUM_RETRIES) {
             task.self.app.logger.error("Queues.agreementUpdateQueue(): exhausted number of retries");
             process.exit(1);
@@ -144,28 +161,20 @@ class Queues {
     return this.estimationQueue.length();
   }
 
-  _buildFilter (task) {
-    return {
-      filter: {
-        account: task.account
-      },
-      fromBlock: task.blockNumber,
-      toBlock: task.blockNumber
-    };
-  }
   async _handleAgreementEvents(task, senderFilter, source, eventName, getAgreementEventsFunc, generateIdFunc) {
+    const app = task.self.app;
     let allFlowUpdatedEvents = await getAgreementEventsFunc(
         eventName,
-        senderFilter
+        senderFilter,
+        app
     );
-
     allFlowUpdatedEvents = allFlowUpdatedEvents.map(
         task.self.app.models.event.transformWeb3Event
     );
 
     allFlowUpdatedEvents.sort((a, b) => a.blockNumber - b.blockNumber)
         .forEach(e => {
-          e.agreementId = generateIdFunc(e.sender, e.receiver);
+          e.agreementId = generateIdFunc(e.sender, e.receiver, app);
           e.source = source;
         });
 
@@ -177,20 +186,19 @@ class Queues {
   }
 
   async _processEvents(task, events) {
-
     for (const event of events) {
-
       await task.self.app.db.models.AgreementModel.upsert({
         agreementId: event.agreementId,
         superToken: event.token,
         sender: event.sender,
         receiver: event.receiver,
         flowRate: event.flowRate,
-        blockNumber: event.blockNumber
+        blockNumber: event.blockNumber,
+        source: event.source
       });
 
       if (["CFA", "GDA"].includes(event.source)) {
-         const accounts = event.source === "CFA" ? [event.sender, event.receiver] : [event.distributor, event.pool];
+        const accounts = event.source === "CFA" ? [event.sender, event.receiver] : [event.distributor, event.pool];
         accounts.forEach(account => {
           task.self.app.queues.estimationQueue.push(
               task.self.app.queues._createAgreementTask(account, event, task)
@@ -213,7 +221,6 @@ class Queues {
       source: event.source
     }
   }
-
 }
 
 module.exports = Queues;

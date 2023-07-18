@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1.3
 
 # Always add commit hash for reproducability
-FROM node:14-alpine@sha256:7bcf853eeb97a25465cb385b015606c22e926f548cbd117f85b7196df8aa0d29
+FROM node:16-alpine@sha256:43b162893518666b4a08d95dae49153f22a5dba85c229f8b0b8113b609000bc2
 
 # Enable prod optimizations
 ENV NODE_ENV=production

@@ -16,7 +16,12 @@ const Repository = require("./database/repository");
 const utils = require("./utils/utils.js");
 const HTTPServer = require("./httpserver/server");
 const Report = require("./httpserver/report");
+const Notifier = require("./services/notifier");
+const SlackNotifier = require("./services/slackNotifier");
+const TelegramNotifier = require("./services/telegramNotifier");
+const NotifierJobs = require("./services/notificationJobs");
 const Errors = require("./utils/errors/errors");
+const { wad4human } = require("@decentral.ee/web3-helpers");
 
 class App {
     /*
@@ -34,7 +39,8 @@ class App {
             FlowUpdatedModel: require("./database/models/flowUpdatedModel")(this.db),
             SuperTokenModel: require("./database/models/superTokenModel")(this.db),
             SystemModel: require("./database/models/systemModel")(this.db),
-            UserConfig: require("./database/models/userConfiguration")(this.db)
+            UserConfig: require("./database/models/userConfiguration")(this.db),
+            ThresholdModel: require("./database/models/thresholdModel")(this.db),
         }
         this.db.queries = new Repository(this);
         this.eventTracker = new EventTracker(this);
@@ -56,6 +62,19 @@ class App {
         this.healthReport = new Report(this);
         this.server = new HTTPServer(this);
         this.timer = new Timer();
+
+        this.notifier = new Notifier(this);
+        // at this stage we only work with slack or telegram
+        if (this.config.SLACK_WEBHOOK_URL) {
+            this._slackNotifier = new SlackNotifier(this, {timeout: 3000});
+        }
+        if (this.config.TELEGRAM_BOT_TOKEN && this.config.TELEGRAM_CHAT_ID) {
+            this._telegramNotifier = new TelegramNotifier(this);
+        }
+        if (this._slackNotifier || this._telegramNotifier) {
+            this.logger.info("initializing notification jobs")
+            this.notificationJobs = new NotifierJobs(this);
+        }
 
         this._isShutdown = false;
         this._isInitialized = false;
@@ -146,14 +165,17 @@ class App {
         try {
             this.logger.debug(`booting sentinel`);
             this._isShutdown = false;
+            // send notification about time sentinel started including timestamp
+            this.notifier.sendNotification(`Sentinel started at ${new Date()}`);
             // connect to provided rpc
             await this.client.connect();
             // if we are running tests don't try to load network information
             if (!this.config.RUN_TEST_ENV) {
-                this.config.loadNetworkInfo(await this.client.getChainId());
+                await this.config.loadNetworkInfo(await this.client.getChainId());
             }
             // create all web3 infrastructure needed
             await this.client.init();
+            this.notifier.sendNotification(`RPC connected with chainId ${await this.client.getChainId()}, account ${this.client.agentAccounts?.address} has balance ${this.client.agentAccounts ? wad4human(await this.client.getAccountBalance()) : "N/A"}`);
             if (this.config.BATCH_CONTRACT !== undefined) {
                 await this.client.loadBatchContract();
             }
@@ -180,9 +202,26 @@ class App {
             this.logger.debug(JSON.stringify(userConfig));
             if (await this.isResyncNeeded(userConfig)) {
                 this.logger.error(`ATTENTION: Configuration changed since last run, please re-sync.`);
+                // send notification about configuration change, and exit
+                this.notifier.sendNotification(`Configuration changed since last run, please re-sync.`);
+                await this.timer.timeout(3500);
                 process.exit(1);
             }
             await this.db.queries.saveConfiguration(JSON.stringify(userConfig));
+            // get json file with tokens and their thresholds limits. Check if it exists and loaded to json object
+            try {
+                const thresholds = require("../thresholds.json");
+                const tokensThresholds = thresholds.networks[await this.client.getChainId()];
+                this.config.SENTINEL_BALANCE_THRESHOLD = tokensThresholds.minSentinelBalanceThreshold;
+                // update thresholds on database
+                await this.db.queries.updateThresholds(tokensThresholds.thresholds);
+            } catch (err) {
+                this.logger.warn(`error loading thresholds.json`);
+                await this.db.queries.updateThresholds({});
+                this.config.SENTINEL_BALANCE_THRESHOLD = 0;
+            }
+
+
             // collect events to detect superTokens and accounts
             const currentBlock = await this.loadEvents.start();
             // query balances to make liquidations estimations
@@ -193,6 +232,11 @@ class App {
             // start http server to serve node health reports and dashboard
             if (this.config.METRICS === true) {
                 this.timer.startAfter(this.server);
+            }
+            // Only start notification jobs if notifier is enabled
+            if (this.notificationJobs) {
+                this.logger.info(`Starting notification jobs`);
+                this.timer.startAfter(this.notificationJobs);
             }
             //from this point on, sentinel is considered initialized.
             this._isInitialized = true;
@@ -233,6 +277,12 @@ class App {
             }
         }
         return false;
+    }
+
+    isRPCDrifting() {
+        const now = Date.now();
+        const tracker = this.eventTracker.lastTimeNewBlocks.getTime();
+        return Math.floor(Math.abs(now - tracker)) > (this.config.POLLING_INTERVAL * 5);
     }
 }
 

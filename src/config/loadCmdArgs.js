@@ -16,6 +16,7 @@ program
     .option("-m, --mnemonic [value]", "Mnemonic")
     .option("--max-query-block-range [value]", "Max query block range (default: 2000)")
     .option("-t, --tokens [value]", "Addresses of SuperTokens the sentinel should watch (default: all SuperTokens)")
+    .option("-e, --exclude-tokens [value]", "Addresses of SuperTokens the sentinel should excluded (default: none)")
     .option("-p, --db-path [value]", "Path of the DB file (default: db.sqlite)")
     .option("-d, --additional-liquidation-delay [value]", "Time to wait (seconds) after an agreement becoming critical before doing a liquidation (default: 0)")
     .option("--tx-timeout [value]", "Time to wait (seconds) before re-broadcasting a pending transaction with higher gas price (default: 60)")
@@ -40,6 +41,9 @@ program
         }
         if (args.tokens !== undefined) {
             process.env.TOKENS = args.tokens;
+        }
+        if(args.excludeTokens !== undefined) {
+            process.env.EXCLUDE_TOKENS = args.excludeTokens;
         }
         if (args.dbPath !== undefined) {
             process.env.DB_PATH = args.dbPath;

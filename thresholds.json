@@ -1,0 +1,14 @@
+{
+  "schema-version": "1",
+  "name": "sentinel-threshold",
+  "networks": {
+    "137": {
+      "name": "Polygon",
+      "minSentinelBalanceThreshold": "100000000000000000000",
+      "thresholds": [{
+        "address": "0xCAa7349CEA390F89641fe306D93591f87595dc1F",
+        "above": "3858024691"
+      }]
+    }
+  }
+}

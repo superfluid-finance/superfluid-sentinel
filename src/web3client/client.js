@@ -5,9 +5,10 @@ const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IIn
 const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
 const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
-const BatchContract = require("@superfluid-finance/ethereum-contracts/build/contracts/BatchLiquidator.json");
+const BatchContract = require("../abis/BatchLiquidator.json");
 const TogaContract = require("@superfluid-finance/ethereum-contracts/build/contracts/TOGA.json");
 const { wad4human } = require("@decentral.ee/web3-helpers");
+const BN = require("bn.js");
 
 /*
  *   Web3 and superfluid client:
@@ -168,7 +169,7 @@ class Client {
     }
   }
 
-  async loadSuperToken (newSuperToken) {
+  async loadSuperToken (newSuperToken, setPIC=false) {
     if (this.superTokens[newSuperToken.toLowerCase()] !== undefined) {
       return;
     }
@@ -182,6 +183,10 @@ class Client {
 
     //get liquidation period
     const resp = await this.gov.methods.getPPPConfig(this.sf._address, newSuperToken).call();
+    // if liquidation period and patrician period are not set
+    if (resp.liquidationPeriod === "0" && resp.patricianPeriod === "0") {
+      this.app.logger.error(`Liquidation period and patrician period are 0 for ${tokenSymbol} - ${tokenName} (${newSuperToken})`);
+    }
     superTokenHTTP.liquidation_period = parseInt(resp.liquidationPeriod);
     superTokenHTTP.patrician_period = parseInt(resp.patricianPeriod);
     const superTokenAddress = await this.resolver.methods.get(
@@ -212,6 +217,10 @@ class Client {
       patricianPeriod: parseInt(resp.patricianPeriod),
       listed: isListed
     });
+    // use for runtime subscription
+    if(setPIC) {
+      this.app.protocol.calculateAndSaveTokenDelay(newSuperToken, false);
+    }
   }
 
   isSuperTokenRegistered (token) {
@@ -237,11 +246,19 @@ class Client {
     }
   }
 
+    async isAccountBalanceBelowMinimum () {
+        const balance = await this.getAccountBalance();
+        return {
+          isBelow: new BN(balance).lt(new BN(this.app.config.SENTINEL_BALANCE_THRESHOLD)),
+          balance: balance
+        };
+    }
+
   getAccount () {
     return this.agentAccounts;
   }
 
-  async getCurrentBlockNumber (offset) {
+  async getCurrentBlockNumber (offset = 0) {
     return (await this.web3.eth.getBlockNumber()) - offset;
   }
 
@@ -250,14 +267,13 @@ class Client {
   }
 
   async sendSignedTransaction (signed) {
-    if (this._testMode === "TIMEOUT_ON_LOW_GAS_PRICE") {
-      if (signed.tx.txObject.gasPrice <= this._testOption.minimumGas) {
-        // eslint-disable-next-line promise/param-names
-        const delay = ms => new Promise(res => setTimeout(res, ms));
-        await delay(signed.tx.timeout * 2);
-      } else {
-        return this.web3.eth.sendSignedTransaction(signed.tx.rawTransaction);
-      }
+    const gasPrice = signed.tx.txObject.gasPrice;
+    const gasLimit = signed.tx.txObject.gasLimit;
+
+    if (this._testMode === "TIMEOUT_ON_LOW_GAS_PRICE" && gasPrice <= this._testOption.minimumGas) {
+      await new Promise(resolve => setTimeout(resolve, signed.tx.timeout * 2));
+    } else if (this._testMode === "REVERT_ON_BLOCK_GAS_LIMIT" && gasLimit > this._testOption.blockGasLimit) {
+      throw new Error("block gas limit");
     } else {
       return this.web3.eth.sendSignedTransaction(signed.tx.rawTransaction);
     }

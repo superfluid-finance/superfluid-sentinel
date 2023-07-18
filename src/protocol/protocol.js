@@ -72,8 +72,8 @@ class Protocol {
         new BN(arrPromise[0]),
         new BN(arrPromise[1].availableBalance),
         new BN(arrPromise[1].deposit),
-          this.app.client.superTokens[token.toLowerCase()].liquidation_period,
-          this.app.client.superTokens[token.toLowerCase()].patrician_period
+        this.app.client.superTokens[token.toLowerCase()].liquidation_period,
+        this.app.client.superTokens[token.toLowerCase()].patrician_period
       );
     } catch (err) {
       console.error(err);
@@ -120,32 +120,43 @@ class Protocol {
     }
   }
 
-  async calculateAndSaveTokenDelay (superToken) {
+  async calculateAndSaveTokenDelay (superToken, sendNotification = false) {
     try {
-      if(!this.app.config.OBSERVER) {
-        const tokenInfo = this.app.client.superTokenNames[superToken.toLowerCase()];
-        const currentTokenPIC = await this.getCurrentPIC(superToken);
-        const rewardAccount = await this.getRewardAddress(superToken);
-        const token = await this.app.db.models.SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });
-        token.pic = currentTokenPIC === undefined ? undefined : currentTokenPIC.pic;
-        token.pppmode = this.app.config.PIRATE ? this.PPPMode.Pirate : this.PPPMode.Pleb;
 
-        if (this.app.config.PIC === undefined) {
-          this.app.logger.debug(`${tokenInfo}: no PIC configured, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`);
-        } else if (currentTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === currentTokenPIC.pic.toLowerCase()) {
-          token.pppmode = this.PPPMode.Patrician;
-          this.app.logger.info(`${tokenInfo}: PIC active`);
-        } else if (rewardAccount.toLowerCase() === this.app.config.PIC.toLowerCase()) {
-          token.pppmode = this.PPPMode.Patrician;
-          this.app.logger.debug(`${tokenInfo}: configured PIC match reward address directly, set as PIC`);
-        } else {
-          this.app.logger.debug(`${tokenInfo}: you are not the PIC, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`);
-        }
-        await token.save();
-      } else {
+      if(this.app.config.OBSERVER) {
         this.app.logger.info("running as observer, ignoring PIC event");
+        return;
       }
 
+      const tokenInfo = this.app.client.superTokenNames[superToken.toLowerCase()];
+      const currentTokenPIC = await this.getCurrentPIC(superToken);
+      const rewardAccount = await this.getRewardAddress(superToken);
+      const token = await this.app.db.models.SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });
+      token.pic = currentTokenPIC === undefined ? undefined : currentTokenPIC.pic;
+      token.pppmode = this.app.config.PIRATE ? this.PPPMode.Pirate : this.PPPMode.Pleb;
+
+      let msg;
+      if (this.app.config.PIC === undefined) {
+        msg = `${tokenInfo}: no PIC configured, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`;
+        this.app.logger.debug(msg);
+      } else if (currentTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === currentTokenPIC.pic.toLowerCase()) {
+        token.pppmode = this.PPPMode.Patrician;
+        msg = `${tokenInfo}: you are the active PIC now`;
+        this.app.logger.info(msg);
+      } else if (rewardAccount.toLowerCase() === this.app.config.PIC.toLowerCase()) {
+        token.pppmode = this.PPPMode.Patrician;
+        msg = `${tokenInfo}: your configured PIC matches the token's reward address (no TOGA set)`;
+        this.app.logger.debug(msg);
+      } else {
+        msg = `${tokenInfo}: you are not the PIC, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`;
+        this.app.logger.debug(msg);
+      }
+
+      if(sendNotification) {
+        this.app.notifier.sendNotification(msg);
+      }
+
+      await token.save();
     } catch (err) {
       this.app.logger.error(err);
       throw Error(`Protocol.calculateAndSaveTokenDelay(): ${err}`);
@@ -161,35 +172,34 @@ class Protocol {
     }
   }
 
-  generateDeleteFlowABI (superToken, sender, receiver) {
+  generateDeleteStreamTxData(superToken, sender, receiver) {
     try {
-      return this.app.client.sf.methods.callAgreement(
-        this.app.client.CFAv1._address,
-        this.app.client.CFAv1.methods.deleteFlow(
-          superToken,
-          sender,
-          receiver,
-          "0x").encodeABI(),
-        "0x"
-      ).encodeABI();
-    } catch (err) {
-      this.app.logger.error(err);
-      throw Error(`Protocol.generateDeleteFlowABI() : ${err}`);
+      const isBatchContractExist = this.app.client.batch !== undefined && this.app.config.NETWORK_TYPE === "evm-l2";
+
+      if (isBatchContractExist) {
+        // on rollups, it's cheaper to always use the batch interface due to smaller calldata (which goes to L1)
+        const tx = this.app.client.batch.methods.deleteFlow(superToken, sender, receiver).encodeABI();
+        return { tx: tx, target: this.app.client.batch._address};
+      } else {
+        // on L1s, use the conventional host interface
+        const CFAv1Address = this.app.client.CFAv1._address;
+        const deleteFlowABI = this.app.client.CFAv1.methods.deleteFlow(superToken, sender, receiver, "0x").encodeABI();
+        const tx = this.app.client.sf.methods.callAgreement(CFAv1Address, deleteFlowABI, "0x").encodeABI();
+        return { tx: tx, target: this.app.client.sf._address};
+      }
+    } catch (error) {
+      this.app.logger.error(error);
+      throw new Error(`Protocol.generateDeleteStreamTxData(): ${error.message}`);
     }
   }
 
-  generateMultiDeleteFlowABI (superToken, senders, receivers) {
+  generateBatchLiquidationTxData(superToken, senders, receivers) {
     try {
-      return this.app.client.batch.methods.deleteFlows(
-        this.app.client.sf._address,
-        this.app.client.CFAv1._address,
-        superToken,
-        senders,
-        receivers
-      ).encodeABI();
-    } catch (err) {
-      this.app.logger.error(err);
-      throw Error(`Protocol.generateMultiDeleteFlowABI() : ${err}`);
+      const tx = this.app.client.batch.methods.deleteFlows(superToken, senders, receivers).encodeABI();
+      return { tx: tx, target: this.app.client.batch._address};
+    } catch (error) {
+      this.app.logger.error(error);
+      throw new Error(`Protocol.generateBatchLiquidationTxData(): ${error.message}`);
     }
   }
 
@@ -208,8 +218,9 @@ class Protocol {
       result.estimation = this._calculateDatePoint(availableBalance, totalNetFlowRate);
       const liquidation_period = new BN(liqPeriod);
       const patrician_period = new BN(plebPeriod);
-      const propDeposit = patrician_period.mul(deposit).div(liquidation_period);
-      result.estimationPleb = this._calculateDatePoint((availableBalance.add(propDeposit)), totalNetFlowRate);
+      const zero = new BN(0);
+      const proportional_deposit = liquidation_period.eq(zero) ? zero : patrician_period.mul(deposit).div(liquidation_period);
+      result.estimationPleb = this._calculateDatePoint((availableBalance.add(proportional_deposit)), totalNetFlowRate);
       result.estimationPirate = this._calculateDatePoint(availableBalance.add(deposit), totalNetFlowRate);
     }
 

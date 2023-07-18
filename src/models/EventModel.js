@@ -39,7 +39,10 @@ class EventModel {
           from: toChecksumAddress(event.returnValues.from),
           admin: toChecksumAddress(event.returnValues.admin),
           pool: toChecksumAddress(event.returnValues.pool),
+          distributor: toChecksumAddress(event.returnValues.distributor),
           publisher: toChecksumAddress(event.returnValues.publisher),
+          adjustmentFlowRecipient: toChecksumAddress(event.returnValues.adjustmentFlowRecipient),
+          operator: toChecksumAddress(event.returnValues.operator),
           indexId: event.returnValues.indexId,
           subscriber: toChecksumAddress(event.returnValues.subscriber),
           amount: event.returnValues.amount,
@@ -53,6 +56,18 @@ class EventModel {
           flowRate: (isNaN(parseInt(event.returnValues.flowRate))
             ? undefined
             : parseInt(event.returnValues.flowRate)),
+          oldFlowRate: (isNaN(parseInt(event.returnValues.oldFlowRate))
+              ? undefined
+              : parseInt(event.returnValues.oldFlowRate)),
+          newDistributorToPoolFlowRate: (isNaN(parseInt(event.returnValues.newDistributorToPoolFlowRate))
+              ? undefined
+              : parseInt(event.returnValues.newDistributorToPoolFlowRate)),
+          newTotalDistributionFlowRate: (isNaN(parseInt(event.returnValues.newTotalDistributionFlowRate))
+              ? undefined
+              : parseInt(event.returnValues.newTotalDistributionFlowRate)),
+          adjustmentFlowRate: (isNaN(parseInt(event.returnValues.adjustmentFlowRate))
+              ? undefined
+              : parseInt(event.returnValues.adjustmentFlowRate)),
           totalSenderFlowRate: (isNaN(parseInt(event.returnValues.totalSenderFlowRate))
             ? undefined
             : parseInt(event.returnValues.totalSenderFlowRate)),

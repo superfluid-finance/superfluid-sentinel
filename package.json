@@ -11,6 +11,7 @@
     "test-node": "node_modules/.bin/mocha -t 1000000 test/integration/node.integration.test.js",
     "test-gas": "node_modules/.bin/mocha -t 1000000 test/integration/gas.integration.test.js",
     "test-ida": "node_modules/.bin/mocha -t 1000000 test/integration/ida.integration.test.js",
+    "test-gda": "node_modules/.bin/mocha -t 1000000 test/integration/gda.integration.test.js",
     "test-cfa": "node_modules/.bin/mocha -t 1000000 test/integration/cfa.integration.test.js",
     "test-batch": "node_modules/.bin/mocha -t 1000000 test/integration/batch.integration.test.js",
     "test-unit": "node_modules/.bin/mocha 'test/unit-tests/**/*.js'",

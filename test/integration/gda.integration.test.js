@@ -55,12 +55,16 @@ describe("GDA integration tests", () => {
     await ganache.close();
   });
 
-  it("should make estimation on flowDistribution", async () => {
+  it("should make estimation on flowDistribution, make liquidation", async () => {
     try {
       // create pool
       const poolAddress = await helper.operations.createPoolGDA(helper.sf.superToken.options.address, accounts[0], accounts[0]);
-      // the pool is the receiver of the flowDistribution
-      const tx = await helper.operations.distributeFlow(helper.sf.superToken.options.address, accounts[0], poolAddress, "1000000000000000");
+      await helper.operations.updateMemberGDA(poolAddress, accounts[0], accounts[2], "100");
+      const tx = await helper.operations.distributeFlow(helper.sf.superToken.options.address, accounts[0], poolAddress, "10000000000000000");
+      await helper.sf.superToken.methods.transferAll(accounts[2]).send({
+        from: accounts[0],
+        gas: 1000000
+      });
       await ganache.helper.timeTravelOnce(provider, web3,1);
       await bootNode({pic: DEFAULT_REWARD_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug"});
       await ganache.helper.timeTravelOnce(provider, web3,60);

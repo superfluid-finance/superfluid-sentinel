@@ -5,6 +5,8 @@ const { Web3 } = require("web3");
 const ethers = require("ethers");
 const expect = require("chai").expect;
 
+const ISuperfluidPool = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluidPool.json");
+
 
 let helper;
 
@@ -51,6 +53,9 @@ async function setup(provider, agentAccount) {
         token: sf.tokens.fDAI,
         resolver: sf.resolver,
         toga: () => {throw new Error("TODO: implement TOGA")},
+        instantiatePool: (poolAddress) => {
+            return new web3.eth.Contract(ISuperfluidPool.abi, poolAddress);
+        }
     }
 
     helper.operations = {
@@ -129,6 +134,13 @@ async function setup(provider, agentAccount) {
             const events = await helper.sf.gda.getPastEvents("FlowDistributionUpdated", {fromBlock: tx.blockNumber, toBlock: tx.blockNumber});
             console.log(events);
             return tx;
+        },
+        updateMemberGDA: async (poolAddress, admin, member, newUnits) => {
+            if(helper === undefined) {
+                throw new Error("helper is undefined");
+            }
+            const pool = helper.sf.instantiatePool(poolAddress);
+            return pool.methods.updateMember(member, newUnits).send({from: admin, gas: 1000000});
         }
     }
 

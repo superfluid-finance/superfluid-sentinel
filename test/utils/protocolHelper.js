@@ -59,53 +59,85 @@ async function setup(provider, agentAccount) {
                 throw new Error("helper is undefined");
             }
             const data = helper.sf.cfa.methods.createFlow(superTokenAddress, receiver, flowRate, "0x").encodeABI();
-            return await helper.sf.host.methods.callAgreement(helper.sf.cfa.options.address, data, "0x").send({from: sender,gas: 1000000});
+            return helper.sf.host.methods.callAgreement(helper.sf.cfa.options.address, data, "0x").send({from: sender,gas: 1000000});
         },
         updateStream: async (superTokenAddress, sender, receiver, flowRate) => {
             if(helper === undefined) {
                 throw new Error("helper is undefined");
             }
             const data = helper.sf.cfa.methods.updateFlow(superTokenAddress, receiver, flowRate, "0x").encodeABI();
-            return await helper.sf.host.methods.callAgreement(helper.sf.cfa.options.address, data, "0x").send({from: sender,gas: 1000000});
+            return helper.sf.host.methods.callAgreement(helper.sf.cfa.options.address, data, "0x").send({from: sender,gas: 1000000});
         },
         deleteStream: async (superTokenAddress, sender, receiver) => {
             if(helper === undefined) {
                 throw new Error("helper is undefined");
             }
             const data = helper.sf.cfa.methods.deleteFlow(superTokenAddress, sender, receiver, "0x").encodeABI();
-            return await helper.sf.host.methods.callAgreement(helper.sf.cfa.options.address, data, "0x").send({from: sender,gas: 1000000});
+            return helper.sf.host.methods.callAgreement(helper.sf.cfa.options.address, data, "0x").send({from: sender,gas: 1000000});
         },
         createIDAIndex: async (superTokenAddress, sender, indexId) => {
             if(helper === undefined) {
                 throw new Error("helper is undefined");
             }
             const data = helper.sf.ida.methods.createIndex(superTokenAddress, indexId, "0x").encodeABI();
-            return await helper.sf.host.methods.callAgreement(helper.sf.ida.options.address, data, "0x").send({from: sender,gas: 1000000});
+            return helper.sf.host.methods.callAgreement(helper.sf.ida.options.address, data, "0x").send({from: sender,gas: 1000000});
         },
         updateIDASubscription: async (superTokenAddress, sender, receiver, indexId, amount) => {
             if(helper === undefined) {
                 throw new Error("helper is undefined");
             }
             const data = helper.sf.ida.methods.updateSubscription(superTokenAddress, indexId, receiver, amount, "0x").encodeABI();
-            return await helper.sf.host.methods.callAgreement(helper.sf.ida.options.address, data, "0x").send({from: sender,gas: 1000000});
+            return helper.sf.host.methods.callAgreement(helper.sf.ida.options.address, data, "0x").send({from: sender,gas: 1000000});
         },
         approveIDASubscription: async (superTokenAddress, sender, receiver, indexId) => {
             if(helper === undefined) {
                 throw new Error("helper is undefined");
             }
             const data = helper.sf.ida.methods.approveSubscription(superTokenAddress, sender, indexId, "0x").encodeABI();
-            return await helper.sf.host.methods.callAgreement(helper.sf.ida.options.address, data, "0x").send({from: receiver,gas: 1000000});
+            return helper.sf.host.methods.callAgreement(helper.sf.ida.options.address, data, "0x").send({from: receiver,gas: 1000000});
         },
         distributeIDA: async (superTokenAddress, sender, indexId, sendAmount) => {
             if(helper === undefined) {
                 throw new Error("helper is undefined");
             }
             const data = helper.sf.ida.methods.distribute(superTokenAddress, indexId, sendAmount, "0x").encodeABI();
-            return await helper.sf.host.methods.callAgreement(helper.sf.ida.options.address, data, "0x").send({from: sender,gas: 1000000});
+            return helper.sf.host.methods.callAgreement(helper.sf.ida.options.address, data, "0x").send({from: sender,gas: 1000000});
+        },
+        createPoolGDA: async (superTokenAddress, sender, admin) => {
+            if(helper === undefined) {
+                throw new Error("helper is undefined");
+            }
+            const tx = await helper.sf.gda.methods.createPool(superTokenAddress, admin).send({from: sender,gas: 1000000});
+            const events = await helper.sf.gda.getPastEvents("PoolCreated", {fromBlock: tx.blockNumber, toBlock: tx.blockNumber});
+            return events[0].returnValues.pool;
+        },
+        connectPoolGDA: async (poolAddress, sender) => {
+            if(helper === undefined) {
+                throw new Error("helper is undefined");
+            }
+            const data = helper.sf.gda.methods.connectPool(poolAddress, "0x").encodeABI();
+            return helper.sf.host.methods.callAgreement(helper.sf.gda.options.address, data, "0x").send({from: sender ,gas: 1000000});
+
+        },
+        distributeFlow: async (superTokenAddress, sender, pool, flowRate) => {
+            if(helper === undefined) {
+                throw new Error("helper is undefined");
+            }
+
+            const data = helper.sf.gda.methods.distributeFlow(superTokenAddress, sender, pool, flowRate, "0x").encodeABI();
+            const tx = await helper.sf.host.methods.callAgreement(helper.sf.gda.options.address, data, "0x").send({from: sender , gas: 1000000});
+            const events = await helper.sf.gda.getPastEvents("FlowDistributionUpdated", {fromBlock: tx.blockNumber, toBlock: tx.blockNumber});
+            console.log(events);
+            return tx;
         }
     }
 
     return helper;
+}
+
+async function getPoolEvent(blockNumber) {
+    return helper.sf.gda.getPastEvents("PoolCreated", {fromBlock: blockNumber, toBlock: blockNumber});
+
 }
 
 function expectLiquidation(event, node, account) {

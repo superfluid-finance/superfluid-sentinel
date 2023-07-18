@@ -42,8 +42,6 @@ class LoadEvents {
 
             let CFAFlowUpdated = await task.self.app.protocol.getCFAAgreementEvents("FlowUpdated", query);
             let GDAFlowDistributionUpdated = await task.self.app.protocol.getGDAgreementEvents("FlowDistributionUpdated", query);
-
-
             CFAFlowUpdated = CFAFlowUpdated.map(task.self.app.models.event.transformWeb3Event);
             CFAFlowUpdated.forEach(result => result.source = "CFA");
             GDAFlowDistributionUpdated = GDAFlowDistributionUpdated.map(task.self.app.models.event.transformWeb3Event);
@@ -54,7 +52,7 @@ class LoadEvents {
             GDAPoolCreated = GDAPoolCreated.map(task.self.app.models.event.transformWeb3Event);
             GDAPoolCreated.forEach(result => result.source = "GDA-PoolCreated");
             for(const event of GDAPoolCreated) {
-              const agreementId = task.self.app.protocol.generateGDAId(event.pool, event.pool);
+              const agreementId = await task.self.app.protocol.generateGDAId(event.admin, event.pool);
               await task.self.app.db.models.PoolCreatedModel.create({
                 agreementId: agreementId,
                 address: event.address,
@@ -67,7 +65,6 @@ class LoadEvents {
             // end debug only ----------------------------------
 
             const events = [...CFAFlowUpdated, ...GDAFlowDistributionUpdated];
-
             for (const event of events) {
               if (event.source === "CFA") {
                 const agreementId = task.self.app.protocol.generateCFAId(event.sender, event.receiver);
@@ -84,14 +81,19 @@ class LoadEvents {
                   hashId: hashId
                 });
               } else {
-                const agreementId = task.self.app.protocol.generateGDAId(event.pool, event.pool);
+                const agreementId = await task.self.app.protocol.generateGDAId(event.distributor, event.pool);
                 await task.self.app.db.models.FlowDistributionModel.create({
                   agreementId: agreementId,
-                  address: event.address,
-                  blockNumber: event.blockNumber,
                   superToken: event.token,
-                  admin: event.admin,
                   pool: event.pool,
+                  distributor: event.distributor,
+                  operator: event.operator,
+                  oldFlowRate: event.oldFlowRate,
+                  newDistributorToPoolFlowRate: event.newDistributorToPoolFlowRate,
+                  newPoolToDistributorFlowRate: event.newPoolToDistributorFlowRate,
+                  newTotalDistributionFlowRate: event.newTotalDistributionFlowRate,
+                  adjustmentFlowRate: event.adjustmentFlowRate,
+                  blockNumber: event.blockNumber
                 });
               }
             }
@@ -117,11 +119,15 @@ class LoadEvents {
 
       await queue.drain();
 
-      const tokens = await this.app.db.models.FlowUpdatedModel.findAll({
+      const tokensCFA = await this.app.db.models.FlowUpdatedModel.findAll({
         attributes: ["superToken"],
         group: ["superToken"]
       });
-
+      const tokensGDA = await this.app.db.models.FlowDistributionModel.findAll({
+        attributes: ["superToken"],
+        group: ["superToken"]
+      });
+      const tokens = [...tokensCFA, ...tokensGDA];
       // fresh database
       if (systemInfo === null) {
         await this.app.db.models.SystemModel.create({

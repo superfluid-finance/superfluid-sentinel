@@ -11,6 +11,8 @@ const TogaContract = require("@superfluid-finance/ethereum-contracts/build/contr
 const { wad4human } = require("@decentral.ee/web3-helpers");
 const BN = require("bn.js");
 
+const AccountManager = require("./accountManager");
+
 const { FMT_NUMBER, FMT_BYTES } = require("web3");
 
 const dataFormat = {
@@ -47,6 +49,7 @@ class Client {
       };
       this.isConnected = true;
       this.app.logger.info(`Client connected to RPC`);
+      this.accountManager = new AccountManager(this.web3);
     } catch (err) {
       this.app.logger.error(err);
       throw new Error(`Client.initialize(): ${err}`);
@@ -62,23 +65,19 @@ class Client {
       this.app.logger.info(`ChainId: ${await this.getChainId()}`)
       await this._loadSuperfluidContracts();
       if (this.app.config.PRIVATE_KEY !== undefined) {
-        this.app.logger.info("using provided private key");
-        const account = this.web3.eth.accounts.privateKeyToAccount(this.app.config.PRIVATE_KEY);
-        this.agentAccounts = {
-          address: account.address,
-          _privateKey: account.privateKey
-        };
+        this.accountManager.addAccountFromPrivateKey(this.app.config.PRIVATE_KEY);
       } else if (this.app.config.MNEMONIC !== undefined) {
-        this.app.logger.info("using provided mnemonic");
-        this.agentAccounts = this.app.genAccounts(this.app.config.MNEMONIC, this.app.config.MNEMONIC_INDEX);
+        this.accountManager.addAccountFromMnemonic(this.app.config.MNEMONIC, this.app.config.MNEMONIC_INDEX);
       } else if(this.app.config.OBSERVER) {
         this.app.logger.warn("Configuration is set to be Observer.");
       } else {
         throw Error("No account configured. Either PRIVATE_KEY or MNEMONIC needs to be set.");
       }
+
       if(!this.app.config.OBSERVER) {
-        this.app.logger.info(`account: ${this.agentAccounts.address}`);
-        const accBalance = await this.app.client.getAccountBalance();
+        // get first account from manager
+        this.app.logger.info(`account: ${this.accountManager.getAccountAddress(0)}`);
+        const accBalance = await this.accountManager.getAccountBalance(0);
         this.app.logger.info(`balance: ${wad4human(accBalance)}`);
         if (accBalance === "0") {
           this.app.logger.warn("!!!ACCOUNT NOT FUNDED!!!  Will fail to execute liquidations!");
@@ -253,27 +252,19 @@ class Client {
   }
 
   getAccountAddress () {
-    if(this.agentAccounts !== undefined) {
-      return this.agentAccounts.address;
-    }
+    return this.accountManager.getAccountAddress(0);
   }
 
   async getAccountBalance () {
-    if(this.agentAccounts !== undefined) {
-      return this.web3.eth.getBalance(this.agentAccounts.address);
-    }
+    return this.accountManager.getAccountBalance(0);
   }
 
     async isAccountBalanceBelowMinimum () {
-        const balance = await this.getAccountBalance();
-        return {
-          isBelow: new BN(balance).lt(new BN(this.app.config.SENTINEL_BALANCE_THRESHOLD)),
-          balance: balance
-        };
+      return this.accountManager.isAccountBalanceBelowMinimum(0, this.app.config.SENTINEL_BALANCE_THRESHOLD)
     }
 
   getAccount () {
-    return this.agentAccounts;
+    return this.accountManager.getAccount(0);
   }
 
   async getCurrentBlockNumber (offset = 0) {

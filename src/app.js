@@ -21,6 +21,7 @@ const SlackNotifier = require("./services/slackNotifier");
 const TelegramNotifier = require("./services/telegramNotifier");
 const NotifierJobs = require("./services/notificationJobs");
 const Errors = require("./utils/errors/errors");
+const CircularBuffer = require("./utils/circularBuffer");
 const { wad4human } = require("@decentral.ee/web3-helpers");
 
 class App {
@@ -64,6 +65,7 @@ class App {
         this.healthReport = new Report(this);
         this.server = new HTTPServer(this);
         this.timer = new Timer();
+        this.circularBuffer = new CircularBuffer(100);
 
         this.notifier = new Notifier(this);
         // at this stage we only work with slack or telegram

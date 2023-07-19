@@ -90,7 +90,6 @@ class Liquidator {
               : this.app.protocol.generateDeleteGDAStreamTxData(job.superToken, job.sender, job.receiver);
 
           const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice(); // will internally trhow and catch parse error a field
-
           // if we hit the gas price limit or estimation error, we stop the liquidation job and return to main loop
           if(baseGasPrice.error) {
             this.app.logger.error(`Liquidator.baseGasPrice - ${baseGasPrice.error}`);
@@ -223,7 +222,6 @@ class Liquidator {
     const gas = await this.app.gasEstimator.getGasLimit(wallet, txObject);
     if (gas.error !== undefined) {
       if (gas.error instanceof this.app.Errors.SmartContractError) {
-        console.error(`GasEstimation - ${gas.error}`)
         await this.app.protocol.checkFlow(txObject.superToken, txObject.flowSender, txObject.flowReceiver);
       }
       return {
@@ -333,10 +331,7 @@ class Liquidator {
         gasPrice: txObject.gasPrice,
         gasLimit: txObject.gasLimit
       };
-      let signed = await this.app.client.signTransaction(
-        unsignedTx,
-        wallet._privateKey.toString("hex")
-      );
+      let signed =  await wallet.signTransaction(unsignedTx);
       signed.txObject = txObject;
       signed.hitGasPriceLimit = updatedGas.hitGasPriceLimit;
       return {

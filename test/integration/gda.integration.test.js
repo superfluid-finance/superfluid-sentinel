@@ -66,13 +66,39 @@ describe("GDA integration tests", () => {
         gas: 1000000
       });
       await ganache.helper.timeTravelOnce(provider, web3,1);
-      await bootNode({pic: DEFAULT_REWARD_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug"});
-      await ganache.helper.timeTravelOnce(provider, web3,60);
+      await bootNode({pic: DEFAULT_REWARD_ADDRESS, resolver: helper.sf.resolver.options.address});
+      await ganache.helper.timeTravelUntil(provider, web3,60);
       const result = await protocolHelper.waitForEvent(helper, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
       await app.shutdown();
       protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
     } catch (err) {
       protocolHelper.exitWithError(err);
     }
+  });
+
+  it("should subscribe to new token and make estimation on flowDistribution from eventLoop", async () => {
+    try {
+      const poolAddress = await helper.operations.createPoolGDA(helper.sf.superToken.options.address, accounts[0], accounts[0]);
+      await helper.operations.updateMemberGDA(poolAddress, accounts[0], accounts[2], "100");
+      await ganache.helper.timeTravelOnce(provider, web3, 1);
+      await bootNode({pic: DEFAULT_REWARD_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug"});
+      await ganache.helper.timeTravelOnce(provider, web3,60);
+      const tx = await helper.operations.distributeFlow(helper.sf.superToken.options.address, accounts[0], poolAddress, "10000000000000000");
+      await helper.sf.superToken.methods.transferAll(accounts[2]).send({
+        from: accounts[0],
+        gas: 1000000
+      });
+      await ganache.helper.timeTravelUntil(provider, web3, 1, 20);
+
+      // sentinel should have pick new token from distributeFlow
+      const activityLog = app.circularBuffer.get(0);
+      expect(activityLog.event).to.equal(helper.sf.superToken.options.address.toString());
+
+      const result = await protocolHelper.waitForEvent(helper, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+      await app.shutdown();
+      protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
+  } catch (err) {
+    protocolHelper.exitWithError(err);
+  }
   });
 });

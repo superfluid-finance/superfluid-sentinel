@@ -14,11 +14,11 @@ describe("Account Manager", () => {
     let accountManager, app, mnemonic, getBalanceStub;
     let privateKeys = [];
 
+    const web3 = new Web3("http://fake:8545");
+
     beforeEach(() => {
-        app = {
-            web3: new Web3("http://fake:8545"),
-        };
-        accountManager = new AccountManager(app);
+
+        accountManager = new AccountManager(web3);
         mnemonic = bip39.generateMnemonic(); // generate random mnemonic
         for(let i = 0; i < 3; i++) {
             privateKeys[i] = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic))
@@ -30,8 +30,8 @@ describe("Account Manager", () => {
         }
 
         // stub for getBalance method - always return 100 ether
-        getBalanceStub = sinon.stub(app.web3.eth, "getBalance");
-        getBalanceStub.returns(Promise.resolve(app.web3.utils.toWei("100", "ether")));
+        getBalanceStub = sinon.stub(web3.eth, "getBalance");
+        getBalanceStub.returns(Promise.resolve(web3.utils.toWei("100", "ether")));
     });
 
     afterEach(() => {
@@ -39,8 +39,8 @@ describe("Account Manager", () => {
         privateKeys = [];
     });
 
-    it("#1.1 - should throw an error if app is not defined", () => {
-        expect(() => new AccountManager()).to.throw("AccountManager: app is not defined");
+    it("#1.1 - should throw an error if web3 is not defined", () => {
+        expect(() => new AccountManager()).to.throw("AccountManager: web3 is not defined");
     });
 
     it("#1.2 - should throw an error if mnemonic is invalid", () => {
@@ -100,23 +100,23 @@ describe("Account Manager", () => {
 
     it("#1.11 - should get an account balance", async () => {
         const balance = await accountManager.getAccountBalance(0);
-        expect(balance).to.equal(app.web3.utils.toWei("100", "ether"));
+        expect(balance).to.equal(web3.utils.toWei("100", "ether"));
         expect(getBalanceStub.calledOnce).to.be.true;
     });
 
     it("#1.12 - should check if an account balance is below minimum", async () => {
-        const threshold = new BN(app.web3.utils.toWei("200", "ether"));
+        const threshold = new BN(web3.utils.toWei("200", "ether"));
         const result = await accountManager.isAccountBalanceBelowMinimum(0, threshold);
         expect(result.isBelow).to.be.true;
-        expect(result.balance.toString()).to.equal(app.web3.utils.toWei("100", "ether"));
+        expect(result.balance.toString()).to.equal(web3.utils.toWei("100", "ether"));
         expect(getBalanceStub.calledOnce).to.be.true;
     });
 
     it("#1.13 - should check if an account balance is above minimum", async () => {
-        const threshold = new BN(app.web3.utils.toWei("50", "ether"));
+        const threshold = new BN(web3.utils.toWei("50", "ether"));
         const result = await accountManager.isAccountBalanceBelowMinimum(0, threshold);
         expect(result.isBelow).to.be.false;
-        expect(result.balance.toString()).to.equal(app.web3.utils.toWei("100", "ether"));
+        expect(result.balance.toString()).to.equal(web3.utils.toWei("100", "ether"));
         expect(getBalanceStub.calledOnce).to.be.true;
     });
 
@@ -125,7 +125,7 @@ describe("Account Manager", () => {
         const tx = {
             from: account.address,
             to: account.address,
-            value: app.web3.utils.toWei("1", "ether"),
+            value: web3.utils.toWei("1", "ether"),
         };
         const stub = sinon.stub(account, "signTransaction").returns(Promise.resolve({ rawTransaction: "0x123" }));
         const signedTx = await account.signTransaction(tx);
@@ -138,7 +138,7 @@ describe("Account Manager", () => {
         const tx = {
             from: account.address,
             to: account.address,
-            value: app.web3.utils.toWei("1", "ether"),
+            value: web3.utils.toWei("1", "ether"),
         };
         const errorMsg = "Error signing transaction";
         sinon.stub(account, "signTransaction").returns(Promise.reject(new Error(errorMsg)));

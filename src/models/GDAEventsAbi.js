@@ -1,47 +1,4 @@
 module.exports = {
-    BufferAdjusted: {
-        anonymous: false,
-        inputs: [
-            {
-                indexed: true,
-                internalType: "contract ISuperfluidToken",
-                name: "token",
-                type: "address"
-            },
-            {
-                indexed: true,
-                internalType: "address",
-                name: "pool",
-                type: "address"
-            },
-            {
-                indexed: true,
-                internalType: "address",
-                name: "from",
-                type: "address"
-            },
-            {
-                indexed: false,
-                internalType: "int256",
-                name: "bufferDelta",
-                type: "int256"
-            },
-            {
-                indexed: false,
-                internalType: "uint256",
-                name: "newBufferAmount",
-                type: "uint256"
-            },
-            {
-                indexed: false,
-                internalType: "uint256",
-                name: "totalBufferAmount",
-                type: "uint256"
-            }
-        ],
-        name: "BufferAdjusted",
-        type :"event"
-    },
     FlowDistributionUpdated: {
         anonymous: false,
         inputs: [
@@ -144,37 +101,6 @@ module.exports = {
             }
         ],
         name: "InstantDistributionUpdated",
-        type: "event"
-    },
-    PoolConnectionUpdated: {
-        anonymous: false,
-        inputs: [
-            {
-                indexed: true,
-                internalType: "contract ISuperfluidToken",
-                name: "token",
-                type: "address"
-            },
-            {
-                indexed: true,
-                internalType: "contract ISuperfluidPool",
-                name: "pool",
-                type: "address"
-            },
-            {
-                indexed: true,
-                internalType: "address",
-                name: "account",
-                type: "address"
-            },
-            {
-                indexed: false,
-                internalType: "bool",
-                name: "connected",
-                type: "bool"
-            }
-        ],
-        name: "PoolConnectionUpdated",
         type: "event"
     },
     PoolCreated: {

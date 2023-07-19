@@ -108,22 +108,15 @@ class Queues {
               senderFilterCFA,
               "CFA",
               "FlowUpdated",
-              task.self.app.protocol.getCFAAgreementEvents,
-              task.self.app.protocol.generateCFAId
+              task.self.app.protocol.getCFAAgreementEvents
           );
-          const flowDistributionUpdatedEvents = await task.self.app.queues._handleAgreementEvents(
+          let flowDistributionUpdatedEvents = await task.self.app.queues._handleAgreementEvents(
               task,
               senderFilerGDA,
               "GDA",
               "FlowDistributionUpdated",
-              task.self.app.protocol.getGDAgreementEvents,
-              task.self.app.protocol.generateGDAId
+              task.self.app.protocol.getGDAgreementEvents
           );
-          // flowDistributionUpdatedEvents needs to set distributor as sender and pool as receiver
-          flowDistributionUpdatedEvents.forEach((event) => {
-            event.sender = event.distributor;
-            event.receiver = event.pool;
-          });
 
           // merge both
           const events = [...flowUpdatedEvents, ...flowDistributionUpdatedEvents];
@@ -131,7 +124,7 @@ class Queues {
           break;
         } catch (err) {
           keepTrying++;
-          task.self.app.logger.error("newAgreementQueue " + err);
+          task.self.app.logger.error("Queues.agreementUpdateQueue(): " + err);
           if (keepTrying > task.self.app.config.NUM_RETRIES) {
             task.self.app.logger.error("Queues.agreementUpdateQueue(): exhausted number of retries");
             process.exit(1);
@@ -161,27 +154,40 @@ class Queues {
     return this.estimationQueue.length();
   }
 
-  async _handleAgreementEvents(task, senderFilter, source, eventName, getAgreementEventsFunc, generateIdFunc) {
+  async _handleAgreementEvents(task, senderFilter, source, eventName, getAgreementEventsFunc) {
     const app = task.self.app;
     let allFlowUpdatedEvents = await getAgreementEventsFunc(
         eventName,
         senderFilter,
         app
     );
+
+    // return if no events
+    if (!allFlowUpdatedEvents || allFlowUpdatedEvents.length === 0) {
+      return [];
+    }
     allFlowUpdatedEvents = allFlowUpdatedEvents.map(
-        task.self.app.models.event.transformWeb3Event
+        app.models.event.transformWeb3Event
     );
-
-    allFlowUpdatedEvents.sort((a, b) => a.blockNumber - b.blockNumber)
-        .forEach(e => {
-          e.agreementId = generateIdFunc(e.sender, e.receiver, app);
-          e.source = source;
-        });
-
+    allFlowUpdatedEvents.sort((a, b) => a.blockNumber - b.blockNumber);
+    if (source === "GDA") {
+      allFlowUpdatedEvents = await Promise.all(allFlowUpdatedEvents.map(async (event) => {
+        event.sender = event.distributor;
+        event.receiver = event.pool;
+        event.agreementId = await app.protocol.generateGDAId(event.distributor, event.pool);
+        event.flowRate = event.newDistributorToPoolFlowRate;
+        event.source = "GDA";
+        return event;
+      }));
+    } else {
+      allFlowUpdatedEvents.forEach((event) => {
+        event.agreementId = app.protocol.generateCFAId(event.sender, event.receiver);
+        event.source = "CFA";
+      });
+    }
     if (allFlowUpdatedEvents.length === 0) {
       task.self.app.logger.debug(`Didn't find ${eventName} for sender: ${task.account} in blockNumber: ${task.blockNumber} / blockHash ${task.blockHash}`);
     }
-
     return allFlowUpdatedEvents;
   }
 
@@ -196,7 +202,6 @@ class Queues {
         blockNumber: event.blockNumber,
         source: event.source
       });
-
       if (["CFA", "GDA"].includes(event.source)) {
         const accounts = event.source === "CFA" ? [event.sender, event.receiver] : [event.distributor, event.pool];
         accounts.forEach(account => {

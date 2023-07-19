@@ -62,6 +62,7 @@ class RPCClient {
         const gasPrice = signed.tx.txObject.gasPrice;
         const gasLimit = signed.tx.txObject.gasLimit;
         // test mode options
+        //TODO - this is a abstraction leak, should be moved to a test helper
         if (this._testMode === "TIMEOUT_ON_LOW_GAS_PRICE" && gasPrice <= this._testOption.minimumGas) {
             await new Promise((resolve) => setTimeout(resolve, signed.tx.timeout * 2));
         } else if (this._testMode === "REVERT_ON_BLOCK_GAS_LIMIT" && gasLimit > this._testOption.blockGasLimit) {
@@ -76,6 +77,7 @@ class RPCClient {
     }
 
     // set test mode for RPCClient
+    //TODO - this is a abstraction leak, should be moved to a test helper
     setTestFlag(flag, options) {
         this._testMode = flag;
         this._testOption = options;

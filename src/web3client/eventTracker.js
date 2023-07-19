@@ -159,6 +159,7 @@ class EventTracker {
     try {
       if(event && !this.app.client.isSuperTokenRegistered(event.token)) {
         this.app.logger.debug(`found a new token at ${event.token}`);
+        this.app.circularBuffer.push(event.token, null, "new token found");
         await this.app.client.loadSuperToken(event.token, true);
         return true;
       }
@@ -238,9 +239,19 @@ class EventTracker {
   }
 
   async findNewTokens(events) {
+    let foundAnyNewSuperToken = [];
     for (const log of events) {
-      return this.processAgreementEvent(this._parseEvent([CFAEvents.FlowUpdated, GDAEvents.FlowDistributionUpdated], log));
+      try {
+        const CFAEvent = this._parseEvent(CFAEvents, log);
+        const GDAEvent = this._parseEvent(GDAEvents, log);
+        foundAnyNewSuperToken.push(await this.processAgreementEvent(CFAEvent));
+        foundAnyNewSuperToken.push(await this.processAgreementEvent(GDAEvent));
+      } catch (err) {
+        console.error(err);
+      }
     }
+    // return true if any new super token is found
+    return foundAnyNewSuperToken.some((e) => e === true);
   }
 
   _parseEvent (abi, log) {

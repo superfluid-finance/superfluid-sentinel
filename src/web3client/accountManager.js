@@ -7,11 +7,11 @@ const BN = require("bn.js");
 */
 
 class AccountManager {
-    constructor(app) {
+    constructor(web3) {
 
-        if (!app) throw new Error("AccountManager: app is not defined");
+        if (!web3) throw new Error("AccountManager: web3 is not defined");
 
-        this.app = app;
+        this.web3 = web3;
         this.accounts = [];
     }
     // add account from mnemonic
@@ -31,7 +31,7 @@ class AccountManager {
 
     // add account from private key
     addAccountFromPrivateKey(privateKey) {
-        const newAccount = this.app.web3.eth.accounts.privateKeyToAccount(privateKey);
+        const newAccount = this.web3.eth.accounts.privateKeyToAccount(privateKey);
         // reject if account already exists
         if (this.accounts.find(account => account.address === newAccount.address)) {
             throw new Error("AccountManager: account already exists : " + newAccount.address);
@@ -74,7 +74,7 @@ class AccountManager {
             throw new Error("AccountManager: account does not exist");
         }
 
-        return this.app.web3.eth.getBalance(this.accounts[index].address);
+        return this.web3.eth.getBalance(this.accounts[index].address);
 
     }
 

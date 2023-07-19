@@ -128,11 +128,9 @@ async function setup(provider, agentAccount) {
             if(helper === undefined) {
                 throw new Error("helper is undefined");
             }
-
             const data = helper.sf.gda.methods.distributeFlow(superTokenAddress, sender, pool, flowRate, "0x").encodeABI();
             const tx = await helper.sf.host.methods.callAgreement(helper.sf.gda.options.address, data, "0x").send({from: sender , gas: 1000000});
             const events = await helper.sf.gda.getPastEvents("FlowDistributionUpdated", {fromBlock: tx.blockNumber, toBlock: tx.blockNumber});
-            console.log(events);
             return tx;
         },
         updateMemberGDA: async (poolAddress, admin, member, newUnits) => {

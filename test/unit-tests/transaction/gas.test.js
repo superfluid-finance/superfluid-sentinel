@@ -9,11 +9,9 @@ describe("Gas Tests", () => {
     beforeEach(() => {
         mockApp = {
             client: {
-                web3: {
-                    eth: {
+                RPCClient: {
                         estimateGas: sinon.stub(),
                         getGasPrice: sinon.stub()
-                    }
                 }
             },
             config: {
@@ -41,7 +39,7 @@ describe("Gas Tests", () => {
     it("#1.1 - should return expected gasLimit data", async () => {
         const mockWallet = { address: "walletAddress" };
         const mockTxObject = { target: "target", tx: "tx" };
-        mockApp.client.web3.eth.estimateGas.resolves(90);
+        mockApp.client.RPCClient.estimateGas.resolves(90);
         const result = await gas.getGasLimit(mockWallet, mockTxObject);
         expect(result).to.deep.equal({
             error: undefined,
@@ -52,7 +50,7 @@ describe("Gas Tests", () => {
     it("#1.2 - should return error if estimateGas throws", async () => {
         const mockWallet = { address: "walletAddress" };
         const mockTxObject = { target: "target", tx: "tx" };
-        mockApp.client.web3.eth.estimateGas.rejects(new Error("estimateGas error"));
+        mockApp.client.RPCClient.estimateGas.rejects(new Error("estimateGas error"));
         const result = await gas.getGasLimit(mockWallet, mockTxObject);
         expect(result).to.deep.equal({
             error: "parsed error",
@@ -61,7 +59,7 @@ describe("Gas Tests", () => {
     });
 
     it("#1.3 - should return expected getCappedGasPrice data", async () => {
-        mockApp.client.web3.eth.getGasPrice.resolves("80");
+        mockApp.client.RPCClient.getGasPrice.resolves("80");
         const result = await gas.getCappedGasPrice();
         expect(result).to.deep.equal({
             error: undefined,
@@ -71,7 +69,7 @@ describe("Gas Tests", () => {
     });
 
     it("#1.4 - getCappedGasPrice should return error if getGasPrice throws", async () => {
-        mockApp.client.web3.eth.getGasPrice.rejects(new Error("getGasPrice error"));
+        mockApp.client.RPCClient.getGasPrice.rejects(new Error("getGasPrice error"));
         const result = await gas.getCappedGasPrice();
         expect(result).to.deep.equal({
             error: "parsed error"

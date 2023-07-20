@@ -161,8 +161,8 @@ class Protocol {
       const tokenInfo = this.app.client.superTokenNames[superToken.toLowerCase()];
       const currentTokenPIC = await this.getCurrentPIC(superToken);
       const rewardAccount = await this.getRewardAddress(superToken);
-      //TODO: shouldn't call web3 directly
-      const token = await this.app.db.models.SuperTokenModel.findOne({ where: { address: this.app.client.web3.utils.toChecksumAddress(superToken) } });
+      const checkedSuperTokenAddress = this.app.client.toChecksumAddress(superToken);
+      const token = await this.app.db.models.SuperTokenModel.findOne({ where: { address: checkedSuperTokenAddress } });
       token.pic = currentTokenPIC === undefined ? undefined : currentTokenPIC.pic;
       token.pppmode = this.app.config.PIRATE ? this.PPPMode.Pirate : this.PPPMode.Pleb;
 
@@ -198,7 +198,7 @@ class Protocol {
     try {
       app = app || this.app;
       //TODO: shouldn't call web3 directly
-      return app.client.web3.utils.soliditySha3(sender, receiver);
+      return app.client.soliditySha3(sender, receiver);
     } catch (err) {
       this.app.logger.error(err);
       throw Error(`Protocol.generateCFAId(): ${err}`);
@@ -208,9 +208,8 @@ class Protocol {
   async generateGDAId (from, to, app) {
     try {
       app = app || this.app;
-      const chainId = await app.client.getChainId();
-      //TODO: shouldn't call web3 directly
-      return this.app.client.web3.utils.soliditySha3(chainId, "distributionFlow", from, to);
+      const chainId = await app.client.RPCClient.getChainId();
+      return this.app.client.soliditySha3(chainId, "distributionFlow", from, to);
     } catch (err) {
       this.app.logger.error(err);
       throw Error(`Protocol.generateGDAId(): ${err}`);

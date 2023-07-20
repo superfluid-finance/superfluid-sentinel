@@ -12,6 +12,7 @@ const { wad4human } = require("@decentral.ee/web3-helpers");
 const BN = require("bn.js");
 
 const AccountManager = require("./accountManager");
+const RPCClient = require("./rpcClient");
 
 const { FMT_NUMBER, FMT_BYTES } = require("web3");
 
@@ -31,38 +32,30 @@ class Client {
     this.superTokens = new Map();
     this.superTokensAddresses = [];
     this.version = this.app.config.PROTOCOL_RELEASE_VERSION;
-    this.isConnected = false;
     this.totalRequests = 0;
     this.totalSkippedBlockRequests = 0;
   }
 
   async connect () {
     try {
-      this.app.logger.info(`Client connecting to RPC...`);
-      if(!this.app.config.HTTP_RPC_NODE) throw new Error(`Client.connect(): no HTTP RPC set`);
-      const web3Provider = new Web3.providers.HttpProvider(this.app.config.HTTP_RPC_NODE, {
-        keepAlive: true
-      });
-      this.web3 = new Web3(web3Provider);
-      this.web3.eth.currentProvider.sendAsync = function (payload, callback) {
-        return this.send(payload, callback);
-      };
-      this.isConnected = true;
-      this.app.logger.info(`Client connected to RPC`);
-      this.accountManager = new AccountManager(this.web3);
-    } catch (err) {
+
+      this.RPCClient = new RPCClient(this.app);
+      await this.RPCClient.connect();
+      this.accountManager = new AccountManager(this.RPCClient.web3);
+
+    } catch(err) {
       this.app.logger.error(err);
-      throw new Error(`Client.initialize(): ${err}`);
+      throw new Error(`Client.RPC.connect(): ${err}`);
     }
   }
 
   async init () {
     try {
-      if(!this.isConnected) {
+      if(!this.RPCClient.isConnected) {
         throw Error(`Client.init(): not connected to rpc`);
       }
       this.app.logger.info(`Web3Client start`);
-      this.app.logger.info(`ChainId: ${await this.getChainId()}`)
+      this.app.logger.info(`ChainId: ${await this.RPCClient.getChainId()}`)
       await this._loadSuperfluidContracts();
       if (this.app.config.PRIVATE_KEY !== undefined) {
         this.accountManager.addAccountFromPrivateKey(this.app.config.PRIVATE_KEY);
@@ -83,7 +76,7 @@ class Client {
           this.app.logger.warn("!!!ACCOUNT NOT FUNDED!!!  Will fail to execute liquidations!");
         }
       }
-      this.web3.eth.transactionConfirmationBlocks = 3;
+
     } catch (err) {
       this.app.logger.error(err);
       throw Error(`Client.init(): ${err}`);
@@ -93,7 +86,7 @@ class Client {
   async loadBatchContract () {
     try {
       if (this.app.config.BATCH_CONTRACT !== undefined) {
-        this.batch = new this.web3.eth.Contract(BatchContract.abi, this.app.config.BATCH_CONTRACT);
+        this.batch = new this.RPCClient.web3.eth.Contract(BatchContract.abi, this.app.config.BATCH_CONTRACT);
       } else {
         this.app.logger.info("Batch Contract not found");
       }
@@ -106,7 +99,7 @@ class Client {
   async loadTogaContract () {
     try {
       if (this.app.config.TOGA_CONTRACT !== undefined) {
-        this.toga = new this.web3.eth.Contract(TogaContract.abi, this.app.config.TOGA_CONTRACT);
+        this.toga = new this.RPCClient.web3.eth.Contract(TogaContract.abi, this.app.config.TOGA_CONTRACT);
       } else {
         this.app.logger.info("TOGA Contract not found");
       }
@@ -119,24 +112,24 @@ class Client {
   async _loadSuperfluidContracts () {
     try {
 
-      this.resolver = new this.web3.eth.Contract(IResolver.abi,this.app.config.RESOLVER);
+      this.resolver = new this.RPCClient.web3.eth.Contract(IResolver.abi,this.app.config.RESOLVER);
       const superfluidAddress = await this.resolver.methods.get(`Superfluid.${this.version}`).call();
-      this.sf = new this.web3.eth.Contract(ISuperfluid.abi,superfluidAddress);
+      this.sf = new this.RPCClient.web3.eth.Contract(ISuperfluid.abi,superfluidAddress);
       const govAddress = await this.sf.methods.getGovernance().call();
-      this.gov = new this.web3.eth.Contract(SuperfluidGovernance.abi, govAddress);
+      this.gov = new this.RPCClient.web3.eth.Contract(SuperfluidGovernance.abi, govAddress);
       // Agreements
-      const cfaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
-      const gdaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.GeneralDistributionAgreement.v1");
-      const idaIdent = this.web3.utils.sha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
+      const cfaIdent = this.RPCClient.web3.utils.sha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
+      const gdaIdent = this.RPCClient.web3.utils.sha3("org.superfluid-finance.agreements.GeneralDistributionAgreement.v1");
+      const idaIdent = this.RPCClient.web3.utils.sha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
       const [cfaAddress, idaAddress, gdaAddress] = await Promise.all([
           this.sf.methods.getAgreementClass(cfaIdent).call(),
           this.sf.methods.getAgreementClass(idaIdent).call(),
           this.sf.methods.getAgreementClass(gdaIdent).call()
       ]);
 
-      this.CFAv1 = new this.web3.eth.Contract(ICFA.abi, cfaAddress);
-      this.IDAv1 = new this.web3.eth.Contract(IIDA.abi, idaAddress);
-      this.GDAv1 = new this.web3.eth.Contract(IGDA.abi, gdaAddress);
+      this.CFAv1 = new this.RPCClient.web3.eth.Contract(ICFA.abi, cfaAddress);
+      this.IDAv1 = new this.RPCClient.web3.eth.Contract(IIDA.abi, idaAddress);
+      this.GDAv1 = new this.RPCClient.web3.eth.Contract(IGDA.abi, gdaAddress);
 
       this.app.logger.info(`Resolver: ${this.app.config.RESOLVER}`);
       this.app.logger.info(`Superfluid: ${superfluidAddress}`);
@@ -190,7 +183,7 @@ class Client {
     if (this.superTokens[newSuperToken.toLowerCase()] !== undefined) {
       return;
     }
-    const superTokenHTTP = new this.web3.eth.Contract(ISuperToken.abi, newSuperToken);
+    const superTokenHTTP = new this.RPCClient.web3.eth.Contract(ISuperToken.abi, newSuperToken);
     const [tokenName, tokenSymbol] = await Promise.all(
       [
         superTokenHTTP.methods.name().call(),
@@ -246,7 +239,7 @@ class Client {
 
   async getChainId () {
     if (this.chainId === undefined) {
-      this.chainId = Number(await this.web3.eth.getChainId());
+      this.chainId = Number(await this.RPCClient.web3.eth.getChainId());
     }
     return this.chainId;
   }
@@ -268,12 +261,12 @@ class Client {
   }
 
   async getCurrentBlockNumber (offset = 0) {
-    const blockNumber = await this.web3.eth.getBlockNumber();
+    const blockNumber = await this.RPCClient.web3.eth.getBlockNumber();
     return Number(blockNumber) - offset;
   }
 
   async disconnect () {
-    this.web3.currentProvider.disconnect();
+    this.RPCClient.web3.currentProvider.disconnect();
   }
 
   async sendSignedTransaction (signed) {
@@ -285,15 +278,23 @@ class Client {
     } else if (this._testMode === "REVERT_ON_BLOCK_GAS_LIMIT" && gasLimit > this._testOption.blockGasLimit) {
       throw new Error("block gas limit");
     } else {
-      return this.web3.eth.sendSignedTransaction(signed.tx.rawTransaction, dataFormat);
+      return this.RPCClient.web3.eth.sendSignedTransaction(signed.tx.rawTransaction, dataFormat);
     }
   }
 
   async signTransaction (unsignedTx, pk) {
-    return this.web3.eth.accounts.signTransaction(
+    return this.RPCClient.web3.eth.accounts.signTransaction(
       unsignedTx,
       pk
     );
+  }
+
+  toChecksumAddress (address) {
+    return this.RPCClient.web3.utils.toChecksumAddress(address);
+  }
+
+  soliditySha3 (...args) {
+    return this.RPCClient.web3.utils.soliditySha3(...args);
   }
 
   getSFAddresses () {

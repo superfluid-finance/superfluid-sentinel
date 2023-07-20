@@ -38,7 +38,8 @@ class AccountManager {
         }
         this.accounts.push({
             address: newAccount.address,
-            signTransaction: (txParams) => newAccount.signTransaction(txParams)
+            signTransaction: (txParams) => newAccount.signTransaction(txParams),
+            txCount: (dataFormat) => this.web3.eth.getTransactionCount(newAccount.address, undefined, dataFormat)
         });
     }
 
@@ -93,7 +94,13 @@ class AccountManager {
         };
     }
 
+    async getTransactionCount(index = 0) {
+        if (!this.accounts[index]) {
+            throw new Error("AccountManager: account does not exist");
+        }
 
+        return this.web3.eth.getTransactionCount(this.accounts[index].address);
+    }
 }
 
 module.exports = AccountManager;

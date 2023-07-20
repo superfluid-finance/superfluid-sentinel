@@ -104,6 +104,10 @@ class RPCClient {
         return this.web3.eth.getGasPrice(dataFormat);
     }
 
+    getProvider() {
+        return this.web3.currentProvider;
+    }
+
     // set test mode for RPCClient
     //TODO - this is a abstraction leak, should be moved to a test helper
     setTestFlag(flag, options) {

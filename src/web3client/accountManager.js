@@ -7,11 +7,11 @@ const BN = require("bn.js");
 */
 
 class AccountManager {
-    constructor(web3) {
+    constructor(web3Instance) {
 
-        if (!web3) throw new Error("AccountManager: web3 is not defined");
+        if (!web3Instance) throw new Error("AccountManager: web3 is not defined");
 
-        this.web3 = web3;
+        this.web3 = web3Instance;
         this.accounts = [];
     }
     // add account from mnemonic

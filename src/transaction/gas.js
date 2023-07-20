@@ -9,15 +9,14 @@ class Gas {
     this.app = app;
   }
 
-  //TODO: This method shouldn't call web3 directly.
   async getGasLimit (wallet, txObject) {
     try {
 
-      let result = await this.app.client.web3.eth.estimateGas({
+      let result = await this.app.client.RPCClient.estimateGas({
         from: wallet.address,
         to: txObject.target,
         data: txObject.tx
-      }, undefined, dataFormat );
+      }, dataFormat);
 
       result += Math.ceil(Number(result) * 0.1);
       return {
@@ -32,10 +31,9 @@ class Gas {
     }
   }
 
-  //TODO: This method shouldn't call web3 directly.
   async getCappedGasPrice () {
     try {
-      const gasPrice = await this.app.client.web3.eth.getGasPrice(dataFormat);
+      const gasPrice = await this.app.client.RPCClient.getGasPrice(dataFormat);
       let hitGasPriceLimit = false;
       if (this.app.config.MAX_GAS_PRICE !== undefined &&
           parseInt(gasPrice) >= this.app.config.MAX_GAS_PRICE

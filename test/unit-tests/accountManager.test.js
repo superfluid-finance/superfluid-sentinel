@@ -11,7 +11,7 @@ describe("Account Manager", () => {
     const derivePath = "m/44'/60'/0'/0/";
     const invalidAddress = "0xInvalidAddress";
 
-    let accountManager, app, mnemonic, getBalanceStub;
+    let accountManager, app, mnemonic, getBalanceStub, getTransactionCountStub;
     let privateKeys = [];
 
     const web3 = new Web3("http://fake:8545");
@@ -32,10 +32,14 @@ describe("Account Manager", () => {
         // stub for getBalance method - always return 100 ether
         getBalanceStub = sinon.stub(web3.eth, "getBalance");
         getBalanceStub.returns(Promise.resolve(web3.utils.toWei("100", "ether")));
+        // stub getTransactionCount method - always return 10
+        getTransactionCountStub = sinon.stub(web3.eth, "getTransactionCount");
+        getTransactionCountStub.returns(10);
     });
 
     afterEach(() => {
         getBalanceStub.restore();
+        getTransactionCountStub.restore();
         privateKeys = [];
     });
 
@@ -170,5 +174,19 @@ describe("Account Manager", () => {
     it("#1.19 - should throw an error if trying to get account index with invalid address", () => {
         expect(() => accountManager
             .getAccountIndex(invalidAddress)).to.throw("AccountManager: account does not exist");
+    });
+
+    it("#1.20 - should get an account nonce by calling getTransactionCount", async () => {
+        const accountNonce = await accountManager.getTransactionCount(0);
+        expect(accountNonce).to.equal(10);
+        expect(getTransactionCountStub.calledOnce).to.be.true;
+    });
+
+    it("#1.21 - should get an account nonce by calling txCount on account", async () => {
+        const account = accountManager.getAccount(0);
+        const stub = sinon.stub(account, "txCount").returns(Promise.resolve(10));
+        const accountNonce = await account.txCount();
+        expect(accountNonce).to.equal(10);
+        sinon.assert.calledOnce(stub);
     });
 });

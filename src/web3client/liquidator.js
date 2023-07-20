@@ -80,8 +80,7 @@ class Liquidator {
     }
     const wallet = this.app.client.getAccount();
     const chainId = await this.app.client.getChainId();
-    //TODO: shouldn't call web3 directly
-    const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address, undefined, dataFormat);
+    const networkAccountNonce = await wallet.txCount(dataFormat);
     for (const job of work) {
       if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver, job.pppmode)) {
         try {
@@ -179,8 +178,7 @@ class Liquidator {
   async sendBatch (superToken, senders, receivers) {
     const wallet = this.app.client.getAccount();
     const chainId = await this.app.client.getChainId();
-    //TODO: shouldn't call web3 directly
-    const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address, undefined, dataFormat);
+    const networkAccountNonce = await wallet.txCount(dataFormat);
     try {
       const txData = this.app.protocol.generateBatchLiquidationTxData(superToken, senders, receivers);
       const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice();

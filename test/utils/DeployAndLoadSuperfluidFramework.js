@@ -20,6 +20,8 @@ const IGeneralDistributionAgreementV1 = require("@superfluid-finance/ethereum-co
 const Governance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
 const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
 const TestToken = require("@superfluid-finance/ethereum-contracts/build/contracts/TestToken.json");
+const BatchLiquidator = require("@superfluid-finance/ethereum-contracts/build/contracts/BatchLiquidator.json");
+const TOGA = require("@superfluid-finance/ethereum-contracts/build/contracts/TOGA.json");
 
 async function DeployAndLoadSuperfluidFramework(web3, provider) {
 
@@ -64,7 +66,9 @@ async function DeployAndLoadSuperfluidFramework(web3, provider) {
         ida: ida,
         gda: gda
     }
-    const governance = new web3.eth.Contract(Governance.abi, contractsFramework[0]);
+    const governance = new web3.eth.Contract(Governance.abi, contractsFramework[0])
+    const batchLiquidator = new web3.eth.Contract(BatchLiquidator.abi, contractsFramework[11]);
+    const toga = new web3.eth.Contract(TOGA.abi, contractsFramework[12]);
 
     return {
         governance: governance,
@@ -72,6 +76,8 @@ async function DeployAndLoadSuperfluidFramework(web3, provider) {
         resolver: resolver,
         agreements: agreements,
         superTokens: superTokens,
+        batchLiquidator: batchLiquidator,
+        toga: toga,
         tokens: tokens
     };
 }

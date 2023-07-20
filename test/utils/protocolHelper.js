@@ -52,7 +52,8 @@ async function setup(provider, agentAccount) {
         superToken: sf.superTokens.fDAIx,
         token: sf.tokens.fDAI,
         resolver: sf.resolver,
-        toga: () => {throw new Error("TODO: implement TOGA")},
+        batch: sf.batchLiquidator,
+        toga: () => sf.toga,
         instantiatePool: (poolAddress) => {
             return new web3.eth.Contract(ISuperfluidPool.abi, poolAddress);
         }
@@ -234,6 +235,7 @@ async function waitForEvent(protocolVars, sentinel, ganache, eventName, blockNum
 
 //TODO:REFACTOR
 async function waitForEventAtSameBlock(protocolVars, sentinel, ganache, eventName, numberOfEvents, blockNumber) {
+    blockNumber = Number(blockNumber);
     while (true) {
         try {
             console.log(`checking block: ${blockNumber}`);
@@ -245,7 +247,7 @@ async function waitForEventAtSameBlock(protocolVars, sentinel, ganache, eventNam
                 return Number(events[0].blockNumber);
             }
             await timeout(1000);
-            await ganache.helper.timeTravelOnce(1, sentinel, true);
+            await ganache.helper.timeTravelOnce(protocolVars.provider, protocolVars.web3, 1, sentinel, true);
             blockNumber += 1;
         } catch (err) {
             exitWithError(err);

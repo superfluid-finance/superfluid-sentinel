@@ -20,16 +20,14 @@ class EventTracker {
 
   async getPastBlockAndParseEvents (oldBlock, newBlock) {
     if(Number(oldBlock) <= Number(newBlock)) {
-      //TODO: shouldn't call web3 directly
-      let eventsFromBlocks = await this.app.client.web3.eth.getPastLogs({fromBlock: oldBlock,
+      let eventsFromBlocks = await this.app.client.RPCClient.getPastLogs({fromBlock: oldBlock,
         toBlock: newBlock,
         address: this.app.client.getSFAddresses()
       });
       // scan blocks from new tokens to subscribe before processing the remaining data
       const newTokens = await this.findNewTokens(eventsFromBlocks);
       if(newTokens) {
-        //TODO: shouldn't call web3 directly
-        eventsFromBlocks = await this.app.client.web3.eth.getPastLogs({fromBlock: oldBlock,
+        eventsFromBlocks = await this.app.client.RPCClient.getPastLogs({fromBlock: oldBlock,
           toBlock: newBlock,
           address: this.app.client.getSFAddresses()
         });
@@ -44,14 +42,13 @@ class EventTracker {
   }
 
   async start (oldBlock) {
-    if (this.app.client.isConnected === undefined || !this.app.client.isConnected) {
+    if (this.app.client.RPCClient.isConnected === undefined || !this.app.client.RPCClient.isConnected) {
       throw Error("BlockTracker.start() - client is not initialized ");
     }
     if (oldBlock) {
       this.oldSeenBlock = oldBlock;
     }
-    //TODO: shouldn't call web3 directly
-    const provider = this.app.client.web3.eth.currentProvider;
+    const provider = this.app.client.RPCClient.getProvider();
     this.blockTracker = new PollingBlockTracker({
       provider,
       pollingInterval: this.app.config.POLLING_INTERVAL

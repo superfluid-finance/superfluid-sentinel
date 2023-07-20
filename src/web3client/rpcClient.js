@@ -1,5 +1,11 @@
 const { Web3 } = require("web3");
 
+const { FMT_NUMBER, FMT_BYTES } = require("web3");
+
+const dataFormat = {
+    number: FMT_NUMBER.NUMBER
+}
+
 /*
     RPCClient is a wrapper class for web3
     It is used to connect to a RPC node and send transactions
@@ -23,7 +29,9 @@ class RPCClient {
             keepAlive: true,
         });
 
-        const web3 = new Web3(web3Provider);
+        const web3 = new Web3(web3Provider)
+        web3.eth.transactionConfirmationBlocks = 3;
+        // plug sendAsync to web3
         web3.eth.currentProvider.sendAsync = function (payload, callback) {
             return this.send(payload, callback);
         };
@@ -49,13 +57,17 @@ class RPCClient {
 
     async getChainId() {
         if (this.chainId === undefined) {
-            this.chainId = await this.web3.eth.getChainId();
+            this.chainId = await this.web3.eth.getChainId(dataFormat);
         }
         return this.chainId;
     }
 
+    async soliditySha3(...args) {
+        return this.web3.utils.soliditySha3(...args);
+    }
+
     async getCurrentBlockNumber(offset = 0) {
-        return (await this.web3.eth.getBlockNumber()) - offset;
+        return (await this.web3.eth.getBlockNumber(dataFormat)) - offset;
     }
 
     async sendSignedTransaction(signed) {
@@ -74,6 +86,22 @@ class RPCClient {
 
     async signTransaction(unsignedTx, pk) {
         return this.web3.eth.accounts.signTransaction(unsignedTx, pk);
+    }
+
+    async getPastLogs(options) {
+        if(!options) throw new Error("RPCClient.getPastLogs(): options is not defined");
+        if(!this.isConnected) throw new Error("RPCClient.getPastLogs(): not connected");
+        return this.web3.eth.getPastLogs(options);
+    }
+
+    async estimateGas(options, dataFormat) {
+        if(!options) throw new Error("RPCClient.estimateGas(): options is not defined");
+        if(!this.isConnected) throw new Error("RPCClient.estimateGas(): not connected");
+        return this.web3.eth.estimateGas(options, undefined, dataFormat);
+    }
+
+    async getGasPrice(dataFormat) {
+        return this.web3.eth.getGasPrice(dataFormat);
     }
 
     // set test mode for RPCClient

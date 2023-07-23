@@ -39,7 +39,7 @@ class Queues {
       }
       while (true) {
         try {
-          if (task.self.app.client.isSuperTokenRegistered(task.token)) {
+          if (task.self.app.client.superToken.isSuperTokenRegistered(task.token)) {
             task.self.app.logger.debug(`EstimationQueue - Parent Caller ${task.parentCaller} TransactionHash: ${task.transactionHash}`);
             const estimationData = await task.self.app.protocol.liquidationData(task.token, task.account);
             await task.self.app.db.models.AccountEstimationModel.upsert({

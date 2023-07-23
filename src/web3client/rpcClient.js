@@ -108,6 +108,10 @@ class RPCClient {
         return this.web3.currentProvider;
     }
 
+    getContract(abi, address, dataFormat) {
+        return new this.web3.eth.Contract(abi, address, dataFormat);
+    }
+
     // set test mode for RPCClient
     //TODO - this is a abstraction leak, should be moved to a test helper
     setTestFlag(flag, options) {

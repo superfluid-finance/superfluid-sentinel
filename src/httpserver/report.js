@@ -32,9 +32,6 @@ class Report {
     const waitingForNewBlocksSince = Math.floor(Math.abs(new Date() - lastTimeNewBlocks) / 1000);
     const RPCStuck = waitingForNewBlocksSince * 1000 > this.app.config.POLLING_INTERVAL * 2;
     const overallHealthy = rpcIsSyncing === false && databaseOk && !RPCStuck;
-    // TODO: add DB stats - size, nr table entries
-    // TODO: add liquidation stats: past and future 1h, 24h, 30d
-    // TODO add PIC status
     return {
       timestamp: Date.now(),
       healthy: overallHealthy,
@@ -61,8 +58,9 @@ class Report {
         estimationQueue: estimationQueueSize
       },
       protocol: {
-        cfa: this.app.client.CFAv1._address,
-        ida: this.app.client.IDAv1._address,
+        cfa: this.app.client.contracts.getCFAv1Address(),
+        ida: this.app.client.contracts.getIDAv1Address(),
+        gda: this.app.client.contracts.getGDAv1Address(),
         supertokens: Object.values(this.app.client.superTokenNames)
       }
     };

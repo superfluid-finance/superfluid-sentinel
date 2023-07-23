@@ -140,7 +140,7 @@ class LoadEvents {
         await systemInfo.save();
       }
       // Load supertokens
-      await this.app.client.loadSuperTokens(tokens.map(({ superToken }) => superToken));
+      await this.app.client.superToken.loadSuperTokens(tokens.map(({ superToken }) => superToken));
       if(!this.app.config.OBSERVER) {
         this.app.logger.info("start getting delays PIC system");
         // we need to query each supertoken to check pic address
@@ -160,7 +160,7 @@ class LoadEvents {
             }
           }
         }, this.app.config.CONCURRENCY);
-        const superTokens = this.app.client.superTokensAddresses;
+        const superTokens = this.app.client.superToken.superTokensAddresses;
         for (const st of superTokens) {
           delayChecker.push({
             self: this,

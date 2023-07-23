@@ -123,6 +123,7 @@ class App {
     async shutdown(force = false) {
         this._isShutdown = true;
         this.logger.info(`app.shutdown() - agent shutting down`);
+        this.circularBuffer.push("shutdown", null, "agent shutting down");
         this.time.resetTime();
         if (force) {
             process.exit(0);
@@ -239,10 +240,12 @@ class App {
             }
             //from this point on, sentinel is considered initialized.
             this._isInitialized = true;
+            this.circularBuffer.push("sentinel", null, "sentinel is initialized");
             // await x milliseconds before running next liquidation job
             if (!this.config.OBSERVER) {
                 this.run(this.liquidator, this.config.LIQUIDATION_JOB_AWAITS);
             } else {
+                this.circularBuffer.push("observer", null, "observer mode");
                 this.logger.warn(`ATTENTION: Configuration is set to be Observer. Liquidations will not be sent`);
             }
 

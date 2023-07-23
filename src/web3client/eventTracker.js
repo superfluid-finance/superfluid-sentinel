@@ -157,7 +157,7 @@ class EventTracker {
       if(event && !this.app.client.superToken.isSuperTokenRegistered(event.token)) {
         this.app.logger.debug(`found a new token at ${event.token}`);
         this.app.circularBuffer.push(event.token, null, "new token found");
-        await this.app.client.loadSuperToken(event.token, true);
+        await this.app.client.superToken.loadSuperToken(event.token, true);
         return true;
       }
       return false;

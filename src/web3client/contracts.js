@@ -14,7 +14,7 @@ const TogaContract = require("@superfluid-finance/ethereum-contracts/build/contr
 class Contracts {
     constructor(app) {
 
-        if(!app) throw new Error("ContractLoader: app is not defined");
+        if(!app) throw new Error("Contracts: app is not defined");
 
         this.app = app;
         // signal that the contracts have not been loaded yet
@@ -24,7 +24,7 @@ class Contracts {
     async initialize () {
 
         if(this.initialized) return;
-        this.app.logger.info("ContractLoader: Initializing contracts...");
+        this.app.logger.info("Contracts: Initializing contracts...");
         await this._loadResolverContract(this.app.config.RESOLVER);
         const superfluidAddress = await this.resolver.methods.get(`Superfluid.${this.app.config.PROTOCOL_RELEASE_VERSION}`).call();
         await this._loadSuperfluidContract(superfluidAddress);
@@ -52,7 +52,7 @@ class Contracts {
         this.initialized = true;
 
 
-        this.app.logger.info("ContractLoader: Contracts initialized");
+        this.app.logger.info("Contracts: Contracts initialized");
     }
 
     async getSuperTokenInstance (superTokenAddress) {
@@ -66,11 +66,51 @@ class Contracts {
         return {superToken, tokenName, tokenSymbol};
     }
 
+    getAgreementsAddresses() {
+        return [this.CFAv1.options.address, this.IDAv1.options.address, this.GDAv1.options.address]
+    }
+
+    getTogaAddress() {
+        if(this.toga) {
+            return this.toga.options.address;
+        }
+    }
+
+    getCFAv1Address() {
+        if(this.CFAv1) {
+            return this.CFAv1.options.address;
+        }
+    }
+
+    getIDAv1Address() {
+        if(this.IDAv1) {
+            return this.IDAv1.options.address;
+        }
+    }
+
+    getGDAv1Address() {
+        if(this.GDAv1) {
+            return this.GDAv1.options.address;
+        }
+    }
+
+    getBatchAddress() {
+        if(this.batch) {
+            return this.batch.options.address;
+        }
+    }
+
+    getSuperfluidAddress() {
+        if(this.sf) {
+            return this.sf.options.address;
+        }
+    }
+
     async _loadResolverContract (resolverAddress) {
         try {
             this.resolver = this.app.client.RPCClient.getContract(IResolver.abi, resolverAddress);
         } catch (err) {
-            this.app.logger.error("ContractLoader: Error loading resolver contract");
+            this.app.logger.error("Contracts: Error loading resolver contract");
             throw err;
         }
 
@@ -79,9 +119,9 @@ class Contracts {
     async _loadSuperfluidContract (superfluidAddress) {
         try {
             this.sf = this.app.client.RPCClient.getContract(ISuperfluid.abi, superfluidAddress);
-            this.app.logger.info("ContractLoader: loaded superfluid contract");
+            this.app.logger.info("Contracts: loaded superfluid contract");
         } catch (err) {
-            this.app.logger.error("ContractLoader: Error loading superfluid contract");
+            this.app.logger.error("Contracts: Error loading superfluid contract");
             throw err;
         }
     }
@@ -89,9 +129,9 @@ class Contracts {
     async _loadSuperfluidGovernanceContract (govAddress) {
         try {
             this.gov = this.app.client.RPCClient.getContract(SuperfluidGovernance.abi, govAddress);
-            this.app.logger.info("ContractLoader: loaded governance contract");
+            this.app.logger.info("Contracts: loaded governance contract");
         } catch (err) {
-            this.app.logger.error("ContractLoader: Error loading superfluid governance contract");
+            this.app.logger.error("Contracts: Error loading superfluid governance contract");
             throw err;
         }
     }
@@ -101,9 +141,9 @@ class Contracts {
             this.CFAv1 = this.app.client.RPCClient.getContract(ICFA.abi, cfaAddress);
             this.IDAv1 = this.app.client.RPCClient.getContract(IIDA.abi, idaAddress);
             this.GDAv1 = this.app.client.RPCClient.getContract(IGDA.abi, gdaAddress);
-            this.app.logger.info("ContractLoader: loaded agreements contracts");
+            this.app.logger.info("Contracts: loaded agreements contracts");
         } catch (err) {
-            this.app.logger.error("ContractLoader: Error loading agreement contracts");
+            this.app.logger.error("Contracts: Error loading agreement contracts");
             throw err;
         }
     }
@@ -112,12 +152,12 @@ class Contracts {
         try {
             if (batchAddress !== undefined) {
                 this.batch = new this.app.client.RPCClient.getContract(BatchContract.abi, batchAddress);
-                this.app.logger.info("ContractLoader: loaded batch contract");
+                this.app.logger.info("Contracts: loaded batch contract");
             } else {
-                this.app.logger.info("ContractLoader: Batch Contract not found");
+                this.app.logger.info("Contracts: Batch Contract not found");
             }
         } catch (err) {
-            this.app.logger.error("ContractLoader: Error loading batch contract");
+            this.app.logger.error("Contracts: Error loading batch contract");
             throw err;
         }
     }
@@ -126,15 +166,15 @@ class Contracts {
         try {
             if (togaAddress !== undefined) {
                 this.toga = new this.app.client.RPCClient.getContract(TogaContract.abi, togaAddress);
-                this.app.logger.info("ContractLoader: loaded toga contract");
+                this.app.logger.info("Contracts: loaded toga contract");
             } else {
-                this.app.logger.info("ContractLoader: TOGA Contract not found");
+                this.app.logger.info("Contracts: TOGA Contract not found");
             }
         } catch (err) {
-            this.app.logger.error("ContractLoader: Error loading toga contract");
+            this.app.logger.error("Contracts: Error loading toga contract");
             throw err;
         }
     }
 }
 
-module.exports = ContractLoader;
+module.exports = Contracts;

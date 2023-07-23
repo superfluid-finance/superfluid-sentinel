@@ -154,7 +154,7 @@ class EventTracker {
 
   async processAgreementEvent (event) {
     try {
-      if(event && !this.app.client.isSuperTokenRegistered(event.token)) {
+      if(event && !this.app.client.superToken.isSuperTokenRegistered(event.token)) {
         this.app.logger.debug(`found a new token at ${event.token}`);
         this.app.circularBuffer.push(event.token, null, "new token found");
         await this.app.client.loadSuperToken(event.token, true);
@@ -170,7 +170,7 @@ class EventTracker {
   processIDAEvent (event) {
     try {
       if(event && event.eventName === "IndexUpdated") {
-        if (this.app.client.isSuperTokenRegistered(event.token)) {
+        if (this.app.client.superToken.isSuperTokenRegistered(event.token)) {
           this.app.logger.debug(`[IndexUpdated] - ${event.eventName} [${event.token}] - publisher ${event.publisher}`);
           this.app.queues.estimationQueue.push([
             {
@@ -196,7 +196,7 @@ class EventTracker {
   processGDAEvent (event) {
     try {
       if(event && event.eventName === "InstantDistributionUpdated") {
-        if (this.app.client.isSuperTokenRegistered(event.token)) {
+        if (this.app.client.superToken.isSuperTokenRegistered(event.token)) {
           this.app.logger.debug(`[InstantDistributionUpdated] - ${event.eventName} [${event.token}] - publisher ${event.publisher}`);
           this.app.queues.estimationQueue.push([
             {
@@ -222,7 +222,7 @@ class EventTracker {
   async processTOGAEvent (event) {
     try {
       if(event && event.eventName === "NewPIC") {
-        if (this.app.client.isSuperTokenRegistered(event.token)) {
+        if (this.app.client.superToken.isSuperTokenRegistered(event.token)) {
           this.app.logger.info(`[TOGA]: ${event.eventName} [${event.token}] new pic ${event.pic}`);
           await this.app.protocol.calculateAndSaveTokenDelay(event.token, true);
         } else {

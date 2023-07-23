@@ -21,7 +21,7 @@ class SuperTokenManager {
         const { superToken, tokenName, tokenSymbol } = await this.app.client.contracts.getSuperTokenInstance(newSuperToken);
         // get liquidation period
         const pppConfig = await this.app.client.contracts.gov.methods.getPPPConfig(
-            this.app.client.contracts.sf.options.address,
+            this.app.client.contracts.getSuperfluidAddress(),
             newSuperToken
         ).call();
 
@@ -76,11 +76,10 @@ class SuperTokenManager {
         if (this.superTokens[newSuperToken.toLowerCase()] !== undefined) {
             return;
         }
-        const { superToken, tokenName, tokenSymbol } = this.app.client.contracts.getSuperTokenInstance(newSuperToken);
-
+        const { superToken, tokenName, tokenSymbol } = await this.app.client.contracts.getSuperTokenInstance(newSuperToken);
         // get liquidation period
         const pppConfig = await this.app.client.contracts.gov.methods.getPPPConfig(
-            this.app.client.contracts.sf.options.address,
+            this.app.client.contracts.getSuperfluidAddress(),
             newSuperToken
         ).call();
 
@@ -91,7 +90,7 @@ class SuperTokenManager {
         superToken.liquidation_period = parseInt(pppConfig.liquidationPeriod);
         superToken.patrician_period = parseInt(pppConfig.patricianPeriod);
 
-        const superTokenAddress = await this.contracts.resolver.methods.get(
+        const superTokenAddress = await this.app.client.contracts.resolver.methods.get(
             `supertokens.${this.version}.${tokenSymbol}`
         ).call();
 

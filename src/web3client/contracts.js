@@ -47,8 +47,8 @@ class Contracts {
 
         await this._loadAgreementContracts(cfaAddress, idaAddress, gdaAddress);
         // depending on the network/configuration we are using, we might not have a batch contract or a toga contract
-        await this._loadBatchContract(this.app.config.BATCH_ADDRESS);
-        await this._loadTogaContract(this.app.config.TOGA_ADDRESS);
+        await this._loadBatchContract(this.app.config.BATCH_CONTRACT);
+        await this._loadTogaContract(this.app.config.TOGA_CONTRACT);
         this.initialized = true;
 
 

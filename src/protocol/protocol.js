@@ -13,7 +13,7 @@ class Protocol {
   async getAccountRealtimeBalanceOfNow (token, address) {
     try {
       this.app.client.addTotalRequest();
-      return this.app.client.superTokens[token.toLowerCase()].methods.realtimeBalanceOfNow(
+      return this.app.client.superToken.superTokens[token.toLowerCase()].methods.realtimeBalanceOfNow(
         address
       ).call();
     } catch (err) {
@@ -25,7 +25,7 @@ class Protocol {
   async getCFAUserNetFlow (token, account) {
     try {
       this.app.client.addTotalRequest();
-      return this.app.client.CFAv1.methods.getNetFlow(token, account).call();
+      return this.app.client.contracts.CFAv1.methods.getNetFlow(token, account).call();
     } catch (err) {
       console.error(err);
       throw Error(`Protocol.getCFAUserNetFlow(): ${err}`);
@@ -36,7 +36,7 @@ class Protocol {
   async getGDAUserNetFlow (token, account) {
     try {
       this.app.client.addTotalRequest();
-      return this.app.client.GDAv1.methods.getNetFlow(token, account).call();
+      return this.app.client.contracts.GDAv1.methods.getNetFlow(token, account).call();
     } catch (err) {
       console.error(err);
       throw Error(`Protocol.getGDAUserNetFlow(): ${err}`);
@@ -54,7 +54,7 @@ class Protocol {
     try {
       app = app || this.app;
       app.client.addTotalRequest();
-      return app.client.CFAv1.getPastEvents(eventName, filter);
+      return app.client.contracts.CFAv1.getPastEvents(eventName, filter);
     } catch (err) {
       console.error("getCFAAgreementEvents " + err);
       throw Error(`Protocol.getCFAAgreementEvents(): ${err}`);
@@ -66,7 +66,7 @@ class Protocol {
     try {
       app = app || this.app;
       app.client.addTotalRequest();
-      return app.client.GDAv1.getPastEvents(eventName, filter);
+      return app.client.contracts.GDAv1.getPastEvents(eventName, filter);
     } catch (err) {
       console.error("getGDAgreementEvents" + err);
       throw Error(`Protocol.getGDAgreementEvents(): ${err}`);
@@ -76,7 +76,7 @@ class Protocol {
   async isAccountCriticalNow (superToken, account) {
     try {
       this.app.client.addTotalRequest();
-      return this.app.client.superTokens[superToken.toLowerCase()].methods.isAccountCriticalNow(account).call();
+      return this.app.client.superToken.superTokens[superToken.toLowerCase()].methods.isAccountCriticalNow(account).call();
     } catch (err) {
       throw Error(`Protocol.isAccountCriticalNow(): ${err}`);
     }
@@ -85,7 +85,7 @@ class Protocol {
   async isAccountSolventNow (superToken, account) {
     try {
       this.app.client.addTotalRequest();
-      return this.app.client.superTokens[superToken.toLowerCase()].methods.isAccountSolventNow(account).call();
+      return this.app.client.superToken.superTokens[superToken.toLowerCase()].methods.isAccountSolventNow(account).call();
     } catch (err) {
       throw Error(`Protocol.isAccountCriticalNow(): ${err}`);
     }
@@ -102,8 +102,8 @@ class Protocol {
         new BN(totalNetFlow),
         new BN(accountRealtimeBalanceOfNow.availableBalance),
         new BN(accountRealtimeBalanceOfNow.deposit),
-        this.app.client.superTokens[token.toLowerCase()].liquidation_period,
-        this.app.client.superTokens[token.toLowerCase()].patrician_period
+        this.app.client.superToken.superTokens[token.toLowerCase()].liquidation_period,
+        this.app.client.superToken.superTokens[token.toLowerCase()].patrician_period
       );
     } catch (err) {
       console.error(err);
@@ -114,7 +114,7 @@ class Protocol {
   async checkFlow (superToken, sender, receiver) {
     try {
       this.app.client.addTotalRequest();
-      const result = await this.app.client.CFAv1.methods.getFlow(superToken, sender, receiver).call();
+      const result = await this.app.client.contracts.CFAv1.methods.getFlow(superToken, sender, receiver).call();
       if (result.flowRate !== "0") {
         return result;
       }
@@ -125,8 +125,8 @@ class Protocol {
 
   async getCurrentPIC (superToken) {
     try {
-      if (this.app.client.toga !== undefined) {
-        return await this.app.client.toga.methods.getCurrentPICInfo(superToken).call();
+      if (this.app.client.contracts.toga !== undefined) {
+        return await this.app.client.contracts.toga.methods.getCurrentPICInfo(superToken).call();
       }
     } catch (err) {
       throw Error(`Protocol.getCurrentPIC(): ${err}`);
@@ -135,7 +135,7 @@ class Protocol {
 
   async getRewardAddress (superToken) {
     try {
-      return await this.app.client.gov.methods.getRewardAddress(this.app.client.sf._address, superToken).call();
+      return await this.app.client.contracts.gov.methods.getRewardAddress(this.app.client.contracts.getSuperfluidAddress(), superToken).call();
     } catch (err) {
       throw Error(`Protocol.getRewardAddress(): ${err}`);
     }
@@ -144,7 +144,7 @@ class Protocol {
   async isPatricianPeriodNow(superToken, account) {
     try {
       this.app.client.addTotalRequest();
-      return await this.app.client.CFAv1.methods.isPatricianPeriodNow(superToken, account).call();
+      return await this.app.client.contracts.CFAv1.methods.isPatricianPeriodNow(superToken, account).call();
     } catch (err) {
       throw Error(`Protocol.isPatricianPeriodNow(): ${err}`);
     }
@@ -218,18 +218,18 @@ class Protocol {
 
   generateDeleteCFAStreamTxData(superToken, sender, receiver) {
     try {
-      const isBatchContractExist = this.app.client.batch !== undefined && this.app.config.NETWORK_TYPE === "evm-l2";
+      const isBatchContractExist = this.app.client.contracts.batch !== undefined && this.app.config.NETWORK_TYPE === "evm-l2";
 
       if (isBatchContractExist) {
         // on rollups, it's cheaper to always use the batch interface due to smaller calldata (which goes to L1)
-        const tx = this.app.client.batch.methods.deleteFlow(superToken, sender, receiver).encodeABI();
-        return { tx: tx, target: this.app.client.batch._address};
+        const tx = this.app.client.contracts.batch.methods.deleteFlow(superToken, sender, receiver).encodeABI();
+        return { tx: tx, target: this.app.client.contracts.getBatchAddress()};
       } else {
         // on L1s, use the conventional host interface
-        const CFAv1Address = this.app.client.CFAv1._address;
-        const deleteFlowABI = this.app.client.CFAv1.methods.deleteFlow(superToken, sender, receiver, "0x").encodeABI();
-        const tx = this.app.client.sf.methods.callAgreement(CFAv1Address, deleteFlowABI, "0x").encodeABI();
-        return { tx: tx, target: this.app.client.sf._address};
+        const CFAv1Address = this.app.client.contracts.getCFAv1Address();
+        const deleteFlowABI = this.app.client.contracts.CFAv1.methods.deleteFlow(superToken, sender, receiver, "0x").encodeABI();
+        const tx = this.app.client.contracts.sf.methods.callAgreement(CFAv1Address, deleteFlowABI, "0x").encodeABI();
+        return { tx: tx, target: this.app.client.contracts.getSuperfluidAddress()};
       }
     } catch (error) {
       this.app.logger.error(error);
@@ -239,10 +239,10 @@ class Protocol {
 
   generateDeleteGDAStreamTxData(superToken, sender, receiver) {
     try {
-        const GDAv1Address = this.app.client.GDAv1._address;
-        const distributeFlowABI = this.app.client.GDAv1.methods.distributeFlow(superToken, sender, receiver, 0, "0x").encodeABI();
-        const tx = this.app.client.sf.methods.callAgreement(GDAv1Address, distributeFlowABI, "0x").encodeABI();
-        return { tx: tx, target: this.app.client.sf._address};
+        const GDAv1Address = this.app.client.contracts.contracts.getGDAv1Address();
+        const distributeFlowABI = this.app.client.contracts.GDAv1.methods.distributeFlow(superToken, sender, receiver, 0, "0x").encodeABI();
+        const tx = this.app.client.contracts.sf.methods.callAgreement(GDAv1Address, distributeFlowABI, "0x").encodeABI();
+        return { tx: tx, target: this.app.client.contracts.getSuperfluidAddress()};
     } catch (error) {
       this.app.logger.error(error);
       throw new Error(`Protocol.generateDeleteGDAStreamTxData(): ${error.message}`);
@@ -251,8 +251,8 @@ class Protocol {
 
   generateBatchLiquidationTxData(superToken, senders, receivers) {
     try {
-      const tx = this.app.client.batch.methods.deleteFlows(superToken, senders, receivers).encodeABI();
-      return { tx: tx, target: this.app.client.batch._address};
+      const tx = this.app.client.contracts.batch.methods.deleteFlows(superToken, senders, receivers).encodeABI();
+      return { tx: tx, target: this.app.client.contracts.getBatchAddress()};
     } catch (error) {
       this.app.logger.error(error);
       throw new Error(`Protocol.generateBatchLiquidationTxData(): ${error.message}`);

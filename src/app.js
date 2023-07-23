@@ -180,12 +180,7 @@ class App {
             // create all web3 infrastructure needed
             await this.client.init();
             this.notifier.sendNotification(`RPC connected with chainId ${await this.client.getChainId()}, account ${this.client.agentAccounts?.address} has balance ${this.client.agentAccounts ? wad4human(await this.client.getAccountBalance()) : "N/A"}`);
-            if (this.config.BATCH_CONTRACT !== undefined) {
-                await this.client.loadBatchContract();
-            }
-            if (this.config.TOGA_CONTRACT !== undefined) {
-                await this.client.loadTogaContract();
-            }
+            
             //check conditions to decide if getting snapshot data
             if ((!this.utils.fileExist(this.config.DB) || this.config.COLD_BOOT) &&
                 this.config.FASTSYNC && this.config.CID) {

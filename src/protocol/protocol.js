@@ -249,6 +249,23 @@ class Protocol {
     }
   }
 
+  generateBatchLiquidationTxDataNewBatch(superToken, liquidationParams) {
+    try {
+      let structParams = [];
+      for(let i = 0; i < liquidationParams.length; i++) {
+        structParams.push({
+            agreementOperation: liquidationParams[i].source === "CFA" ? "0" : "1",
+            sender: liquidationParams[i].sender,
+            receiver: liquidationParams[i].receiver
+        })
+      }
+      const tx = this.app.client.contracts.batch.methods.deleteFlows(superToken, structParams).encodeABI();
+      return { tx: tx, target: this.app.client.contracts.getBatchAddress()};
+    } catch (error) {
+      this.app.logger.error(error);
+      throw new Error(`Protocol.generateBatchLiquidationTxData(): ${error.message}`);
+    }
+  }
   generateBatchLiquidationTxData(superToken, senders, receivers) {
     try {
       const tx = this.app.client.contracts.batch.methods.deleteFlows(superToken, senders, receivers).encodeABI();

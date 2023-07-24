@@ -126,14 +126,14 @@ class EventTracker {
             break;
           }
           case "AgreementLiquidatedBy": {
-            this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.penaltyAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
+            this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superToken,superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.penaltyAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
             if (event.bailoutAmount.toString() !== "0") {
               this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.bailoutAmount)}`);
             }
             break;
           }
           case "AgreementLiquidatedV2": {
-            this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.targetAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
+            this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superToken.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.targetAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
             const ramount = new BN(event.rewardAmount)
             const delta = new BN(event.targetAccountBalanceDelta)
             const isBailout = ramount.add(delta).lt(0);

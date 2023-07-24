@@ -5,6 +5,7 @@ const App = require("../../src/app");
 
 const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
 const DEFAULT_REWARD_ADDRESS = "0x0000000000000000000000000000000000000045";
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 let app, accounts, snapId, helper, web3, ganache, provider;
 
@@ -34,6 +35,8 @@ describe("Batch liquidation tests", () => {
     provider = await ganache.provider;
     helper = await protocolHelper.setup(provider, AGENT_ACCOUNT);
     helper.provider = provider;
+    helper.togaAddress = helper.sf.toga.options.address;
+    helper.batchAddress = helper.sf.batch.options.address;
     web3 = helper.web3;
     accounts = helper.accounts;
     snapId = await ganache.helper.takeEvmSnapshot(provider);
@@ -74,11 +77,12 @@ describe("Batch liquidation tests", () => {
       await ganache.helper.timeTravelOnce(provider, web3, 60);
 
       await bootNode({
-        pic: DEFAULT_REWARD_ADDRESS,
+        pic: ZERO_ADDRESS,
         resolver: helper.sf.resolver.options.address,
         batch_contract: helper.sf.batch.options.address,
-        polling_interval: 1,
+        toga_contract: helper.togaAddress,
         max_tx_number: 5,
+        liquidation_job_awaits: 15000,
         log_level: "debug"
       });
       await ganache.helper.timeTravelOnce(provider, web3, 1000, app, true);

@@ -5,6 +5,7 @@ const App = require("../../src/app");
 
 const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
 const DEFAULT_REWARD_ADDRESS = "0x0000000000000000000000000000000000000045";
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 let app, accounts, snapId, helper, web3, ganache, provider;
 
@@ -30,6 +31,7 @@ describe("CFA tests", () => {
     provider = await ganache.provider;
     helper = await protocolHelper.setup(provider, AGENT_ACCOUNT);
     helper.provider = provider;
+    helper.togaAddress = helper.sf.toga.options.address;
     web3 = helper.web3;
     accounts = helper.accounts;
     snapId = await ganache.helper.takeEvmSnapshot(provider);
@@ -61,6 +63,7 @@ describe("CFA tests", () => {
       await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "100000000000");
       await ganache.helper.timeTravelOnce(provider, web3,1);
       await bootNode({pic: DEFAULT_REWARD_ADDRESS, resolver: helper.sf.resolver.options.address});
+      await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug", toga_contract: helper.togaAddress});
       await ganache.helper.timeTravelOnce(provider, web3, 60);
       const tx = await helper.sf.superToken.methods.transferAll(accounts[2]).send({
         from: accounts[0],
@@ -78,7 +81,7 @@ describe("CFA tests", () => {
     try {
       await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "1000");
       await ganache.helper.timeTravelOnce(provider, web3,1);
-      await bootNode({pic: DEFAULT_REWARD_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug"});
+      await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug", toga_contract: helper.togaAddress});
       await ganache.helper.timeTravelOnce(provider, web3, 60);
       await helper.operations.updateStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "100000000000");
       await ganache.helper.timeTravelOnce(provider, web3, 60);
@@ -98,7 +101,7 @@ describe("CFA tests", () => {
     try {
       await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "1000000000");
       await ganache.helper.timeTravelOnce(provider, web3,1);
-      await bootNode({pic: DEFAULT_REWARD_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug"});
+      await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug", toga_contract: helper.togaAddress});
       await ganache.helper.timeTravelOnce(provider, web3, 60);
       await helper.operations.createStream(helper.sf.superToken.options.address, accounts[2], accounts[0], "10000");
       await ganache.helper.timeTravelOnce(provider, web3, 60);
@@ -118,7 +121,7 @@ describe("CFA tests", () => {
     try {
       await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "1000000000000000");
       await ganache.helper.timeTravelOnce(provider, web3,1);
-      await bootNode({pic: DEFAULT_REWARD_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug"});
+      await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug", toga_contract: helper.togaAddress});
       await ganache.helper.timeTravelOnce(provider, web3, 3600, app, true);
       await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[3], "1000000000000000");
       const tx = await helper.sf.superToken.methods.transferAll(accounts[9]).send({
@@ -137,7 +140,7 @@ describe("CFA tests", () => {
     try {
       await helper.operations.createStream(helper.sf.superToken.options.address, accounts[5], accounts[2], "100000000000000");
       await ganache.helper.timeTravelOnce(provider, web3, 1);
-      await bootNode({pic: DEFAULT_REWARD_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug"});
+      await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug", toga_contract: helper.togaAddress});
       const firstEstimation = await app.db.queries.getAddressEstimations(accounts[5]);
       await ganache.helper.timeTravelUntil(provider, web3, 1, 20);
       await helper.operations.updateStream(helper.sf.superToken.options.address, accounts[5], accounts[2], "1");
@@ -242,13 +245,15 @@ describe("CFA tests", () => {
 
   it("Subscribe to token runtime", async () => {
     try {
-      await bootNode({pic: DEFAULT_REWARD_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug"});
+      await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug", toga_contract: helper.togaAddress});
       await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "1000000000");
       const tx = await helper.sf.superToken.methods.transferAll(accounts[2]).send({
         from: accounts[0],
         gas: 1000000
       });
       const result = await protocolHelper.waitForEvent(helper, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+      const activityLog = app.circularBuffer.toArray().filter((element) => { return element.stateChange === "new token found" });
+      expect(activityLog.length).to.equal(1);
       await app.shutdown();
       protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
     } catch (err) {

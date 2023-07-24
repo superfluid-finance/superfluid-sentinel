@@ -158,7 +158,7 @@ class Protocol {
         return;
       }
 
-      const tokenInfo = this.app.client.superTokenNames[superToken.toLowerCase()];
+      const tokenInfo = this.app.client.superToken.superTokenNames[superToken.toLowerCase()];
       const currentTokenPIC = await this.getCurrentPIC(superToken);
       const rewardAccount = await this.getRewardAddress(superToken);
       const checkedSuperTokenAddress = this.app.client.toChecksumAddress(superToken);

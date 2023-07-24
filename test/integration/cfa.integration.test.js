@@ -62,7 +62,6 @@ describe("CFA tests", () => {
     try {
       await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "100000000000");
       await ganache.helper.timeTravelOnce(provider, web3,1);
-      await bootNode({pic: DEFAULT_REWARD_ADDRESS, resolver: helper.sf.resolver.options.address});
       await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug", toga_contract: helper.togaAddress});
       await ganache.helper.timeTravelOnce(provider, web3, 60);
       const tx = await helper.sf.superToken.methods.transferAll(accounts[2]).send({

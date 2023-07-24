@@ -119,7 +119,7 @@ class Contracts {
     async _loadSuperfluidContract (superfluidAddress) {
         try {
             this.sf = this.app.client.RPCClient.getContract(ISuperfluid.abi, superfluidAddress);
-            this.app.logger.info("Contracts: loaded superfluid contract");
+            this.app.logger.info("Contracts: loaded superfluid contract at address: " + superfluidAddress);
         } catch (err) {
             this.app.logger.error("Contracts: Error loading superfluid contract");
             throw err;
@@ -129,7 +129,7 @@ class Contracts {
     async _loadSuperfluidGovernanceContract (govAddress) {
         try {
             this.gov = this.app.client.RPCClient.getContract(SuperfluidGovernance.abi, govAddress);
-            this.app.logger.info("Contracts: loaded governance contract");
+            this.app.logger.info("Contracts: loaded governance contract at address: " + govAddress);
         } catch (err) {
             this.app.logger.error("Contracts: Error loading superfluid governance contract");
             throw err;
@@ -142,6 +142,7 @@ class Contracts {
             this.IDAv1 = this.app.client.RPCClient.getContract(IIDA.abi, idaAddress);
             this.GDAv1 = this.app.client.RPCClient.getContract(IGDA.abi, gdaAddress);
             this.app.logger.info("Contracts: loaded agreements contracts");
+            this.app.logger.info(`CFA at address: ${cfaAddress} | IDA at address: ${idaAddress} | GDA at address: ${gdaAddress}`);
         } catch (err) {
             this.app.logger.error("Contracts: Error loading agreement contracts");
             throw err;
@@ -151,8 +152,8 @@ class Contracts {
     async _loadBatchContract (batchAddress) {
         try {
             if (batchAddress !== undefined) {
-                this.batch = new this.app.client.RPCClient.getContract(BatchContract.abi, batchAddress);
-                this.app.logger.info("Contracts: loaded batch contract");
+                this.batch = this.app.client.RPCClient.getContract(BatchContract.abi, batchAddress);
+                this.app.logger.info("Contracts: loaded batch contract at address: " + batchAddress);
             } else {
                 this.app.logger.info("Contracts: Batch Contract not found");
             }
@@ -165,8 +166,8 @@ class Contracts {
     async _loadTogaContract (togaAddress) {
         try {
             if (togaAddress !== undefined) {
-                this.toga = new this.app.client.RPCClient.getContract(TogaContract.abi, togaAddress);
-                this.app.logger.info("Contracts: loaded toga contract");
+                this.toga = this.app.client.RPCClient.getContract(TogaContract.abi, togaAddress);
+                this.app.logger.info("Contracts: loaded toga contract at address: " + togaAddress);
             } else {
                 this.app.logger.info("Contracts: TOGA Contract not found");
             }

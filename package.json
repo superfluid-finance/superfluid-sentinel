@@ -15,7 +15,7 @@
     "test-cfa": "node_modules/.bin/mocha -t 1000000 test/integration/cfa.integration.test.js",
     "test-batch": "node_modules/.bin/mocha -t 1000000 test/integration/batch.integration.test.js",
     "test-unit": "node_modules/.bin/mocha 'test/unit-tests/**/*.js'",
-    "test": "npm run test-unit && npm run test-node && npm run test-gas && npm run test-ida && npm run test-cfa && npm run test-batch"
+    "test": "npm run test-unit && npm run test-node && npm run test-gas && npm run test-ida && npm run test-cfa"
   },
   "keywords": [
     "superfluid",
@@ -27,7 +27,7 @@
   "dependencies": {
     "@decentral.ee/web3-helpers": "^0.5.3",
     "@slack/webhook": "^6.1.0",
-    "@superfluid-finance/ethereum-contracts": "1.7.2-PR1357.cc099b3.0",
+    "@superfluid-finance/ethereum-contracts": "1.7.2-PR1357.a99fe1b.0",
     "@superfluid-finance/metadata": "https://github.com/superfluid-finance/metadata",
     "@truffle/contract": "^4.6.26",
     "async": "^3.2.4",

@@ -59,7 +59,6 @@ class App {
         this.liquidator = new Liquidator(this);
         this.bootstrap = new Bootstrap(this);
         this.time = new Time();
-        this.genAccounts = utils.generateAccounts;
         this.utils = utils;
 
         this.healthReport = new Report(this);

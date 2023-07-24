@@ -53,7 +53,7 @@ async function setup(provider, agentAccount) {
         token: sf.tokens.fDAI,
         resolver: sf.resolver,
         batch: sf.batchLiquidator,
-        toga: () => sf.toga,
+        toga: sf.toga,
         instantiatePool: (poolAddress) => {
             return new web3.eth.Contract(ISuperfluidPool.abi, poolAddress);
         }

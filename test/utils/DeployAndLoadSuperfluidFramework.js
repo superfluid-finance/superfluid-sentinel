@@ -68,7 +68,7 @@ async function DeployAndLoadSuperfluidFramework(web3, provider) {
     }
     const governance = new web3.eth.Contract(Governance.abi, contractsFramework[0])
     const batchLiquidator = new web3.eth.Contract(BatchLiquidator.abi, contractsFramework[11]);
-    const toga = new web3.eth.Contract(TOGA.abi, contractsFramework[12]);
+    const toga = new web3.eth.Contract(TOGA.abi, contractsFramework[14]);
 
     return {
         governance: governance,

@@ -139,7 +139,7 @@ async function setup(provider, agentAccount) {
                 throw new Error("helper is undefined");
             }
             const pool = helper.sf.instantiatePool(poolAddress);
-            return pool.methods.updateMember(member, newUnits).send({from: admin, gas: 1000000});
+            return pool.methods.updateMemberUnits(member, newUnits).send({from: admin, gas: 1000000});
         }
     }
 

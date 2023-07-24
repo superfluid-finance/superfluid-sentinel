@@ -61,7 +61,7 @@ class Report {
         cfa: this.app.client.contracts.getCFAv1Address(),
         ida: this.app.client.contracts.getIDAv1Address(),
         gda: this.app.client.contracts.getGDAv1Address(),
-        supertokens: Object.values(this.app.client.superTokenNames)
+        supertokens: Object.values(this.app.client.superToken.superTokenNames)
       }
     };
   }

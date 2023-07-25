@@ -5,6 +5,7 @@ const App = require("../../src/app");
 
 const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
 const DEFAULT_REWARD_ADDRESS = "0x0000000000000000000000000000000000000045";
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 let app, accounts, snapId, helper, web3, ganache, provider;
 
@@ -29,6 +30,8 @@ describe("Gas Integration tests", () => {
     provider = await ganache.provider;
     helper = await protocolHelper.setup(provider, AGENT_ACCOUNT);
     helper.provider = provider;
+    helper.togaAddress = helper.sf.toga.options.address;
+    helper.batchAddress = helper.sf.batch.options.address;
     web3 = helper.web3;
     accounts = helper.accounts;
     snapId = await ganache.helper.takeEvmSnapshot(provider);
@@ -62,7 +65,7 @@ describe("Gas Integration tests", () => {
         from: accounts[0],
         gas: 1000000
       });
-      await bootNode({pic: DEFAULT_REWARD_ADDRESS, resolver: helper.sf.resolver.options.address, tx_timeout: 2});
+      await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, toga_contract: helper.togaAddress,  tx_timeout: 2, log_level: "debug"});
       app.setTestFlag("TIMEOUT_ON_LOW_GAS_PRICE", { minimumGas: 3000000000 });
       const result = await protocolHelper.waitForEvent(helper, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
       await app.shutdown();

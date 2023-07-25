@@ -63,8 +63,7 @@ describe("Batch liquidation tests", () => {
     await ganache.close();
   });
 
-  it.only("Send a batch Liquidation to close multi streams", async () => {
-    console.log("Batch Contract address : " + helper.sf.batch.options.address);
+  it("Send a batch Liquidation to close multi streams", async () => {
     try {
       for(let i = 1; i <= 5; i++) {
         await helper.operations.createStream(helper.sf.superToken.options.address, accounts[i], accounts[0], "1000000000000000");
@@ -83,6 +82,40 @@ describe("Batch liquidation tests", () => {
         toga_contract: helper.togaAddress,
         max_tx_number: 5,
         liquidation_job_awaits: 15000,
+        log_level: "debug"
+      });
+      await ganache.helper.timeTravelOnce(provider, web3, 1000, app, true);
+      const result = await protocolHelper.waitForEventAtSameBlock(helper, app, ganache, "AgreementLiquidatedV2", 5, tx.blockNumber);
+      await app.shutdown();
+      expect(result).gt(tx.blockNumber);
+    } catch (err) {
+      exitWithError(err);
+    }
+  });
+
+  it("Send a batch Liquidation to close multi streams of GDA", async () => {
+    try {
+      let pools = [];
+      let tx;
+      for(let i = 0; i < 5; i++) {
+        // create pools
+        const poolAddress = await helper.operations.createPoolGDA(helper.sf.superToken.options.address, accounts[i], accounts[i]);
+        pools.push(poolAddress);
+        await helper.operations.updateMemberGDA(poolAddress, accounts[i], accounts[9], "100");
+        await helper.operations.distributeFlow(helper.sf.superToken.options.address, accounts[i], poolAddress, "1000000000");
+        tx = await helper.sf.superToken.methods.transferAll(accounts[9]).send({
+          from: accounts[i],
+          gas: 1000000
+        });
+      }
+
+      await ganache.helper.timeTravelOnce(provider, web3, 60);
+      await bootNode({
+        pic: ZERO_ADDRESS,
+        resolver: helper.sf.resolver.options.address,
+        batch_contract: helper.sf.batch.options.address,
+        toga_contract: helper.togaAddress,
+        max_tx_number: 5,
         log_level: "debug"
       });
       await ganache.helper.timeTravelOnce(provider, web3, 1000, app, true);

@@ -239,7 +239,7 @@ class Protocol {
 
   generateDeleteGDAStreamTxData(superToken, sender, receiver) {
     try {
-        const GDAv1Address = this.app.client.contracts.contracts.getGDAv1Address();
+        const GDAv1Address = this.app.client.contracts.getGDAv1Address();
         const distributeFlowABI = this.app.client.contracts.GDAv1.methods.distributeFlow(superToken, sender, receiver, 0, "0x").encodeABI();
         const tx = this.app.client.contracts.sf.methods.callAgreement(GDAv1Address, distributeFlowABI, "0x").encodeABI();
         return { tx: tx, target: this.app.client.contracts.getSuperfluidAddress()};

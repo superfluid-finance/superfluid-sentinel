@@ -5,6 +5,7 @@ const App = require("../../src/app");
 
 const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
 const DEFAULT_REWARD_ADDRESS = "0x0000000000000000000000000000000000000045";
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 let app, accounts, snapId, helper, web3, ganache, provider;
 
@@ -29,6 +30,8 @@ describe("IDA integration tests", () => {
     provider = await ganache.provider;
     helper = await protocolHelper.setup(provider, AGENT_ACCOUNT);
     helper.provider = provider;
+    helper.togaAddress = helper.sf.toga.options.address;
+    helper.batchAddress = helper.sf.batch.options.address;
     web3 = helper.web3;
     accounts = helper.accounts;
     snapId = await ganache.helper.takeEvmSnapshot(provider);
@@ -59,7 +62,7 @@ describe("IDA integration tests", () => {
     try {
       await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "1000000000000");
       await ganache.helper.timeTravelOnce(provider, web3,1);
-      await bootNode({pic: DEFAULT_REWARD_ADDRESS, resolver: helper.sf.resolver.options.address});
+      await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug", toga_contract: helper.togaAddress});
       await helper.operations.createIDAIndex(helper.sf.superToken.options.address, accounts[0], "6");
       await helper.operations.updateIDASubscription(helper.sf.superToken.options.address, accounts[0], accounts[1], "6", "100");
       await ganache.helper.timeTravelOnce(provider, web3,60);

@@ -64,7 +64,7 @@ class Client {
       if (this.app.config.PRIVATE_KEY !== undefined) {
         this.accountManager.addAccountFromPrivateKey(this.app.config.PRIVATE_KEY);
       } else if (this.app.config.MNEMONIC !== undefined) {
-        this.accountManager.addAccountFromMnemonic(this.app.config.MNEMONIC, this.app.config.MNEMONIC_INDEX);
+        this.accountManager.addAccountFromMnemonic(this.app.config.MNEMONIC, Number(this.app.config.MNEMONIC_INDEX));
       } else if(this.app.config.OBSERVER) {
         this.app.logger.warn("Configuration is set to be Observer.");
       } else {

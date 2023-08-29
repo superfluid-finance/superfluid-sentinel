@@ -15,7 +15,7 @@
     "test-cfa": "node_modules/.bin/mocha -t 1000000 test/integration/cfa.integration.test.js",
     "test-batch": "node_modules/.bin/mocha -t 1000000 test/integration/batch.integration.test.js",
     "test-unit": "node_modules/.bin/mocha 'test/unit-tests/**/*.js'",
-    "test": "npm run test-unit && npm run test-node && npm run test-gas && npm run test-ida && npm run test-cfa && npm run test-gda && npm run test-batch"
+    "test": "yarn test-unit && yarn test-node && yarn test-gas && yarn test-ida && yarn test-cfa && yarn test-gda && yarn test-batch"
   },
   "keywords": [
     "superfluid",

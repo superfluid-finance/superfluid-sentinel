@@ -31,7 +31,7 @@ Check `.env.example` for additional configuration items and their documentation.
 
 ### Native Setup
 
-Requires Node.js v16+ and npm already installed.
+Requires Node.js v18+ and yarn already installed.
 
 First, check out this repository and cd into it:
 
@@ -43,7 +43,7 @@ cd superfluid-sentinel
 Then install dependencies with:
 
 ```
-NODE_ENV=production npm ci
+NODE_ENV=production yarn install
 ```
 
 Before starting the instance, make sure it's configured according to your needs. The configuration can be provided
@@ -56,7 +56,7 @@ cp superfluid-sentinel.service.template superfluid-sentinel.service
 ```
 
 Then edit `superfluid-sentinel.service` to match your setup. You need to set the working directory to the root directory
-of the sentinel, the username to execute with and the path to npm on your system. Then you can install and start the
+of the sentinel, the username to execute with and the path to yarn on your system. Then you can install and start the
 service:
 
 ```
@@ -111,13 +111,13 @@ use the wrong RPC node or write to a sqlite file created for a different network
 With the env files in place, you can start instances like this:
 
 ```
-npm start <network-name>
+yarn start <network-name>
 ```
 
-For example: `npm start xdai`will start an instance configured according to the settings in `.env-xdai`.
+For example: `yarn start xdai`will start an instance configured according to the settings in `.env-xdai`.
 
 If you use systemd, create instance specific copies of the service file, e.g. `superfluid-sentinel-xdai.service`, and
-add the network name to the start command, e.g. `ExecStart=/usr/bin/npm start xdai`.
+add the network name to the start command, e.g. `ExecStart=/home/ubuntu/.nvm/nvm-exec yarn start xdai`.
 
 #### Update
 
@@ -130,7 +130,7 @@ git pull
 ```
 in order to get the latest version of the code. Then do
 ```
-NODE_ENV=production npm ci
+NODE_ENV=production yarn ci
 ```
 in order to update dependencies if needed.
 Then restart the service(s). E.g. for a single instance running with systemd, do

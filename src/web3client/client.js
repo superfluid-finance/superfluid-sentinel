@@ -29,6 +29,7 @@ class Client {
     this.totalSkippedBlockRequests = 0;
   }
 
+  // having to connect() before init() is a bit weird
   async connect () {
     try {
 
@@ -94,6 +95,7 @@ class Client {
     return this.chainId;
   }
 
+  // legacy
   getAccountAddress () {
     return this.accountManager.getAccountAddress(0);
   }

@@ -3,6 +3,7 @@ const {
     Op
 } = require("sequelize");
 
+// rename to Queries?
 class Repository {
     constructor(app) {
         this.app = app;

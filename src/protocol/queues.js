@@ -7,6 +7,7 @@ async function trigger (fn, ms) {
   await fn.drain();
 }
 
+// keeps DB up to date based on latest relevant on-chain events
 class Queues {
   constructor (app) {
     this.app = app;

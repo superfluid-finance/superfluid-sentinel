@@ -83,6 +83,8 @@ class App {
         this._isInitialized = false;
     }
 
+    // run <fn> forever every <time> ms after the previous call finished
+    // rename to "loop" or "runForever" or ...?
     async run(fn, time) {
         if (this._isShutdown) {
             this.logger.info(`app.shutdown() - closing app runner`);

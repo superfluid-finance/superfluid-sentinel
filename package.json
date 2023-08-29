@@ -27,8 +27,8 @@
   "dependencies": {
     "@decentral.ee/web3-helpers": "^0.5.3",
     "@slack/webhook": "^6.1.0",
-    "@superfluid-finance/ethereum-contracts": "1.7.2-PR1357.a99fe1b.0",
-    "@superfluid-finance/metadata": "https://github.com/superfluid-finance/metadata",
+    "@superfluid-finance/ethereum-contracts": "file:ethereum-contracts",
+    "@superfluid-finance/metadata": "^1.1.13",
     "@truffle/contract": "^4.6.26",
     "async": "^3.2.4",
     "axios": "^1.4.0",

@@ -12,16 +12,16 @@
 
 const {ethers} = require("ethers");
 const SuperfluidFrameworkDeployer = require("../utils/SuperfluidFrameworkDeployer");
-const IResolver = require("@superfluid-finance/ethereum-contracts/build/contracts/IResolver.json");
-const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
-const IConstantFlowAgreementV1 = require("@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json");
-const IInstantDistributionAgreementV1 = require("@superfluid-finance/ethereum-contracts/build/contracts/IInstantDistributionAgreementV1.json");
-const IGeneralDistributionAgreementV1 = require("@superfluid-finance/ethereum-contracts/build/contracts/IGeneralDistributionAgreementV1.json");
-const Governance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
-const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
-const TestToken = require("@superfluid-finance/ethereum-contracts/build/contracts/TestToken.json");
-const BatchLiquidator = require("@superfluid-finance/ethereum-contracts/build/contracts/BatchLiquidator.json");
-const TOGA = require("@superfluid-finance/ethereum-contracts/build/contracts/TOGA.json");
+const IResolver = require("@superfluid-finance/ethereum-contracts/build/truffle/IResolver.json");
+const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/truffle/ISuperfluid.json");
+const IConstantFlowAgreementV1 = require("@superfluid-finance/ethereum-contracts/build/truffle/IConstantFlowAgreementV1.json");
+const IInstantDistributionAgreementV1 = require("@superfluid-finance/ethereum-contracts/build/truffle/IInstantDistributionAgreementV1.json");
+const IGeneralDistributionAgreementV1 = require("@superfluid-finance/ethereum-contracts/build/truffle/IGeneralDistributionAgreementV1.json");
+const Governance = require("@superfluid-finance/ethereum-contracts/build/truffle/SuperfluidGovernanceBase.json");
+const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/truffle/ISuperToken.json");
+const TestToken = require("@superfluid-finance/ethereum-contracts/build/truffle/TestToken.json");
+const BatchLiquidator = require("@superfluid-finance/ethereum-contracts/build/truffle/BatchLiquidator.json");
+const TOGA = require("@superfluid-finance/ethereum-contracts/build/truffle/TOGA.json");
 
 async function DeployAndLoadSuperfluidFramework(web3, provider) {
 

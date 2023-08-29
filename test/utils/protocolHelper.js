@@ -5,7 +5,7 @@ const { Web3 } = require("web3");
 const ethers = require("ethers");
 const expect = require("chai").expect;
 
-const ISuperfluidPool = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluidPool.json");
+const ISuperfluidPool = require("@superfluid-finance/ethereum-contracts/build/truffle/ISuperfluidPool.json");
 
 
 let helper;

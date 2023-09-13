@@ -5,32 +5,32 @@
     "1": {
       "name": "Ethereum",
       "network_type": "evm",
-      "cid": "QmUggirxXTV5G9KTYHiEP6tBG9KAG1Vm3h72cefSc28bwa"
+      "cid": "Qmabn75819847E7GzUthpvC6B3DdjHYxqxKGRtfvzNiVUw"
     },
     "5": {
       "name": "Goerli Testnet",
       "network_type": "evm",
-      "cid": "Qmbpqqpj56gqVEvtCq32dHLzHMoVQMsFQem5KnsJdndtQT"
+      "cid": "QmNguyC1iS93P8azCfxuKhirbmEDSGEuCAbBKD8FtAAazB"
     },
     "10": {
       "name": "Optimism",
       "network_type": "evm-l2",
-      "cid": "QmSGKe5G4Ekv4W35s49pG59rrkxeJqnsfiqyeMmEBumfub"
+      "cid": "QmbqAW2GF5pQ9YAsS6BS222RJ7ZcHFZymn6SkvAxVgiBNu"
     },
     "56": {
       "name": "Binance Smart Chain",
       "network_type": "evm",
-      "cid": "QmdoaYxpBw1td47wLcHUYwKwpMTE22Zo74RsxtmZ73V1AV"
+      "cid": "QmQ6zhZ2J4PA1txygTjuvNSYFuxRtux4VkHugHQ3DZjx35"
     },
     "100": {
       "name": "Gnosis Chain",
       "network_type": "evm",
-      "cid": "QmSNNNDfsYB8XDVH3Lrmhh5PVSSFq9YKpUjxe3titZPqRp"
+      "cid": "QmdiBVQVcYUcuzPachXDxtkNnhYYn4G9E8oSZC6exXeMZ2"
     },
     "137": {
       "name": "Polygon",
       "network_type": "evm",
-      "cid": "QmZbCG6MHbjACuB8h2oQr6fB3D9UKJw1yQUADnAwW9apQ3"
+      "cid": "QmXWZ9dk6DC2r3wy5LM9UFdLctSvCRpwRBpm77ZXpmaDrL"
     },
     "420": {
       "name": "Optimism Goerli Testnet",
@@ -39,26 +39,31 @@
     "42161": {
       "name": "Arbitrum One",
       "network_type": "evm-l2",
-      "cid": "QmajKn6sEwaMjcoFv1qque7QZ4WuZMWJ8PLLxTg4BJMHRd"
+      "cid": "QmUDvD9hKRQW4ZTpvYK4RdCDHsMT9gSLf76WeNrhPztii1"
     },
     "42220": {
       "name": "Celo",
-      "network_type": "evm"
+      "network_type": "evm",
+      "cid": "QmZuMSzahPRiUjkMT7grKM8y7ibCUKov5pmVBN651gByDe"
     },
     "43113": {
       "name": "Avalanche Fuji Testnet",
       "network_type": "evm",
-      "cid": "QmcEDXzuTRQqAQyPxKagJ6P2ZAvFHCZWgqLh2ztSzidY83"
+      "cid": "QmPFnLtpLccXQrMEodcwVvH1VZizyyYfE1ZQMTaxtNhRUf"
     },
     "43114": {
       "name": "Avalanche C-Chain",
       "network_type": "evm",
-      "cid": "QmWEQCvA8wCM1KFKBFdb3ETHYWHR6vfubbjqFVdkkHqQXL"
+      "cid": "QmT8aEuxZ3aLuQBxYYG9C1xipjM1EneoZyyQABeDPFYxoP"
     },
     "80001": {
       "name": "Polygon Mumbai Testnet",
       "network_type": "evm",
-      "cid": "QmX4GA1DLoorKJ5B4TvgTkNV8JvbjtuFcu21EphCvQx1tJ"
+      "cid": "QmfNV1Cmmi97SdquvVsttpfjhDcqBiDmmA65APRvLyKqok"
+    },
+    "84531": {
+      "name": "Base Goerli Testnet",
+      "network_type": "evm"
     },
     "421613": {
       "name": "Arbitrum Goerli Testnet",

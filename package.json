@@ -28,7 +28,7 @@
     "@slack/webhook": "^6.1.0",
     "@superfluid-finance/ethereum-contracts": "1.0.0",
     "@superfluid-finance/js-sdk": "0.5.12",
-    "@superfluid-finance/metadata": "github:superfluid-finance/metadata#BatchLiquidatorV2",
+    "@superfluid-finance/metadata": "1.1.9",
     "@truffle/contract": "^4.4.2",
     "async": "^3.2.2",
     "axios": "^0.24.0",

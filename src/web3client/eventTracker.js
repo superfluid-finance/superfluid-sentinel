@@ -197,11 +197,11 @@ class EventTracker {
     try {
       if(event && event.eventName === "InstantDistributionUpdated") {
         if (this.app.client.superToken.isSuperTokenRegistered(event.token)) {
-          this.app.logger.debug(`[InstantDistributionUpdated] - ${event.eventName} [${event.token}] - publisher ${event.publisher}`);
+          this.app.logger.debug(`[InstantDistributionUpdated] - ${event.eventName} [${event.token}] - distributor ${event.distributor}`);
           this.app.queues.estimationQueue.push([
             {
               self: this,
-              account: event.from,
+              account: event.distributor,
               token: event.token,
               blockNumber: event.blockNumber,
               blockHash: event.blockHash,

@@ -26,6 +26,7 @@ program
     .option("--pic [value]", "PIC Address (default: not set)")
     .option("--observer", "Set sentinel to observer (default: not set)")
     .option("--no-fastsync", "Don't use fastsync feature (default: not set)")
+    .option("--no-telemetry", "Don't use telemetry feature (default: not set)")
     .action(function (args) {
         if (args.httpRpcNode !== undefined) {
             process.env.HTTP_RPC_NODE = args.httpRpcNode;
@@ -71,6 +72,9 @@ program
         }
         if(args.fastsync === false) { // the prefix no- is treated differently
             process.env.FASTSYNC = "false";
+        }
+        if(args.telemetry === false) { // the prefix no- is treated differently
+            process.env.TELEMETRY = "false";
         }
     });
 program.parse(process.argv);

@@ -13,7 +13,7 @@ COPY ["package.json", "package-lock.json*", "./"]
 RUN npm ci --only=production
 COPY . /app
 
-RUN mkdir data
+# make sure we can write the data directory
 RUN chown node:node data
 
 # Add a simple init system so that Node would respect process signals

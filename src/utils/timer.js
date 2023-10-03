@@ -9,6 +9,10 @@ class Timer {
     return fn.start();
   }
 
+  async triggerInterval(fn, time) {
+    return setInterval(fn, time);
+  }
+
   async startAfter(fn, data, ms= 1000) {
     setTimeout(() => fn.start(data), 1000);
   }

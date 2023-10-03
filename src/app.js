@@ -239,8 +239,8 @@ class App {
             }
             // start reporting services with the configured interval.
             if(this.config.TELEMETRY) {
-                this.logger.info(`Starting telemetry job`);
-                this._telemetryIntervalId = this.timer.triggerInterval(this.telemetry.start, this.config.TELEMETRY_INTERVAL);
+                this.logger.info(`Starting telemetry job with interval ${this.config.TELEMETRY_INTERVAL}`);
+                this._telemetryIntervalId = this.timer.triggerInterval(() => this.telemetry.start(), this.config.TELEMETRY_INTERVAL);
             }
             // Only start notification jobs if notifier is enabled
             if (this.notificationJobs) {

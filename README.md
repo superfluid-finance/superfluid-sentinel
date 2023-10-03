@@ -77,7 +77,7 @@ If all is well, you may want to set the service to autostart:
 systemctl enable superfluid-sentinel.service
 ```
 
-### Monitoring & Alerting
+### Monitoring, Alerting & Telemetry
 
 The sentinel can provide monitoring information. In the default configuration, this is available on port 9100 and json formatted.
 
@@ -97,6 +97,18 @@ You can also set up notifications to Slack or Telegram. Events triggering a noti
 In order to set up notifications, see `.env-example` for the relevant configuration items.
 
 The notification system is modular. If you want support for more channels, consider adding it. See `src/services/slackNotifier.js` for a blueprint. PRs are welcome!
+
+Sentinel instances also periodically (default: every 12 hours) report basic metrics to a telemetry endpoint.  
+This helps understanding how many instances are active and what their approximate configuration is.
+Reported metrics:  
+* uuid (randomly generated on first start and preserved in a file "data/uuid.txt")
+* chain i
+* nodejs version
+* sentinel version
+* healthy flag (false e.g. if the configured RPC is drifting)
+* nr of rpc requests (since last restart)
+* account balance (rounded to 3 decimal places)
+* memory used by the process
 
 #### Run multiple instances
 

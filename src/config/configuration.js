@@ -93,8 +93,8 @@ class Config {
     this.TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     this.TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
     this.TELEMETRY = this._parseToBool(process.env.TELEMETRY, true);
-    this.TELEMETRY_URL = process.env.TELEMETRY_URL || undefined //TODO: add default url when backend services ready;
-    this.TELEMETRY_INTERVAL = 43200000; // defaults to 12 hours
+    this.TELEMETRY_URL = process.env.TELEMETRY_URL || "https://sentinel-telemetry.x.superfluid.dev";
+    this.TELEMETRY_INTERVAL = process.env.TELEMETRY_INTERVAL * 1000 || 43200000; // defaults to 12 hours
 
     // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
     this.CONCURRENCY = process.env.CONCURRENCY || 1;

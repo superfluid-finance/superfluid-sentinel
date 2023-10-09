@@ -33,17 +33,18 @@ class Contracts {
         await this._loadSuperfluidGovernanceContract(governanceAddress);
 
         const cfaHashID = this.app.client.soliditySha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
-        const gdaHashID = this.app.client.soliditySha3("org.superfluid-finance.agreements.GeneralDistributionAgreement.v1");
+        const gdaHashID = this.app.client.soliditySha3("org.xsuperfluid-finance.agreements.GeneralDistributionAgreement.v1");
         const idaHashID = this.app.client.soliditySha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
-        const [
-            cfaAddress,
-            idaAddress,
-            gdaAddress
-        ] = await Promise.all([
-            this.sf.methods.getAgreementClass(cfaHashID).call(),
-            this.sf.methods.getAgreementClass(idaHashID).call(),
-            this.sf.methods.getAgreementClass(gdaHashID).call()
-        ]);
+
+        const cfaAddress = await this.sf.methods.getAgreementClass(cfaHashID).call();
+        const idaAddress = await this.sf.methods.getAgreementClass(idaHashID).call();
+        // sentinel will continue without GDA if it is not found
+        let gdaAddress;
+        try {
+            gdaAddress = await this.sf.methods.getAgreementClass(gdaHashID).call();
+        } catch (err) {
+            this.app.logger.warn("Contracts: GDA contract not found, sentinel will continue without it");
+        }
 
         await this._loadAgreementContracts(cfaAddress, idaAddress, gdaAddress);
         // depending on the network/configuration we are using, we might not have a batch contract or a toga contract

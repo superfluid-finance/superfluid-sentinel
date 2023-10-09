@@ -32,10 +32,13 @@ class Protocol {
     }
   }
 
-  // get GDA User Net Flow
+  // get GDA User Net Flow, if GDA is not deployed, return 0
   async getGDAUserNetFlow (token, account) {
     try {
       this.app.client.addTotalRequest();
+      if (this.app.client.contracts.getGDAv1Address() === undefined) {
+          return 0;
+      }
       return this.app.client.contracts.GDAv1.methods.getNetFlow(token, account).call();
     } catch (err) {
       console.error(err);
@@ -61,11 +64,15 @@ class Protocol {
     }
   }
 
-  // getGDAgreementEvents
+  // getGDAgreementEvents, if GDA is not deployed, return empty array
   async getGDAgreementEvents (eventName, filter, app = undefined) {
     try {
       app = app || this.app;
       app.client.addTotalRequest();
+      // if GDA is not deployed, return empty array
+      if (app.client.contracts.getGDAv1Address() === undefined) {
+          return [];
+      }
       return app.client.contracts.GDAv1.getPastEvents(eventName, filter);
     } catch (err) {
       console.error("getGDAgreementEvents" + err);
@@ -205,9 +212,13 @@ class Protocol {
     }
   }
 
+  // generateGDAId, if GDA is not deployed, return undefined
   async generateGDAId (from, to, app) {
     try {
       app = app || this.app;
+      if(app.client.contracts.getGDAv1Address() === undefined) {
+        return undefined;
+      }
       const chainId = await app.client.RPCClient.getChainId();
       return this.app.client.soliditySha3(chainId, "distributionFlow", from, to);
     } catch (err) {

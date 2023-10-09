@@ -87,7 +87,8 @@ sentinel_telemetry_rpc_requests{${labels}} ${healthReport.network.rpc.totalReque
 + (healthReport.account.balance ? // undefined in observer mode
 `# HELP sentinel_telemetry_account_balance Balance of the monitored account, rounded to 3 decimal places.
 # TYPE sentinel_telemetry_account_balance gauge
-sentinel_telemetry_account_balance{${labels}} ${Math.floor(parseInt(healthReport.account.balance) / 1e15) / 1e3}` : "")
+sentinel_telemetry_account_balance{${labels}} ${Math.floor(parseInt(healthReport.account.balance) / 1e15) / 1e3}
+` : "")
 +
 `# HELP sentinel_telemetry_memory_used Amount of memory used by the process in bytes, as reported by process.memoryUsage().heapUsed
 # TYPE sentinel_telemetry_memory_used gauge

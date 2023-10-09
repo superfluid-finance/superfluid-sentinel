@@ -24,7 +24,7 @@ class Report {
         this.app.logger.error(`report.fullReport() - web3.eth.isSyncing failed: ${err}`);
       }
     }
-
+    const rpcProvider = (new URL(this.app.config.HTTP_RPC_NODE)).hostname;
     const databaseOk = await this.checkDatabase();
     const estimationQueueSize = this.app.queues.getEstimationQueueLength();
     const agreementQueueSize = this.app.queues.getAgreementQueueLength();
@@ -42,6 +42,7 @@ class Report {
       network: {
         chainId: await this.app.client.getChainId(),
         rpc: {
+          rpcProvider: rpcProvider,
           totalRequests: this.app.client.getTotalRequests(),
           isSyncing: rpcIsSyncing,
           lastTimeNewBlocks: lastTimeNewBlocks,

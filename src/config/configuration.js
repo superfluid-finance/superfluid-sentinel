@@ -92,6 +92,9 @@ class Config {
     this.SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL;
     this.TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     this.TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+    this.TELEMETRY = this._parseToBool(process.env.TELEMETRY, true);
+    this.TELEMETRY_URL = process.env.TELEMETRY_URL || "https://sentinel-telemetry.x.superfluid.dev";
+    this.TELEMETRY_INTERVAL = process.env.TELEMETRY_INTERVAL * 1000 || 43200000; // defaults to 12 hours
 
     // extra options: undoc and excluded from cmdline parser. Use .env file to change the defaults.
     this.CONCURRENCY = process.env.CONCURRENCY || 1;
@@ -192,7 +195,7 @@ class Config {
       MAX_TX_NUMBER: this.MAX_TX_NUMBER,
       SLACK_WEBHOOK_URL: this.SLACK_WEBHOOK_URL,
       TELEGRAM_BOT_TOKEN: this.TELEGRAM_BOT_TOKEN,
-      TELEGRAM_CHAT_ID: this.TELEGRAM_CHAT_ID
+      TELEGRAM_CHAT_ID: this.TELEGRAM_CHAT_ID,
     };
   }
 }

@@ -20,6 +20,7 @@ const Notifier = require("./services/notifier");
 const SlackNotifier = require("./services/slackNotifier");
 const TelegramNotifier = require("./services/telegramNotifier");
 const NotifierJobs = require("./services/notificationJobs");
+const Telemetry = require("./services/telemetry");
 const Errors = require("./utils/errors/errors");
 const CircularBuffer = require("./utils/circularBuffer");
 const { wad4human } = require("@decentral.ee/web3-helpers");
@@ -63,6 +64,7 @@ class App {
 
         this.healthReport = new Report(this);
         this.server = new HTTPServer(this);
+        this.telemetry = new Telemetry(this);
         this.timer = new Timer();
         this.circularBuffer = new CircularBuffer(100);
 
@@ -145,6 +147,8 @@ class App {
                     counter--;
                 }
             }
+            this.logger.info(`app.shutdown() - clear interval`);
+            clearInterval(this._telemetryIntervalId);
             this.logger.info(`app.shutdown() - closing database`);
             await this.db.close();
         } catch (err) {
@@ -231,6 +235,11 @@ class App {
             // start http server to serve node health reports and dashboard
             if (this.config.METRICS === true) {
                 this.timer.startAfter(this.server);
+            }
+            // start reporting services with the configured interval.
+            if(this.config.TELEMETRY) {
+                this.logger.info(`Starting telemetry job with interval ${this.config.TELEMETRY_INTERVAL}`);
+                this._telemetryIntervalId = this.timer.triggerInterval(() => this.telemetry.start(), this.config.TELEMETRY_INTERVAL);
             }
             // Only start notification jobs if notifier is enabled
             if (this.notificationJobs) {

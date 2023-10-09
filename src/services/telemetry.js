@@ -8,10 +8,11 @@ const UUID_FILE = "data/uuid.txt";
 // Implements functionality for creating prometheus formatted reports and sending them to a telemetry endpoint.
 class Telemetry {
 
-    constructor(app) {
+    constructor(app, httpClient) {
         this.app = app;
         this._isShutdown = false;
         this.uuid = undefined;
+        this.httpClient = httpClient === undefined ? require("axios") : httpClient;
     }
 
     async start() {
@@ -39,7 +40,7 @@ class Telemetry {
             if(this.app.config.TELEMETRY_URL) {
                 const reportData = this.createReport(await this.app.healthReport.fullReport());
                 this.app.logger.info(`sending data to telemetry with uuid ${this.uuid}`);
-                const resp = await axios({
+                const resp = await this.httpClient({
                     method: 'post',
                     url: this.app.config.TELEMETRY_URL,
                     data: reportData,

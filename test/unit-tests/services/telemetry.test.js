@@ -1,15 +1,22 @@
 const sinon = require("sinon");
 const chai = require("chai");
 const fs = require("fs");
+const axios = require("axios");
 const Telemetry = require("../../../src/services/telemetry");
 
 const { expect } = chai;
 
 describe("Telemetry", () => {
-    let appMock, telemetry, fsReadStub, fsWriteStub, uuidStub;
+    let appMock;
+    let fsReadStub;
+    let fsWriteStub;
+    let axiosPostStub;
+    let telemetry;
 
     beforeEach(() => {
-        // Mocking app object
+        axiosPostStub = sinon.stub(axios, 'post').resolves({ data: 'ok' });
+        fsReadStub = sinon.stub(fs, "readFileSync");
+        fsWriteStub = sinon.stub(fs, "writeFileSync");
         appMock = {
             _isShutdown: false,
             logger: {
@@ -21,14 +28,19 @@ describe("Telemetry", () => {
                 TELEMETRY_URL: "http://fake.telemetry",
             },
             healthReport: {
-                fullReport: sinon.stub().resolves({}),
-            },
+                fullReport: sinon.stub().resolves({
+                    network: {
+                        chainId: '1',
+                        rpc: { totalRequests: 100 }
+                    },
+                    process: { uptime: 1000 },
+                    healthy: true,
+                    account: { balance: '1000000000000000000' }
+                })
+            }
         };
 
-        fsReadStub = sinon.stub(fs, "readFileSync");
-        fsWriteStub = sinon.stub(fs, "writeFileSync");
-
-        telemetry = new Telemetry(appMock);
+        telemetry = new Telemetry(appMock, axiosPostStub);
     });
 
     afterEach(() => {
@@ -45,5 +57,10 @@ describe("Telemetry", () => {
         fsReadStub.throws(new Error("File not found"));
         await telemetry.start();
         expect(fsWriteStub.calledOnceWith("data/uuid.txt", sinon.match.string)).to.be.true;
+    });
+
+    it('should post data to telemetry endpoint', async () => {
+        await telemetry.start();
+        expect(axiosPostStub.calledOnce).to.be.true;
     });
 });

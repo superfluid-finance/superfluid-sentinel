@@ -33,7 +33,7 @@ class Contracts {
         await this._loadSuperfluidGovernanceContract(governanceAddress);
 
         const cfaHashID = this.app.client.soliditySha3("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
-        const gdaHashID = this.app.client.soliditySha3("org.xsuperfluid-finance.agreements.GeneralDistributionAgreement.v1");
+        const gdaHashID = this.app.client.soliditySha3("org.superfluid-finance.agreements.GeneralDistributionAgreement.v1");
         const idaHashID = this.app.client.soliditySha3("org.superfluid-finance.agreements.InstantDistributionAgreement.v1");
 
         const cfaAddress = await this.sf.methods.getAgreementClass(cfaHashID).call();

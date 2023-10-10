@@ -179,26 +179,44 @@ class App {
             await this.client.connect();
             // if we are running tests don't try to load network information
             if (!this.config.RUN_TEST_ENV) {
-                await this.config.loadNetworkInfo(await this.client.getChainId());
+                const error = await this.config.loadNetworkInfo(await this.client.getChainId());
+                if(error !== undefined) {
+                    this.logger.warn(error);
+                }
             }
             // create all web3 infrastructure needed
             await this.client.init();
             this.notifier.sendNotification(`RPC connected with chainId ${await this.client.getChainId()}, account ${this.client.agentAccounts?.address} has balance ${this.client.agentAccounts ? wad4human(await this.client.getAccountBalance()) : "N/A"}`);
             
             //check conditions to decide if getting snapshot data
-            if ((!this.utils.fileExist(this.config.DB) || this.config.COLD_BOOT) &&
+            const dbFileExist = this.utils.fileExist(this.config.DB);
+            if ((!dbFileExist || this.config.COLD_BOOT) &&
                 this.config.FASTSYNC && this.config.CID) {
                 this.logger.info(`getting snapshot from ${this.config.IPFS_GATEWAY + this.config.CID}`);
                 await this.utils.downloadFile(this.config.IPFS_GATEWAY + this.config.CID, this.config.DB + ".gz");
                 this.logger.info("unzipping snapshot...");
                 this.utils.unzip(this.config.DB + ".gz", this.config.DB);
                 await this.db.sync();
+                const userSchemaVersion = Number((await this.db.queries.getUserSchemaVersion())[0].user_version);
+                if(userSchemaVersion !== this.config.SCHEMA_VERSION) {
+                    throw Error(`local data schema ${userSchemaVersion} don't match sentinel version ${this.config.SCHEMA_VERSION}. Update and resync sentinel`);
+                }
             } else if (this.config.COLD_BOOT) {
                 // drop existing database to force a full boot
                 this.logger.debug(`resyncing database data`);
                 await this.db.sync({force: true});
+                await this.db.queries.setUserSchemaVersion(this.config.SCHEMA_VERSION)
             } else {
                 await this.db.sync();
+                // fresh database
+                if(!dbFileExist) {
+                    await this.db.queries.setUserSchemaVersion(this.config.SCHEMA_VERSION)
+                } else {
+                    const userSchemaVersion = Number((await this.db.queries.getUserSchemaVersion())[0].user_version);
+                    if(userSchemaVersion !== this.config.SCHEMA_VERSION) {
+                        throw Error(`local data schema ${userSchemaVersion} don't match sentinel version ${this.config.SCHEMA_VERSION}. Update and resync sentinel`);
+                    }
+                }
             }
             // log configuration data
             const userConfig = this.config.getConfigurationInfo();

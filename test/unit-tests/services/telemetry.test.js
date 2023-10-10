@@ -47,19 +47,19 @@ describe("Telemetry", () => {
         sinon.restore();
     });
 
-    it("should read uuid from file", async () => {
+    it("#1.1 - should read uuid from file", async () => {
         fsReadStub.returns("existing-uuid");
         await telemetry.start();
         expect(fsReadStub.calledOnceWith("data/uuid.txt", "utf8")).to.be.true;
     });
 
-    it("should write uuid to file if not exists", async () => {
+    it("#1.2 - should write uuid to file if not exists", async () => {
         fsReadStub.throws(new Error("File not found"));
         await telemetry.start();
         expect(fsWriteStub.calledOnceWith("data/uuid.txt", sinon.match.string)).to.be.true;
     });
 
-    it('should post data to telemetry endpoint', async () => {
+    it("#1.3 - should post data to telemetry endpoint", async () => {
         await telemetry.start();
         expect(axiosPostStub.calledOnce).to.be.true;
     });

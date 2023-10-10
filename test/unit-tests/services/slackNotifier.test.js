@@ -1,7 +1,7 @@
 const sinon = require("sinon");
 const { expect } = require("chai");
 const { IncomingWebhook } = require("@slack/webhook");
-const SlackNotifier = require("../../../src/services/slackNotifier");
+const SlackNotifierTest = require("../../../src/services/slackNotifier");
 
 describe("SlackNotifier", () => {
     let slackNotifier;
@@ -29,7 +29,7 @@ describe("SlackNotifier", () => {
         sendStub = sandbox.stub();
         sandbox.stub(IncomingWebhook.prototype, "send").callsFake(sendStub);
 
-        slackNotifier = new SlackNotifier(appMock);
+        slackNotifier = new SlackNotifierTest(appMock);
     });
 
     afterEach(() => {
@@ -39,13 +39,13 @@ describe("SlackNotifier", () => {
     it("#1.1 - should throw an error if SLACK_WEBHOOK_URL is not set", () => {
         appMock.config.SLACK_WEBHOOK_URL = null;
 
-        expect(() => new SlackNotifier(appMock)).to.throw("Slack webhook url must be set in config");
+        expect(() => new SlackNotifierTest(appMock)).to.throw("Slack webhook url must be set in config");
     });
 
     it("#1.2 - should throw an error if notifier is not initialized", () => {
         appMock.notifier = null;
 
-        expect(() => new SlackNotifier(appMock)).to.throw("Notifier must be initialized before SlackNotifier");
+        expect(() => new SlackNotifierTest(appMock)).to.throw("Notifier must be initialized before SlackNotifier");
     });
 
     it("#1.3 - should send a notification to slack", async () => {

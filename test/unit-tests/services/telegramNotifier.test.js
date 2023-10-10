@@ -1,7 +1,7 @@
 const sinon = require("sinon");
 const { expect } = require("chai");
 const TelegramBot = require("node-telegram-bot-api");
-const TelegramNotifier = require("../../../src/services/telegramNotifier");
+const TelegramNotifierTest = require("../../../src/services/telegramNotifier");
 
 describe("TelegramNotifier", () => {
     let telegramNotifier;
@@ -28,7 +28,7 @@ describe("TelegramNotifier", () => {
 
         sendMessageStub = sandbox.stub();
         sandbox.stub(TelegramBot.prototype, "sendMessage").callsFake(sendMessageStub);
-        telegramNotifier = new TelegramNotifier(appMock);
+        telegramNotifier = new TelegramNotifierTest(appMock);
     });
 
     afterEach(() => {
@@ -39,12 +39,12 @@ describe("TelegramNotifier", () => {
         appMock.config.TELEGRAM_BOT_TOKEN = null;
         appMock.config.TELEGRAM_CHAT_ID = null;
 
-        expect(() => new TelegramNotifier(appMock)).to.throw("Telegram botToken and ChatId must be set in config");
+        expect(() => new TelegramNotifierTest(appMock)).to.throw("Telegram botToken and ChatId must be set in config");
     });
 
     it("#1.2 - should throw an error if notifier is not initialized", () => {
         appMock.notifier = null;
-        expect(() => new TelegramNotifier(appMock)).to.throw("Notifier must be initialized before TelegramNotifier");
+        expect(() => new TelegramNotifierTest(appMock)).to.throw("Notifier must be initialized before TelegramNotifier");
     });
 
     it("#1.3 - should send a notification to telegram", async () => {

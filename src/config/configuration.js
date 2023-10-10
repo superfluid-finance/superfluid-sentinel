@@ -131,19 +131,29 @@ class Config {
   }
 
   async getManifestCIDAndNetworkType (chainId) {
+    let schemaVersion = Number(localManifest["schema-version"]);
     let cid = localManifest.networks[chainId]?.cid;
     let networkType = localManifest.networks[chainId]?.network_type;
+    let returnError;
     const manifestUrl = "https://raw.githubusercontent.com/superfluid-finance/superfluid-sentinel/master/manifest.json";
     if (!this.NO_REMOTE_MANIFEST) {
       try {
         const response = await axios.get(manifestUrl);
-        cid = response?.data?.networks?.[chainId]?.cid;
-        networkType = response?.data?.networks?.[chainId]?.network_type;
+        const remoteManifestSchemaVersion = Number(response?.data["schema-version"]);
+        // if version don't match, this sentinel is outdated, continue with local file
+        if(schemaVersion === remoteManifestSchemaVersion) {
+          schemaVersion = remoteManifestSchemaVersion;
+          cid = response?.data?.networks?.[chainId]?.cid;
+          networkType = response?.data?.networks?.[chainId]?.network_type;
+        } else {
+          returnError = "Remote manifest schema version don't match local version. Please update sentinel and resync database"
+        }
+
       } catch (error) {
-        //console.warn("getting remote manifest failed, using local one");
+        returnError = error;
       }
     }
-    return { cid, networkType };
+    return { cid, networkType, schemaVersion, returnError };
   }
 
   async loadNetworkInfo (chainId) {
@@ -153,15 +163,18 @@ class Config {
     }
     const contractsV1 = network.contractsV1 || {};
     this.EPOCH_BLOCK = network.startBlockV1 || 0;
-    const { cid, networkType } = await this.getManifestCIDAndNetworkType(chainId);
+    const { cid, networkType, schemaVersion, returnError } = await this.getManifestCIDAndNetworkType(chainId);
     this.CID = cid;
     this.NETWORK_TYPE = networkType;
+    this.SCHEMA_VERSION = schemaVersion;
+
 
     this.BATCH_CONTRACT = contractsV1.batchLiquidator || undefined;
     this.TOGA_CONTRACT = contractsV1.toga || undefined;
     if(this.RESOLVER === undefined) {
       this.RESOLVER = contractsV1.resolver || undefined;
     }
+    return returnError;
   }
 
   getConfigurationInfo () {

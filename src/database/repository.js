@@ -250,6 +250,18 @@ order by count(*) desc`;
             }
         }
     }
+
+    async getUserSchemaVersion() {
+        return this.app.db.query("PRAGMA user_version;", {
+            type: QueryTypes.SELECT
+        });
+    }
+
+    async setUserSchemaVersion(schemaVersion){
+        return this.app.db.query(`PRAGMA user_version = ${schemaVersion};`, {
+            type: QueryTypes.SELECT
+        });
+    }
 }
 
 module.exports = Repository;

@@ -18,6 +18,9 @@ const DB = require("./../src/database/db");
 const Repository = require("./../src/database/repository");
 const Timer = require("./../src/utils/timer");
 const metadata = require("@superfluid-finance/metadata/networks.json");
+const {QueryTypes} = require("sequelize");
+
+const DB_SCHEMA_VERSION = 3;
 /*
  * Build a fresh snapshot
  */
@@ -60,10 +63,13 @@ const metadata = require("@superfluid-finance/metadata/networks.json");
             AgreementModel: require("./../src/database/models/agreementModel")(db),
             FlowUpdatedModel: require("./../src/database/models/flowUpdatedModel")(db),
             SuperTokenModel: require("./../src/database/models/superTokenModel")(db),
+            FlowDistributionModel: require("./../src/database/models/flowDistributionUpdatedModel")(db),
+            PoolCreatedModel: require("./../src/database/models/poolCreatedModel")(db),
             SystemModel: require("./../src/database/models/systemModel")(db)
         }
 
         await db.sync({ force: true });
+
         app.db = db;
         app.models = {
             event: new EventModel()
@@ -76,7 +82,9 @@ const metadata = require("@superfluid-finance/metadata/networks.json");
         const bootstrap = new Bootstrap(app);
         await loadEvents.start();
         await bootstrap.start();
-
+        await db.query(`PRAGMA user_version = ${DB_SCHEMA_VERSION};`, {
+            type: QueryTypes.SELECT
+        });
         //compress database
         const newFile = config.db_path.slice(0, -3).concat("sqlite.gz");
         const gzip = zlib.createGzip();

@@ -109,7 +109,7 @@ class Config {
     this.POLLING_INTERVAL = process.env.POLLING_INTERVAL * 1000 || 30000;
     this.BLOCK_OFFSET = process.env.BLOCK_OFFSET || 12;
     this.MAX_TX_NUMBER = process.env.MAX_TX_NUMBER || 100;
-    this.NO_REMOTE_MANIFEST = this._parseToBool(process.env.NO_REMOTE_MANIFEST, true);
+    this.NO_REMOTE_MANIFEST = this._parseToBool(process.env.NO_REMOTE_MANIFEST, false);
   }
 
   _parseToBool(value, defaultValue = false) {
@@ -130,13 +130,13 @@ class Config {
     return Array.from(new Set(array.map(x => x.toLowerCase()))).length !== array.length;
   }
 
-  async getManifestCIDAndNetworkType (chainId) {
+  async getManifestCIDAndNetworkType (chainId, dbFileExist) {
     let schemaVersion = Number(localManifest["schema-version"]);
     let cid = localManifest.networks[chainId]?.cid;
     let networkType = localManifest.networks[chainId]?.network_type;
     let returnError;
     const manifestUrl = "https://raw.githubusercontent.com/superfluid-finance/superfluid-sentinel/master/manifest.json";
-    if (!this.NO_REMOTE_MANIFEST) {
+    if (!dbFileExist && !this.NO_REMOTE_MANIFEST) {
       try {
         const response = await axios.get(manifestUrl);
         const remoteManifestSchemaVersion = Number(response?.data["schema-version"]);
@@ -156,14 +156,14 @@ class Config {
     return { cid, networkType, schemaVersion, returnError };
   }
 
-  async loadNetworkInfo (chainId) {
+  async loadNetworkInfo (chainId, dbFileExist) {
     const network = metadata.filter(x => x.chainId === Number(chainId))[0];
     if(network === undefined) {
         throw Error(`Config.loadNetworkInfo(): unknown chainId: ${chainId}`);
     }
     const contractsV1 = network.contractsV1 || {};
     this.EPOCH_BLOCK = network.startBlockV1 || 0;
-    const { cid, networkType, schemaVersion, returnError } = await this.getManifestCIDAndNetworkType(chainId);
+    const { cid, networkType, schemaVersion, returnError } = await this.getManifestCIDAndNetworkType(chainId, dbFileExist);
     this.CID = cid;
     this.NETWORK_TYPE = networkType;
     this.SCHEMA_VERSION = schemaVersion;

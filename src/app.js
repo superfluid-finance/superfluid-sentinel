@@ -179,9 +179,10 @@ class App {
             this.notifier.sendNotification(`Sentinel started at ${new Date()}`);
             // connect to provided rpc
             await this.client.connect();
+            const dbFileExist = this.utils.fileExist(this.config.DB);
             // if we are running tests don't try to load network information
             if (!this.config.RUN_TEST_ENV) {
-                const error = await this.config.loadNetworkInfo(await this.client.getChainId());
+                const error = await this.config.loadNetworkInfo(await this.client.getChainId(), dbFileExist);
                 if(error !== undefined) {
                     this.logger.warn(error);
                 }
@@ -191,7 +192,6 @@ class App {
             this.notifier.sendNotification(`RPC connected with chainId ${await this.client.getChainId()}, account ${this.client.agentAccounts?.address} has balance ${this.client.agentAccounts ? wad4human(await this.client.getAccountBalance()) : "N/A"}`);
             
             //check conditions to decide if getting snapshot data
-            const dbFileExist = this.utils.fileExist(this.config.DB);
             if ((!dbFileExist || this.config.COLD_BOOT) &&
                 this.config.FASTSYNC && this.config.CID) {
                 this.logger.info(`getting snapshot from ${this.config.IPFS_GATEWAY + this.config.CID}`);

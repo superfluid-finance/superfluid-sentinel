@@ -1,7 +1,7 @@
 const { Web3 } = require('web3');
 const { wad4human } = require("@decentral.ee/web3-helpers");
 const BN = require("bn.js");
-const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
+const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/truffle/ISuperToken.json");
 
 const AccountManager = require("./accountManager");
 const RPCClient = require("./rpcClient");
@@ -29,6 +29,7 @@ class Client {
     this.totalSkippedBlockRequests = 0;
   }
 
+  // having to connect() before init() is a bit weird
   async connect () {
     try {
 
@@ -94,6 +95,7 @@ class Client {
     return this.chainId;
   }
 
+  // legacy
   getAccountAddress () {
     return this.accountManager.getAccountAddress(0);
   }

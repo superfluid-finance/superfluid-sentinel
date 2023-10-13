@@ -1,12 +1,12 @@
-const IResolver = require("@superfluid-finance/ethereum-contracts/build/contracts/IResolver.json");
-const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperfluid.json");
-const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/contracts/ISuperToken.json");
-const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/contracts/SuperfluidGovernanceBase.json");
-const ICFA = require("@superfluid-finance/ethereum-contracts/build/contracts/IConstantFlowAgreementV1.json");
-const IGDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IGeneralDistributionAgreementV1.json");
-const IIDA = require("@superfluid-finance/ethereum-contracts/build/contracts/IInstantDistributionAgreementV1.json");
-const BatchContract = require("@superfluid-finance/ethereum-contracts/build/contracts/BatchLiquidator.json");
-const TogaContract = require("@superfluid-finance/ethereum-contracts/build/contracts/TOGA.json");
+const IResolver = require("@superfluid-finance/ethereum-contracts/build/truffle/IResolver.json");
+const ISuperfluid = require("@superfluid-finance/ethereum-contracts/build/truffle/ISuperfluid.json");
+const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/truffle/ISuperToken.json");
+const SuperfluidGovernance = require("@superfluid-finance/ethereum-contracts/build/truffle/SuperfluidGovernanceBase.json");
+const ICFA = require("@superfluid-finance/ethereum-contracts/build/truffle/IConstantFlowAgreementV1.json");
+const IGDA = require("@superfluid-finance/ethereum-contracts/build/truffle/IGeneralDistributionAgreementV1.json");
+const IIDA = require("@superfluid-finance/ethereum-contracts/build/truffle/IInstantDistributionAgreementV1.json");
+const BatchContract = require("@superfluid-finance/ethereum-contracts/build/truffle/BatchLiquidator.json");
+const TogaContract = require("@superfluid-finance/ethereum-contracts/build/truffle/TOGA.json");
 
 /*
     Contracts is a class that loads all the contracts that are needed for the app to run

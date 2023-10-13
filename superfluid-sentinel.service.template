@@ -6,11 +6,11 @@ After=network.target
 User=<username>
 WorkingDirectory=<sentinel root directory>
 
-ExecStart=<path to npm> start
+ExecStart=<path to yarn> start
 
 # If you are using nvm, you can use this instead:
 #Environment="NODE_VERSION=14"
-#ExecStart=<PATH TO HOME>/.nvm/nvm-exec npm start
+#ExecStart=<PATH TO HOME>/.nvm/nvm-exec yarn start
 
 Restart=always
 

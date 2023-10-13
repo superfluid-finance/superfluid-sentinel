@@ -1,6 +1,6 @@
 const sinon = require("sinon");
 const { expect } = require("chai");
-const RPCClient = require("../../src/web3client/RPCClient");
+const RPCClient = require("../../src/web3client/rpcClient.js");
 const Web3 = require("web3");
 
 describe("RPC Client", () => {

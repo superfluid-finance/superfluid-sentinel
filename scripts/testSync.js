@@ -3,7 +3,7 @@
  * using the snapshot set for the chain in manifest.json (if set).
  *
  * Requires HTTP_RPC_NODE to be set. If an .env file exists in the project root, it reads it.
- * exec: npm run test-sync RPC_URL
+ * exec: yarn test-sync RPC_URL
  */
 require("dotenv").config();
 const App = require("./../src/app");

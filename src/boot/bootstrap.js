@@ -3,6 +3,8 @@ const { Op } = require("sequelize");
 /*
  * @dev Bootstrap the app from fresh or persisted state
  */
+// with all events loaded, transforms raw data in the DB
+// to higher level data (like estimations)
 class Bootstrap {
   constructor (app) {
     this.app = app;

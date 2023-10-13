@@ -1,10 +1,14 @@
 const async = require("async");
 
+// rename to EventLoader?
+// used only for the initial load
+// persists the raw data in the DB
 class LoadEvents {
   constructor (app) {
     this.app = app;
   }
 
+  // add a comment summarizing what it does
   async start () {
     try {
       this.app.logger.info("getting past event to find SuperTokens");

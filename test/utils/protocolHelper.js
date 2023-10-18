@@ -18,14 +18,15 @@ async function setup(provider, agentAccount) {
     const accounts = await web3.eth.getAccounts();
     const providerEthers = new ethers.JsonRpcProvider("http://127.0.0.1:8545",null,{polling: true});
     const account = await providerEthers.getSigner();
-    await web3.eth.sendTransaction({
-        from: accounts[1],
+
+    const fundTx1 = {
+        from: accounts[0],
         to: account.address,
-        value: web3.utils.toWei("10", "ether")
-    });
+        value: web3.utils.toWei("100", "ether")
+    }
+    await web3.eth.sendTransaction(fundTx1, undefined, { ignoreGasPricing: true })
 
-    const sf = await DeployAndLoadSuperfluidFramework(web3, account);
-
+    const sf = await DeployAndLoadSuperfluidFramework(web3, account,  accounts[0]);
     for (const account of accounts) {
         await sf.tokens.fDAI.methods.mint(account, "10000000000000000000000").send({from: account});
         await sf.tokens.fDAI.methods.approve(sf.superTokens.fDAIx.options.address, "10000000000000000000000").send({from: account});
@@ -35,11 +36,12 @@ async function setup(provider, agentAccount) {
         });
     }
 
-    await web3.eth.sendTransaction({
+    const fundTx2 = {
         to: agentAccount,
         from: accounts[9],
         value: web3.utils.toWei("10", "ether")
-    });
+    };
+    await web3.eth.sendTransaction(fundTx2, undefined, { ignoreGasPricing: true });
     helper = {};
     helper.web3 = web3;
     helper.accounts = accounts;
@@ -113,7 +115,8 @@ async function setup(provider, agentAccount) {
             if(helper === undefined) {
                 throw new Error("helper is undefined");
             }
-            const tx = await helper.sf.gda.methods.createPool(superTokenAddress, admin).send({from: sender,gas: 1000000});
+            let poolConfig = {transferabilityForUnitsOwner:true, distributionFromAnyAddress:true};
+            const tx = await helper.sf.gda.methods.createPool(superTokenAddress, admin, poolConfig).send({from: sender,gas: 1000000});
             const events = await helper.sf.gda.getPastEvents("PoolCreated", {fromBlock: tx.blockNumber, toBlock: tx.blockNumber});
             return events[0].returnValues.pool;
         },
@@ -144,6 +147,7 @@ async function setup(provider, agentAccount) {
     }
 
     return helper;
+
 }
 
 async function getPoolEvent(blockNumber) {

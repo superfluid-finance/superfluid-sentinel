@@ -35,10 +35,10 @@ async function DeployAndLoadSuperfluidFramework(web3, provider) {
     const sfDeployer = await SuperfluidFrameworkDeployer.deployTestFramework(provider);
     const contractsFramework = await sfDeployer.frameworkDeployer.getFramework();
 
-    await sfDeployer.frameworkDeployer.deployWrapperSuperToken("Fake DAI Token", "fDAI", 18, MINT_AMOUNT);
-    await sfDeployer.frameworkDeployer.deployWrapperSuperToken("Fake USDC Token", "fUSDC", 18, MINT_AMOUNT);
+    await sfDeployer.frameworkDeployer.deployWrapperSuperToken("Fake DAI Token", "fDAI", 18, MINT_AMOUNT, provider.address);
+    await sfDeployer.frameworkDeployer.deployWrapperSuperToken("Fake USDC Token", "fUSDC", 18, MINT_AMOUNT, provider.address);
 
-    const resolver = new web3.eth.Contract(IResolver.abi, contractsFramework[8]);
+    const resolver = new web3.eth.Contract(IResolver.abi, contractsFramework[11]);
     const superfluid = new web3.eth.Contract(ISuperfluid.abi, contractsFramework[1]);
     const fDAIxAddress = await resolver.methods.get("supertokens.test.fDAIx").call();
     const fUSDCxAddress = await resolver.methods.get("supertokens.test.fUSDCx").call();
@@ -67,8 +67,8 @@ async function DeployAndLoadSuperfluidFramework(web3, provider) {
         gda: gda
     }
     const governance = new web3.eth.Contract(Governance.abi, contractsFramework[0])
-    const batchLiquidator = new web3.eth.Contract(BatchLiquidator.abi, contractsFramework[13]);
-    const toga = new web3.eth.Contract(TOGA.abi, contractsFramework[14]);
+    const batchLiquidator = new web3.eth.Contract(BatchLiquidator.abi, contractsFramework[16]);
+    const toga = new web3.eth.Contract(TOGA.abi, contractsFramework[17]);
 
     return {
         governance: governance,

@@ -55,6 +55,12 @@ module.exports = {
                 internalType: "int96",
                 name: "adjustmentFlowRate",
                 type: "int96"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes",
+                "name": "userData",
+                "type": "bytes"
             }
         ],
         name: "FlowDistributionUpdated",
@@ -98,6 +104,12 @@ module.exports = {
                 internalType: "uint256",
                 name: "actualAmount",
                 type: "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes",
+                "name": "userData",
+                "type": "bytes"
             }
         ],
         name: "InstantDistributionUpdated",

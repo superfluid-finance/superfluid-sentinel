@@ -19,12 +19,12 @@ async function setup(provider, agentAccount) {
     const providerEthers = new ethers.JsonRpcProvider("http://127.0.0.1:8545",null,{polling: true});
     const account = await providerEthers.getSigner();
 
-    const fundTx1 = {
+    await web3.eth.sendTransaction({
         from: accounts[0],
         to: account.address,
-        value: web3.utils.toWei("100", "ether")
-    }
-    await web3.eth.sendTransaction(fundTx1, undefined, { ignoreGasPricing: true })
+        value: web3.utils.toWei("100", "ether"),
+        type: "0x0"
+    });
 
     const sf = await DeployAndLoadSuperfluidFramework(web3, account,  accounts[0]);
     for (const account of accounts) {
@@ -36,12 +36,12 @@ async function setup(provider, agentAccount) {
         });
     }
 
-    const fundTx2 = {
+    await web3.eth.sendTransaction({
         to: agentAccount,
         from: accounts[9],
-        value: web3.utils.toWei("10", "ether")
-    };
-    await web3.eth.sendTransaction(fundTx2, undefined, { ignoreGasPricing: true });
+        value: web3.utils.toWei("10", "ether"),
+        type: "0x0"
+    });
     helper = {};
     helper.web3 = web3;
     helper.accounts = accounts;

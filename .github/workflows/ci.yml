@@ -37,6 +37,8 @@ jobs:
       - name: Install, lint & build
         run: |
           yarn install
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
       - name: run node unit tests
         run: |

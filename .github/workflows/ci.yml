@@ -11,6 +11,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    permissions:
+      packages: read
+
     strategy:
       matrix:
         node-version: [18.x]

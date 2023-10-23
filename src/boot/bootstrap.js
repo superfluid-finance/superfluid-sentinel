@@ -3,6 +3,8 @@ const { Op } = require("sequelize");
 /*
  * @dev Bootstrap the app from fresh or persisted state
  */
+// with all events loaded, transforms raw data in the DB
+// to higher level data (like estimations)
 class Bootstrap {
   constructor (app) {
     this.app = app;
@@ -34,7 +36,9 @@ class Bootstrap {
           await queue.drain();
         }
 
-        const flows = await this.app.db.queries.getLastFlows(blockNumber);
+        const cfaFlows = await this.app.db.queries.getLastCFAFlows(blockNumber);
+        const gdaFlows = await this.app.db.queries.getLastGDAFlows(blockNumber);
+        const flows = [...cfaFlows, ...gdaFlows];
         for (const flow of flows) {
           try {
             await this.app.db.models.AgreementModel.upsert({
@@ -43,7 +47,8 @@ class Bootstrap {
               sender: flow.sender,
               receiver: flow.receiver,
               flowRate: flow.flowRate,
-              blockNumber: blockNumber
+              blockNumber: blockNumber,
+              source: flow.source
             });
           } catch (err) {
             this.app.logger.error(err);

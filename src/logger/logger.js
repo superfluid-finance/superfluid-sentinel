@@ -4,7 +4,6 @@ const { combine, timestamp, label, printf } = format;
 class Logger {
   constructor (app) {
     this.app = app;
-    this.logs = [];
     const logFormat = printf(({
       level,
       message,

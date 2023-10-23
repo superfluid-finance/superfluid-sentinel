@@ -1,11 +1,13 @@
-const protocolHelper = require("../utils/protocolHelper");
+const protocolHelper = require("../../test/utils/protocolHelper");
 const expect = require("chai").expect;
-const ganache = require("../utils/ganache");
+const startGanache = require("../../test/utils/ganache");
 const App = require("../../src/app");
 
 const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
+const DEFAULT_REWARD_ADDRESS = "0x0000000000000000000000000000000000000045";
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-let app, accounts, snapId, protocolVars, web3;
+let app, accounts, snapId, helper, web3, ganache, provider;
 
 const bootNode = async (config) => {
     const sentinelConfig = protocolHelper.getSentinelConfig(config);
@@ -23,11 +25,17 @@ const closeNode = async (force = false) => {
 };
 
 describe("Agent configurations tests", () => {
+
     before(async function () {
-        protocolVars = await protocolHelper.setup(ganache.provider, AGENT_ACCOUNT);
-        web3 = protocolVars.web3;
-        accounts = protocolVars.accounts;
-        snapId = await ganache.helper.takeEvmSnapshot();
+        ganache = await startGanache();
+        provider = await ganache.provider;
+        helper = await protocolHelper.setup(provider, AGENT_ACCOUNT);
+        helper.provider = provider;
+        helper.togaAddress = helper.sf.toga.options.address;
+        helper.batchAddress = helper.sf.batch.options.address;
+        web3 = helper.web3;
+        accounts = helper.accounts;
+        snapId = await ganache.helper.takeEvmSnapshot(provider);
     });
 
     beforeEach(async () => {
@@ -35,7 +43,7 @@ describe("Agent configurations tests", () => {
 
     afterEach(async () => {
         try {
-            snapId = await ganache.helper.revertToSnapShot(snapId.result);
+            await ganache.helper.revertToSnapShot(provider, snapId);
         } catch (err) {
             protocolHelper.exitWithError(err);
         }
@@ -48,28 +56,25 @@ describe("Agent configurations tests", () => {
         await ganache.close();
     });
 
-    it("Should use delay paramater when sending liquidation", async () => {
+    it("Should use delay parameter when sending liquidation", async () => {
         try {
-            const data = protocolVars.cfa.methods.createFlow(
-                protocolVars.superToken._address,
-                accounts[2],
-                "100000000000",
-                "0x"
-            ).encodeABI();
-            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({
+            await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "100000000000");
+            await ganache.helper.timeTravelOnce(provider, web3, 1);
+            await bootNode({
+                pic: ZERO_ADDRESS,
+                resolver: helper.sf.resolver.options.address,
+                toga_contract: helper.togaAddress,
+                additional_liquidation_delay: 2700,
+                log_level: "debug"
+            });
+            const tx = await helper.sf.superToken.methods.transferAll(accounts[2]).send({
                 from: accounts[0],
                 gas: 1000000
             });
-            await ganache.helper.timeTravelOnce(1);
-            await bootNode({additional_liquidation_delay: 2700});
-            const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({
-                from: accounts[0],
-                gas: 1000000
-            });
-            await ganache.helper.timeTravelOnce(3580, app, true);
-            const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+            await ganache.helper.timeTravelOnce(provider, web3,3580, app, true);
+            const result = await protocolHelper.waitForEvent(helper, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
             await app.shutdown();
-            expect(result[0].returnValues.liquidatorAccount).to.equal(AGENT_ACCOUNT);
+            protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "1");
         } catch (err) {
             protocolHelper.exitWithError(err);
         }
@@ -77,18 +82,9 @@ describe("Agent configurations tests", () => {
 
     it("Change state if not getting new blocks", async () => {
         try {
-            const data = protocolVars.cfa.methods.createFlow(
-                protocolVars.superToken._address,
-                accounts[2],
-                "100000000000",
-                "0x"
-            ).encodeABI();
-            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({
-                from: accounts[0],
-                gas: 1000000
-            });
-            await ganache.helper.timeTravelOnce(1);
-            await bootNode();
+            await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "100000000000");
+            await ganache.helper.timeTravelOnce(provider, web3, 1);
+            await bootNode({resolver: helper.sf.resolver.options.address});
             let healthy;
             while (true) {
                 await protocolHelper.timeout(9000);
@@ -103,42 +99,34 @@ describe("Agent configurations tests", () => {
         }
     });
 
-    it("Get PIC on Boot and change after", async () => {
+    // TODO: Superfluid Deployers need to deploy and register peripherals contracts
+    it.skip("Get PIC on Boot and change after", async () => {
         try {
-            const data = protocolVars.cfa.methods.createFlow(
-                protocolVars.superToken._address,
-                accounts[2],
-                "100000000000",
-                "0x"
-            ).encodeABI();
-            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({
-                from: accounts[0],
-                gas: 1000000
-            });
+            await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "100000000000");
             //became pic
-            await protocolVars.superToken.methods.transfer(protocolVars.toga._address, "100000000000000000").send({
+            await helper.superToken.methods.transfer(helper.toga._address, "100000000000000000").send({
                 from: accounts[0],
                 gas: 1000000
             });
             await ganache.helper.timeTravelOnce(5);
-            await bootNode({toga_contract: protocolVars.toga._address});
+            await bootNode({toga_contract: helper.toga._address});
             let picInfo
             while (true) {
                 await protocolHelper.timeout(5000);
-                picInfo = await app.getPICInfo(protocolVars.superToken._address);
+                picInfo = await app.getPICInfo(helper.superToken._address);
                 if (picInfo.length > 0) break;
             }
 
             expect(picInfo[0].pic).to.be.equal(accounts[0]);
             //PIC changes
-            await protocolVars.superToken.methods.transfer(protocolVars.toga._address, "100000000000000000").send({
+            await helper.superToken.methods.transfer(helper.toga._address, "100000000000000000").send({
                 from: accounts[1],
                 gas: 1000000
             });
             await ganache.helper.timeTravelOnce(5);
             while (true) {
                 await protocolHelper.timeout(8000);
-                picInfo = await app.getPICInfo(protocolVars.superToken._address);
+                picInfo = await app.getPICInfo(helper.superToken._address);
                 if (picInfo.length > 0) break;
             }
             await app.shutdown();
@@ -148,44 +136,18 @@ describe("Agent configurations tests", () => {
         }
     });
 
-    it("When observer, no need for wallet / address", async () => {
-        try{
-            await bootNode({observer: "true", fastsync: "false"});
-            expect(app.getConfigurationInfo().OBSERVER).to.be.true;
-            await app.shutdown();
-        } catch(err) {
-            protocolHelper.exitWithError(err);
-        }
-    });
-
-    // not yet supported
     it.skip("Start node, subscribe to new Token and perform estimation", async () => {
         try {
-            await bootNode();
-            const data = protocolVars.cfa.methods.createFlow(
-                protocolVars.superToken._address,
-                accounts[2],
-                "10000000000000000",
-                "0x"
-            ).encodeABI();
-            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({
+            await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug", toga_contract: helper.togaAddress});
+            await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "1000000000");
+            const tx = await helper.sf.superToken.methods.transferAll(accounts[2]).send({
                 from: accounts[0],
                 gas: 1000000
             });
-            while (true) {
-                const estimation = await app.db.queries.getAddressEstimations(accounts[0]);
-                if (estimation.length > 0) {
-                    console.log(estimation);
-                    break;
-                }
-                await protocolHelper.timeout(1000);
-            }
-            await protocolHelper.timeout(1000);
-            const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({
-                from: accounts[0],
-                gas: 1000000
-            });
-            const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+            const result = await protocolHelper.waitForEvent(helper, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+            const activityLog = app.circularBuffer.toArray().filter((element) => { return element.stateChange === "new token found" });
+            expect(activityLog.length).to.equal(1);
+            await app.shutdown();
             protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
         } catch (err) {
             protocolHelper.exitWithError(err);
@@ -194,25 +156,35 @@ describe("Agent configurations tests", () => {
     // not yet supported
     it.skip("When token is listed afterwards, and there is already existing negative accounts, liquidations should still be performed", async () => {
         try {
-            const data = protocolVars.cfa.methods.createFlow(
-                protocolVars.superToken._address,
+            const data = helper.cfa.methods.createFlow(
+                helper.superToken._address,
                 accounts[2],
                 "1000000000000000000",
                 "0x"
             ).encodeABI();
-            await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({
+            await helper.host.methods.callAgreement(helper.cfa._address, data, "0x").send({
                 from: accounts[0],
                 gas: 1000000
             });
-            const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({
+            const tx = await helper.superToken.methods.transferAll(accounts[2]).send({
                 from: accounts[0],
                 gas: 1000000
             });
             //  const timestamp = await ganache.helper.timeTravelOnce(3600 * 4);
             await bootNode();
-            const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+            const result = await protocolHelper.waitForEvent(helper, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
             protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
         } catch (err) {
+            protocolHelper.exitWithError(err);
+        }
+    });
+
+    it("When observer, no need for wallet / address", async () => {
+        try{
+            await bootNode({observer: "true", fastsync: "false", resolver: helper.sf.resolver.options.address});
+            expect(app.getConfigurationInfo().OBSERVER).to.be.true;
+            await app.shutdown();
+        } catch(err) {
             protocolHelper.exitWithError(err);
         }
     });

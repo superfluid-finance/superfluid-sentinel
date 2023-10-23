@@ -1,14 +1,19 @@
 const async = require("async");
 
+// rename to EventLoader?
+// used only for the initial load
+// persists the raw data in the DB
 class LoadEvents {
   constructor (app) {
     this.app = app;
   }
 
+  // add a comment summarizing what it does
   async start () {
     try {
       this.app.logger.info("getting past event to find SuperTokens");
       const systemInfo = await this.app.db.models.SystemModel.findOne();
+      //TODO: we should pick the last block number from the last event (CFA or GDA)
       const lastEventBlockNumber = await this.app.db.models.FlowUpdatedModel.findOne({
         order: [["blockNumber", "DESC"]]
       });
@@ -27,6 +32,7 @@ class LoadEvents {
       let pullCounter = blockNumber;
       const currentBlockNumber = await this.app.client.getCurrentBlockNumber(this.app.config.BLOCK_OFFSET);
       const realBlockNumber = currentBlockNumber + this.app.config.BLOCK_OFFSET;
+
       this.app.logger.info(`scanning blocks from ${pullCounter} to ${currentBlockNumber} - real ${realBlockNumber}`);
       const queue = async.queue(async function (task) {
         let keepTrying = 1;
@@ -38,24 +44,64 @@ class LoadEvents {
                 ? { filter: { token: task.self.app.config.TOKENS }, fromBlock: task.fromBlock, toBlock: task.toBlock }
                 : { fromBlock: task.fromBlock, toBlock: task.toBlock };
 
-            let result = await task.self.app.protocol.getAgreementEvents("FlowUpdated", query);
-            result = result.map(task.self.app.models.event.transformWeb3Event);
+            let CFAFlowUpdated = await task.self.app.protocol.getCFAAgreementEvents("FlowUpdated", query);
+            let GDAFlowDistributionUpdated = await task.self.app.protocol.getGDAgreementEvents("FlowDistributionUpdated", query);
+            CFAFlowUpdated = CFAFlowUpdated.map(task.self.app.models.event.transformWeb3Event);
+            CFAFlowUpdated.forEach(result => result.source = "CFA");
+            GDAFlowDistributionUpdated = GDAFlowDistributionUpdated.map(task.self.app.models.event.transformWeb3Event);
+            GDAFlowDistributionUpdated.forEach(result => result.source = "GDA");
 
-            for (const event of result) {
-              const agreementId = task.self.app.protocol.generateId(event.sender, event.receiver);
-              const hashId = task.self.app.protocol.generateId(event.token, agreementId);
-
-              await task.self.app.db.models.FlowUpdatedModel.create({
+            // debug only ----------------------------------
+            let GDAPoolCreated = await task.self.app.protocol.getGDAgreementEvents("PoolCreated", query);
+            GDAPoolCreated = GDAPoolCreated.map(task.self.app.models.event.transformWeb3Event);
+            GDAPoolCreated.forEach(result => result.source = "GDA-PoolCreated");
+            for(const event of GDAPoolCreated) {
+              const agreementId = await task.self.app.protocol.generateGDAId(event.admin, event.pool);
+              await task.self.app.db.models.PoolCreatedModel.create({
+                agreementId: agreementId,
                 address: event.address,
                 blockNumber: event.blockNumber,
                 superToken: event.token,
-                sender: event.sender,
-                receiver: event.receiver,
-                flowRate: event.flowRate,
-                agreementId: agreementId,
-                hashId: hashId
+                admin: event.admin,
+                pool: event.pool,
               });
             }
+            // end debug only ----------------------------------
+
+            const events = [...CFAFlowUpdated, ...GDAFlowDistributionUpdated];
+            for (const event of events) {
+              if (event.source === "CFA") {
+                const agreementId = task.self.app.protocol.generateCFAId(event.sender, event.receiver);
+                const hashId = task.self.app.protocol.generateCFAId(event.token, agreementId);
+
+                await task.self.app.db.models.FlowUpdatedModel.create({
+                  address: event.address,
+                  blockNumber: event.blockNumber,
+                  superToken: event.token,
+                  sender: event.sender,
+                  receiver: event.receiver,
+                  flowRate: event.flowRate,
+                  agreementId: agreementId,
+                  hashId: hashId
+                });
+              } else {
+                const agreementId = await task.self.app.protocol.generateGDAId(event.distributor, event.pool);
+                await task.self.app.db.models.FlowDistributionModel.create({
+                  agreementId: agreementId,
+                  superToken: event.token,
+                  pool: event.pool,
+                  distributor: event.distributor,
+                  operator: event.operator,
+                  oldFlowRate: event.oldFlowRate,
+                  newDistributorToPoolFlowRate: event.newDistributorToPoolFlowRate,
+                  newPoolToDistributorFlowRate: event.newPoolToDistributorFlowRate,
+                  newTotalDistributionFlowRate: event.newTotalDistributionFlowRate,
+                  adjustmentFlowRate: event.adjustmentFlowRate,
+                  blockNumber: event.blockNumber
+                });
+              }
+            }
+
             break;
           } catch (err) {
             keepTrying++;
@@ -77,11 +123,15 @@ class LoadEvents {
 
       await queue.drain();
 
-      const tokens = await this.app.db.models.FlowUpdatedModel.findAll({
+      const tokensCFA = await this.app.db.models.FlowUpdatedModel.findAll({
         attributes: ["superToken"],
         group: ["superToken"]
       });
-
+      const tokensGDA = await this.app.db.models.FlowDistributionModel.findAll({
+        attributes: ["superToken"],
+        group: ["superToken"]
+      });
+      const tokens = [...tokensCFA, ...tokensGDA];
       // fresh database
       if (systemInfo === null) {
         await this.app.db.models.SystemModel.create({
@@ -94,7 +144,7 @@ class LoadEvents {
         await systemInfo.save();
       }
       // Load supertokens
-      await this.app.client.loadSuperTokens(tokens.map(({ superToken }) => superToken));
+      await this.app.client.superToken.loadSuperTokens(tokens.map(({ superToken }) => superToken));
       if(!this.app.config.OBSERVER) {
         this.app.logger.info("start getting delays PIC system");
         // we need to query each supertoken to check pic address
@@ -114,7 +164,7 @@ class LoadEvents {
             }
           }
         }, this.app.config.CONCURRENCY);
-        const superTokens = this.app.client.superTokensAddresses;
+        const superTokens = this.app.client.superToken.superTokensAddresses;
         for (const st of superTokens) {
           delayChecker.push({
             self: this,

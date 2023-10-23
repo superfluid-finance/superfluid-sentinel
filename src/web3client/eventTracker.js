@@ -1,6 +1,7 @@
 const { PollingBlockTracker } = require("eth-block-tracker");
 const superTokenEvents = require("../models/SuperTokensEventsAbi");
 const CFAEvents = require("../models/CFAEventsAbi");
+const GDAEvents = require("../models/GDAEventsAbi");
 const IDAEvents = require("../models/IDAEventsAbi");
 const TOGAEvents = require("../models/TOGAEventsAbi");
 const decoder = require("ethjs-abi");
@@ -19,14 +20,14 @@ class EventTracker {
 
   async getPastBlockAndParseEvents (oldBlock, newBlock) {
     if(Number(oldBlock) <= Number(newBlock)) {
-      let eventsFromBlocks = await this.app.client.web3.eth.getPastLogs({fromBlock: oldBlock,
+      let eventsFromBlocks = await this.app.client.RPCClient.getPastLogs({fromBlock: oldBlock,
         toBlock: newBlock,
         address: this.app.client.getSFAddresses()
       });
       // scan blocks from new tokens to subscribe before processing the remaining data
       const newTokens = await this.findNewTokens(eventsFromBlocks);
       if(newTokens) {
-        eventsFromBlocks = await this.app.client.web3.eth.getPastLogs({fromBlock: oldBlock,
+        eventsFromBlocks = await this.app.client.RPCClient.getPastLogs({fromBlock: oldBlock,
           toBlock: newBlock,
           address: this.app.client.getSFAddresses()
         });
@@ -34,19 +35,20 @@ class EventTracker {
       for (const log of eventsFromBlocks) {
         this.processSuperTokenEvent(this._parseEvent(superTokenEvents, log));
         this.processIDAEvent(this._parseEvent(IDAEvents, log));
+        this.processGDAEvent(this._parseEvent(GDAEvents, log));
         await this.processTOGAEvent(this._parseEvent(TOGAEvents, log));
       }
     }
   }
 
   async start (oldBlock) {
-    if (this.app.client.isConnected === undefined || !this.app.client.isConnected) {
+    if (this.app.client.RPCClient.isConnected === undefined || !this.app.client.RPCClient.isConnected) {
       throw Error("BlockTracker.start() - client is not initialized ");
     }
     if (oldBlock) {
       this.oldSeenBlock = oldBlock;
     }
-    const provider = this.app.client.web3.eth.currentProvider;
+    const provider = this.app.client.RPCClient.getProvider();
     this.blockTracker = new PollingBlockTracker({
       provider,
       pollingInterval: this.app.config.POLLING_INTERVAL
@@ -75,7 +77,7 @@ class EventTracker {
         self.app.client.addTotalRequest();
       });
     } catch (err) {
-      this.app.logger.error(err);
+      this.app.logger.error(`BlockTracker.start() - ${err}`);
       // retry how many times? - process.exit(1) || this.start(oldBlock);
     }
   }
@@ -124,14 +126,14 @@ class EventTracker {
             break;
           }
           case "AgreementLiquidatedBy": {
-            this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.penaltyAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
+            this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superToken,superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.penaltyAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
             if (event.bailoutAmount.toString() !== "0") {
               this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.bailoutAmount)}`);
             }
             break;
           }
           case "AgreementLiquidatedV2": {
-            this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.targetAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
+            this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superToken.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.targetAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
             const ramount = new BN(event.rewardAmount)
             const delta = new BN(event.targetAccountBalanceDelta)
             const isBailout = ramount.add(delta).lt(0);
@@ -152,9 +154,10 @@ class EventTracker {
 
   async processAgreementEvent (event) {
     try {
-      if(event && !this.app.client.isSuperTokenRegistered(event.token)) {
+      if(event && !this.app.client.superToken.isSuperTokenRegistered(event.token)) {
         this.app.logger.debug(`found a new token at ${event.token}`);
-        await this.app.client.loadSuperToken(event.token, true);
+        this.app.circularBuffer.push(event.token, null, "new token found");
+        await this.app.client.superToken.loadSuperToken(event.token, true);
         return true;
       }
       return false;
@@ -167,7 +170,7 @@ class EventTracker {
   processIDAEvent (event) {
     try {
       if(event && event.eventName === "IndexUpdated") {
-        if (this.app.client.isSuperTokenRegistered(event.token)) {
+        if (this.app.client.superToken.isSuperTokenRegistered(event.token)) {
           this.app.logger.debug(`[IndexUpdated] - ${event.eventName} [${event.token}] - publisher ${event.publisher}`);
           this.app.queues.estimationQueue.push([
             {
@@ -190,11 +193,38 @@ class EventTracker {
     }
   }
 
+  processGDAEvent (event) {
+    try {
+      if(event && event.eventName === "InstantDistributionUpdated") {
+        if (this.app.client.superToken.isSuperTokenRegistered(event.token)) {
+          this.app.logger.debug(`[InstantDistributionUpdated] - ${event.eventName} [${event.token}] - distributor ${event.distributor}`);
+          this.app.queues.estimationQueue.push([
+            {
+              self: this,
+              account: event.distributor,
+              token: event.token,
+              blockNumber: event.blockNumber,
+              blockHash: event.blockHash,
+              transactionHash: event.transactionHash,
+              parentCaller: "processGDAEvent"
+            }
+          ]);
+        } else {
+          this.app.logger.debug(`[GDA]: token ${event.token} is not subscribed`);
+        }
+      }
+    } catch (err) {
+      this.app.logger.error(err);
+      throw Error(`EventTracker.processIDAEvent(): ${err}`);
+    }
+  }
+
   async processTOGAEvent (event) {
     try {
       if(event && event.eventName === "NewPIC") {
-        if (this.app.client.isSuperTokenRegistered(event.token)) {
+        if (this.app.client.superToken.isSuperTokenRegistered(event.token)) {
           this.app.logger.info(`[TOGA]: ${event.eventName} [${event.token}] new pic ${event.pic}`);
+          this.app.circularBuffer.push(event.token, null, "new pic");
           await this.app.protocol.calculateAndSaveTokenDelay(event.token, true);
         } else {
           this.app.logger.debug(`[TOGA]: token ${event.token} is not subscribed`);
@@ -207,9 +237,19 @@ class EventTracker {
   }
 
   async findNewTokens(events) {
+    let foundAnyNewSuperToken = [];
     for (const log of events) {
-      return this.processAgreementEvent(this._parseEvent(CFAEvents, log));
+      try {
+        const CFAEvent = this._parseEvent(CFAEvents, log);
+        const GDAEvent = this._parseEvent(GDAEvents, log);
+        foundAnyNewSuperToken.push(await this.processAgreementEvent(CFAEvent));
+        foundAnyNewSuperToken.push(await this.processAgreementEvent(GDAEvent));
+      } catch (err) {
+        console.error(err);
+      }
     }
+    // return true if any new super token is found
+    return foundAnyNewSuperToken.some((e) => e === true);
   }
 
   _parseEvent (abi, log) {

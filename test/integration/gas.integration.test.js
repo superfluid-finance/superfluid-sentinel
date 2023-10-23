@@ -1,11 +1,13 @@
-const protocolHelper = require("../utils/protocolHelper");
+const protocolHelper = require("../../test/utils/protocolHelper");
 const expect = require("chai").expect;
-const ganache = require("../utils/ganache");
+const startGanache = require("../../test/utils/ganache");
 const App = require("../../src/app");
 
 const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
+const DEFAULT_REWARD_ADDRESS = "0x0000000000000000000000000000000000000045";
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-let app, accounts, snapId, protocolVars, web3;
+let app, accounts, snapId, helper, web3, ganache, provider;
 
 const bootNode = async (config) => {
   const sentinelConfig = protocolHelper.getSentinelConfig(config);
@@ -24,10 +26,15 @@ const closeNode = async (force = false) => {
 
 describe("Gas Integration tests", () => {
   before(async function () {
-    protocolVars = await protocolHelper.setup(ganache.provider, AGENT_ACCOUNT);
-    web3 = protocolVars.web3;
-    accounts = protocolVars.accounts;
-    snapId = await ganache.helper.takeEvmSnapshot();
+    ganache = await startGanache();
+    provider = await ganache.provider;
+    helper = await protocolHelper.setup(provider, AGENT_ACCOUNT);
+    helper.provider = provider;
+    helper.togaAddress = helper.sf.toga.options.address;
+    helper.batchAddress = helper.sf.batch.options.address;
+    web3 = helper.web3;
+    accounts = helper.accounts;
+    snapId = await ganache.helper.takeEvmSnapshot(provider);
   });
 
   beforeEach(async () => {
@@ -35,7 +42,10 @@ describe("Gas Integration tests", () => {
 
   afterEach(async () => {
     try {
-      snapId = await ganache.helper.revertToSnapShot(snapId.result);
+      console.log("loading snapshot...");
+      const result = await ganache.helper.revertToSnapShot(provider, snapId);
+      snapId = await ganache.helper.takeEvmSnapshot(provider);
+      expect(result).to.be.true;
     } catch (err) {
       protocolHelper.exitWithError(err);
     }
@@ -50,23 +60,14 @@ describe("Gas Integration tests", () => {
 
   it("Scale gas on timeout", async () => {
     try {
-      const data = protocolVars.cfa.methods.createFlow(
-        protocolVars.superToken._address,
-        accounts[2],
-        "10000000000000000",
-        "0x"
-      ).encodeABI();
-      await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, data, "0x").send({
+      await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "10000000000000000");
+      const tx = await helper.sf.superToken.methods.transferAll(accounts[2]).send({
         from: accounts[0],
         gas: 1000000
       });
-      const tx = await protocolVars.superToken.methods.transferAll(accounts[2]).send({
-        from: accounts[0],
-        gas: 1000000
-      });
-      await bootNode({pic: accounts[0], tx_timeout: 2});
+      await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, toga_contract: helper.togaAddress,  tx_timeout: 2, log_level: "debug"});
       app.setTestFlag("TIMEOUT_ON_LOW_GAS_PRICE", { minimumGas: 3000000000 });
-      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+      const result = await protocolHelper.waitForEvent(helper, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
       await app.shutdown();
       protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
     } catch (err) {

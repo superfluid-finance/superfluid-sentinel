@@ -7,6 +7,7 @@ async function trigger (fn, ms) {
   await fn.drain();
 }
 
+// keeps DB up to date based on latest relevant on-chain events
 class Queues {
   constructor (app) {
     this.app = app;
@@ -39,7 +40,7 @@ class Queues {
       }
       while (true) {
         try {
-          if (task.self.app.client.isSuperTokenRegistered(task.token)) {
+          if (task.self.app.client.superToken.isSuperTokenRegistered(task.token)) {
             task.self.app.logger.debug(`EstimationQueue - Parent Caller ${task.parentCaller} TransactionHash: ${task.transactionHash}`);
             const estimationData = await task.self.app.protocol.liquidationData(task.token, task.account);
             await task.self.app.db.models.AccountEstimationModel.upsert({
@@ -54,7 +55,8 @@ class Queues {
               estimationHuman: estimationData.estimation,
               estimationHumanPleb:estimationData.estimationPleb,
               estimationHumanPirate: estimationData.estimationPirate,
-              blockNumber: task.blockNumber
+              blockNumber: task.blockNumber,
+              source: task.source
             });
             const estimationOutput = new Date(estimationData.estimation).getTime() > 0 ? estimationData.estimation : "no estimation found";
             task.self.app.logger.debug(`[${task.token}]: ${task.account} - ${estimationOutput}`);
@@ -64,7 +66,7 @@ class Queues {
           break;
         } catch (err) {
           keepTrying++;
-          task.self.app.logger.error(err);
+          task.self.app.logger.error("newEstimationQueue: " +  err);
           if (keepTrying > task.self.app.config.NUM_RETRIES) {
             task.self.app.logger.error("Queues.estimationQueue(): exhausted number of retries");
             process.exit(1);
@@ -74,7 +76,7 @@ class Queues {
     }, this.app.config.CONCURRENCY);
   }
 
-  newAgreementQueue () {
+  newAgreementQueue() {
     if (this.estimationQueue === undefined) {
       throw Error("Queues.newAgreementQueue(): Need EstimationQueue to be set first");
     }
@@ -83,10 +85,11 @@ class Queues {
       if (task.account === "0x0000000000000000000000000000000000000000") {
         return;
       }
+
       while (true) {
         try {
           task.self.app.logger.debug(`EstimationQueue - Parent Caller ${task.parentCaller} TransactionHash: ${task.transactionHash}`);
-          const senderFilter = {
+          const senderFilterCFA = {
             filter: {
               sender: task.account
             },
@@ -94,56 +97,35 @@ class Queues {
             toBlock: task.blockNumber
           };
 
-          let allFlowUpdatedEvents = await task.self.app.protocol.getAgreementEvents(
-            "FlowUpdated",
-            senderFilter
+          const senderFilerGDA = {
+            filter: {
+              distributor: task.account
+            },
+            fromBlock: task.blockNumber,
+            toBlock: task.blockNumber
+          };
+          const flowUpdatedEvents = await task.self.app.queues._handleAgreementEvents(
+              task,
+              senderFilterCFA,
+              "CFA",
+              "FlowUpdated",
+              task.self.app.protocol.getCFAAgreementEvents
+          );
+          let flowDistributionUpdatedEvents = await task.self.app.queues._handleAgreementEvents(
+              task,
+              senderFilerGDA,
+              "GDA",
+              "FlowDistributionUpdated",
+              task.self.app.protocol.getGDAgreementEvents
           );
 
-          allFlowUpdatedEvents = allFlowUpdatedEvents.map(
-            task.self.app.models.event.transformWeb3Event
-          );
-
-          allFlowUpdatedEvents.sort(function (a, b) {
-            return a.blockNumber > b.blockNumber;
-          }).forEach(e => {
-            e.agreementId = task.self.app.protocol.generateId(e.sender, e.receiver);
-          });
-
-          if (allFlowUpdatedEvents.length === 0) {
-            task.self.app.logger.debug(`Didn't find FlowUpdated for sender: ${task.account} in blockNumber: ${task.blockNumber} / blockHash ${task.blockHash}`);
-          }
-
-          for (const event of allFlowUpdatedEvents) {
-            await task.self.app.db.models.AgreementModel.upsert({
-              agreementId: event.agreementId,
-              superToken: event.token,
-              sender: event.sender,
-              receiver: event.receiver,
-              flowRate: event.flowRate,
-              blockNumber: event.blockNumber
-            });
-            task.self.app.queues.estimationQueue.push([{
-              self: task.self,
-              account: event.sender,
-              token: event.token,
-              blockNumber: event.blockNumber,
-              blockHash: event.blockHash,
-              transactionHash: event.transactionHash,
-              parentCaller: "agreementUpdateQueue"
-            }, {
-              self: task.self,
-              account: event.receiver,
-              token: event.token,
-              blockNumber: event.blockNumber,
-              blockHash: event.blockHash,
-              transactionHash: event.transactionHash,
-              parentCaller: "agreementUpdateQueue"
-            }]);
-          }
+          // merge both
+          const events = [...flowUpdatedEvents, ...flowDistributionUpdatedEvents];
+          await task.self.app.queues._processEvents(task, events);
           break;
         } catch (err) {
           keepTrying++;
-          task.self.app.logger.error(err);
+          task.self.app.logger.error("Queues.agreementUpdateQueue(): " + err);
           if (keepTrying > task.self.app.config.NUM_RETRIES) {
             task.self.app.logger.error("Queues.agreementUpdateQueue(): exhausted number of retries");
             process.exit(1);
@@ -171,6 +153,79 @@ class Queues {
 
   getEstimationQueueLength () {
     return this.estimationQueue.length();
+  }
+
+  async _handleAgreementEvents(task, senderFilter, source, eventName, getAgreementEventsFunc) {
+    const app = task.self.app;
+    let allFlowUpdatedEvents = await getAgreementEventsFunc(
+        eventName,
+        senderFilter,
+        app
+    );
+
+    // return if no events
+    if (!allFlowUpdatedEvents || allFlowUpdatedEvents.length === 0) {
+      return [];
+    }
+    allFlowUpdatedEvents = allFlowUpdatedEvents.map(
+        app.models.event.transformWeb3Event
+    );
+    allFlowUpdatedEvents.sort((a, b) => a.blockNumber - b.blockNumber);
+    if (source === "GDA") {
+      allFlowUpdatedEvents = await Promise.all(allFlowUpdatedEvents.map(async (event) => {
+        event.sender = event.distributor;
+        event.receiver = event.pool;
+        event.agreementId = await app.protocol.generateGDAId(event.distributor, event.pool);
+        event.flowRate = event.newDistributorToPoolFlowRate;
+        event.source = "GDA";
+        return event;
+      }));
+    } else {
+      allFlowUpdatedEvents.forEach((event) => {
+        event.agreementId = app.protocol.generateCFAId(event.sender, event.receiver);
+        event.source = "CFA";
+      });
+    }
+    if (allFlowUpdatedEvents.length === 0) {
+      task.self.app.logger.debug(`Didn't find ${eventName} for sender: ${task.account} in blockNumber: ${task.blockNumber} / blockHash ${task.blockHash}`);
+    }
+    return allFlowUpdatedEvents;
+  }
+
+  async _processEvents(task, events) {
+    for (const event of events) {
+      await task.self.app.db.models.AgreementModel.upsert({
+        agreementId: event.agreementId,
+        superToken: event.token,
+        sender: event.sender,
+        receiver: event.receiver,
+        flowRate: event.flowRate,
+        blockNumber: event.blockNumber,
+        source: event.source
+      });
+      if (["CFA", "GDA"].includes(event.source)) {
+        const accounts = event.source === "CFA" ? [event.sender, event.receiver] : [event.distributor, event.pool];
+        accounts.forEach(account => {
+          task.self.app.queues.estimationQueue.push(
+              task.self.app.queues._createAgreementTask(account, event, task)
+          );
+        });
+      }
+    }
+  }
+
+  // organize the task to be pushed to the queue
+  _createAgreementTask(account, event, task) {
+    return {
+      self: task.self,
+      account: account,
+      token: event.token,
+      blockNumber: event.blockNumber,
+      blockHash: event.blockHash,
+      transactionHash: event.transactionHash,
+      parentCaller: "agreementUpdateQueue",
+      source: event.source
+    }
   }
 }
 

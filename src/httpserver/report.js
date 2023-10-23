@@ -18,7 +18,7 @@ class Report {
     // not available on all networks
     if(this._isSyncingMethodExist) {
       try {
-        rpcIsSyncing = await this.app.client.web3.eth.isSyncing();
+        rpcIsSyncing = await this.app.client.RPCClient.web3.eth.isSyncing();
       } catch(err) {
         this._isSyncingMethodExist = false;
         this.app.logger.error(`report.fullReport() - web3.eth.isSyncing failed: ${err}`);
@@ -32,9 +32,6 @@ class Report {
     const waitingForNewBlocksSince = Math.floor(Math.abs(new Date() - lastTimeNewBlocks) / 1000);
     const RPCStuck = waitingForNewBlocksSince * 1000 > this.app.config.POLLING_INTERVAL * 2;
     const overallHealthy = rpcIsSyncing === false && databaseOk && !RPCStuck;
-    // TODO: add DB stats - size, nr table entries
-    // TODO: add liquidation stats: past and future 1h, 24h, 30d
-    // TODO add PIC status
     return {
       timestamp: Date.now(),
       healthy: overallHealthy,
@@ -62,9 +59,10 @@ class Report {
         estimationQueue: estimationQueueSize
       },
       protocol: {
-        cfa: this.app.client.CFAv1._address,
-        ida: this.app.client.IDAv1._address,
-        supertokens: Object.values(this.app.client.superTokenNames)
+        cfa: this.app.client.contracts.getCFAv1Address(),
+        ida: this.app.client.contracts.getIDAv1Address(),
+        gda: this.app.client.contracts.getGDAv1Address(),
+        supertokens: Object.values(this.app.client.superToken.superTokenNames)
       }
     };
   }

@@ -1,18 +1,20 @@
-const protocolHelper = require("../utils/protocolHelper");
+const protocolHelper = require("../../test/utils/protocolHelper");
 const expect = require("chai").expect;
-const ganache = require("../utils/ganache");
+const startGanache = require("../../test/utils/ganache");
 const App = require("../../src/app");
 
 const AGENT_ACCOUNT = "0x868D9F52f84d33261c03C8B77999f83501cF5A99";
+const DEFAULT_REWARD_ADDRESS = "0x0000000000000000000000000000000000000045";
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-let app, accounts, snapId, protocolVars, web3;
+let app, accounts, snapId, helper, web3, ganache, provider;
 
 const bootNode = async (config) => {
   const sentinelConfig = protocolHelper.getSentinelConfig(config);
   app = new App(sentinelConfig);
   app.start();
   while (!app.isInitialized()) {
-    await protocolHelper.timeout(3000);
+    await protocolHelper.timeout(5000);
   }
 };
 
@@ -24,10 +26,15 @@ const closeNode = async (force = false) => {
 
 describe("IDA integration tests", () => {
   before(async function () {
-    protocolVars = await protocolHelper.setup(ganache.provider, AGENT_ACCOUNT);
-    web3 = protocolVars.web3;
-    accounts = protocolVars.accounts;
-    snapId = await ganache.helper.takeEvmSnapshot();
+    ganache = await startGanache();
+    provider = await ganache.provider;
+    helper = await protocolHelper.setup(provider, AGENT_ACCOUNT);
+    helper.provider = provider;
+    helper.togaAddress = helper.sf.toga.options.address;
+    helper.batchAddress = helper.sf.batch.options.address;
+    web3 = helper.web3;
+    accounts = helper.accounts;
+    snapId = await ganache.helper.takeEvmSnapshot(provider);
   });
 
   beforeEach(async () => {
@@ -35,9 +42,12 @@ describe("IDA integration tests", () => {
 
   afterEach(async () => {
     try {
-      snapId = await ganache.helper.revertToSnapShot(snapId.result);
+      console.log("loading snapshot...");
+      const result = await ganache.helper.revertToSnapShot(provider, snapId);
+      snapId = await ganache.helper.takeEvmSnapshot(provider);
+      expect(result).to.be.true;
     } catch (err) {
-      exitWithError(err);
+      protocolHelper.exitWithError(err);
     }
   });
 
@@ -48,59 +58,23 @@ describe("IDA integration tests", () => {
     await ganache.close();
   });
 
-  it("Get critical after IDA distribuiton", async () => {
+  it("Get critical after IDA distribution", async () => {
     try {
-      const cfaData = protocolVars.cfa.methods.createFlow(
-        protocolVars.superToken._address,
-        accounts[2],
-        "1000000000000",
-        "0x"
-      ).encodeABI();
-      await protocolVars.host.methods.callAgreement(protocolVars.cfa._address, cfaData, "0x").send({
-        from: accounts[0],
-        gas: 1000000
-      });
-      await ganache.helper.timeTravelOnce(60);
-      await bootNode({pic: accounts[0]});
-      const data = protocolVars.ida.methods.createIndex(
-        protocolVars.superToken._address, 6, "0x"
-      ).encodeABI();
-      await protocolVars.host.methods.callAgreement(protocolVars.ida._address, data, "0x").send({
-        from: accounts[0],
-        gas: 1000000
-      });
-      const subscriptionData = protocolVars.ida.methods.updateSubscription(
-        protocolVars.superToken._address, 6, accounts[1], 100, "0x"
-      ).encodeABI();
-      await protocolVars.host.methods.callAgreement(protocolVars.ida._address, subscriptionData, "0x").send({
-        from: accounts[0],
-        gas: 1000000
-      });
-      const approveSubData = protocolVars.ida.methods.approveSubscription(
-        protocolVars.superToken._address, accounts[0], 6, "0x"
-      ).encodeABI();
-      await protocolVars.host.methods.callAgreement(protocolVars.ida._address, approveSubData, "0x").send({
-        from: accounts[1],
-        gas: 1000000
-      });
-      await ganache.helper.timeTravelOnce(60);
-      const balance = await protocolVars.superToken.methods.realtimeBalanceOfNow(accounts[0]).call();
-      const availableBalance = web3.utils.toBN(balance.availableBalance.toString());
-      const distData = protocolVars.ida.methods.distribute(
-        protocolVars.superToken._address,
-        6,
-        availableBalance.sub(web3.utils.toBN("1000000000000")).toString(),
-        "0x"
-      ).encodeABI();
-      const tx = await protocolVars.host.methods.callAgreement(protocolVars.ida._address, distData, "0x").send({
-        from: accounts[0],
-        gas: 1000000
-      });
-      const result = await protocolHelper.waitForEvent(protocolVars, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
+      await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "1000000000000");
+      await ganache.helper.timeTravelOnce(provider, web3,1);
+      await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug", toga_contract: helper.togaAddress});
+      await helper.operations.createIDAIndex(helper.sf.superToken.options.address, accounts[0], "6");
+      await helper.operations.updateIDASubscription(helper.sf.superToken.options.address, accounts[0], accounts[1], "6", "100");
+      await ganache.helper.timeTravelOnce(provider, web3,60);
+      const balance = await helper.sf.superToken.methods.realtimeBalanceOfNow(accounts[0]).call();
+      const availableBalance = balance.availableBalance;
+      const tx = await helper.operations.distributeIDA(helper.sf.superToken.options.address, accounts[0], "6", availableBalance);
+      await ganache.helper.timeTravelOnce(provider, web3,60);
+      const result = await protocolHelper.waitForEvent(helper, app, ganache, "AgreementLiquidatedV2", tx.blockNumber);
       await app.shutdown();
       protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
     } catch (err) {
-      exitWithError(err);
+      protocolHelper.exitWithError(err);
     }
   });
 });

@@ -22,6 +22,7 @@ const TelegramNotifier = require("./services/telegramNotifier");
 const NotifierJobs = require("./services/notificationJobs");
 const Telemetry = require("./services/telemetry");
 const Errors = require("./utils/errors/errors");
+const CircularBuffer = require("./utils/circularBuffer");
 const { wad4human } = require("@decentral.ee/web3-helpers");
 
 class App {
@@ -39,6 +40,8 @@ class App {
             AgreementModel: require("./database/models/agreementModel")(this.db),
             FlowUpdatedModel: require("./database/models/flowUpdatedModel")(this.db),
             SuperTokenModel: require("./database/models/superTokenModel")(this.db),
+            PoolCreatedModel: require("./database/models/poolCreatedModel")(this.db),
+            FlowDistributionModel: require("./database/models/flowDistributionUpdatedModel")(this.db),
             SystemModel: require("./database/models/systemModel")(this.db),
             UserConfig: require("./database/models/userConfiguration")(this.db),
             ThresholdModel: require("./database/models/thresholdModel")(this.db),
@@ -57,13 +60,13 @@ class App {
         this.liquidator = new Liquidator(this);
         this.bootstrap = new Bootstrap(this);
         this.time = new Time();
-        this.genAccounts = utils.generateAccounts;
         this.utils = utils;
 
         this.healthReport = new Report(this);
         this.server = new HTTPServer(this);
         this.telemetry = new Telemetry(this);
         this.timer = new Timer();
+        this.circularBuffer = new CircularBuffer(100);
 
         this.notifier = new Notifier(this);
         // at this stage we only work with slack or telegram
@@ -82,6 +85,8 @@ class App {
         this._isInitialized = false;
     }
 
+    // run <fn> forever every <time> ms after the previous call finished
+    // rename to "loop" or "runForever" or ...?
     async run(fn, time) {
         if (this._isShutdown) {
             this.logger.info(`app.shutdown() - closing app runner`);
@@ -121,6 +126,7 @@ class App {
     async shutdown(force = false) {
         this._isShutdown = true;
         this.logger.info(`app.shutdown() - agent shutting down`);
+        this.circularBuffer.push("shutdown", null, "agent shutting down");
         this.time.resetTime();
         if (force) {
             process.exit(0);
@@ -173,33 +179,46 @@ class App {
             this.notifier.sendNotification(`Sentinel started at ${new Date()}`);
             // connect to provided rpc
             await this.client.connect();
+            const dbFileExist = this.utils.fileExist(this.config.DB);
             // if we are running tests don't try to load network information
             if (!this.config.RUN_TEST_ENV) {
-                await this.config.loadNetworkInfo(await this.client.getChainId());
+                const error = await this.config.loadNetworkInfo(await this.client.getChainId(), dbFileExist);
+                if(error !== undefined) {
+                    this.logger.warn(error);
+                }
             }
             // create all web3 infrastructure needed
             await this.client.init();
             this.notifier.sendNotification(`RPC connected with chainId ${await this.client.getChainId()}, account ${this.client.agentAccounts?.address} has balance ${this.client.agentAccounts ? wad4human(await this.client.getAccountBalance()) : "N/A"}`);
-            if (this.config.BATCH_CONTRACT !== undefined) {
-                await this.client.loadBatchContract();
-            }
-            if (this.config.TOGA_CONTRACT !== undefined) {
-                await this.client.loadTogaContract();
-            }
+            
             //check conditions to decide if getting snapshot data
-            if ((!this.utils.fileExist(this.config.DB) || this.config.COLD_BOOT) &&
+            if ((!dbFileExist || this.config.COLD_BOOT) &&
                 this.config.FASTSYNC && this.config.CID) {
                 this.logger.info(`getting snapshot from ${this.config.IPFS_GATEWAY + this.config.CID}`);
                 await this.utils.downloadFile(this.config.IPFS_GATEWAY + this.config.CID, this.config.DB + ".gz");
                 this.logger.info("unzipping snapshot...");
                 this.utils.unzip(this.config.DB + ".gz", this.config.DB);
                 await this.db.sync();
+                const userSchemaVersion = Number((await this.db.queries.getUserSchemaVersion())[0].user_version);
+                if(userSchemaVersion !== this.config.SCHEMA_VERSION) {
+                    throw Error(`local data schema ${userSchemaVersion} don't match sentinel version ${this.config.SCHEMA_VERSION}. Update and resync sentinel`);
+                }
             } else if (this.config.COLD_BOOT) {
                 // drop existing database to force a full boot
                 this.logger.debug(`resyncing database data`);
                 await this.db.sync({force: true});
+                await this.db.queries.setUserSchemaVersion(this.config.SCHEMA_VERSION)
             } else {
                 await this.db.sync();
+                // fresh database
+                if(!dbFileExist) {
+                    await this.db.queries.setUserSchemaVersion(this.config.SCHEMA_VERSION)
+                } else {
+                    const userSchemaVersion = Number((await this.db.queries.getUserSchemaVersion())[0].user_version);
+                    if(userSchemaVersion !== this.config.SCHEMA_VERSION) {
+                        throw Error(`local data schema ${userSchemaVersion} don't match sentinel version ${this.config.SCHEMA_VERSION}. Update and resync sentinel`);
+                    }
+                }
             }
             // log configuration data
             const userConfig = this.config.getConfigurationInfo();
@@ -249,10 +268,12 @@ class App {
             }
             //from this point on, sentinel is considered initialized.
             this._isInitialized = true;
+            this.circularBuffer.push("sentinel", null, "sentinel is initialized");
             // await x milliseconds before running next liquidation job
             if (!this.config.OBSERVER) {
                 this.run(this.liquidator, this.config.LIQUIDATION_JOB_AWAITS);
             } else {
+                this.circularBuffer.push("observer", null, "observer mode");
                 this.logger.warn(`ATTENTION: Configuration is set to be Observer. Liquidations will not be sent`);
             }
 

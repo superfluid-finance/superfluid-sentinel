@@ -1,4 +1,8 @@
-const {Base} = require("mocha/lib/reporters");
+const { FMT_NUMBER, FMT_BYTES } = require("web3");
+
+const dataFormat = {
+  number: FMT_NUMBER.NUMBER
+}
 
 class Liquidator {
   constructor (app) {
@@ -25,7 +29,6 @@ class Liquidator {
       let haveBatchWork = [];
       // if we have a batchLiquidator contract, use batch calls
       if (this.app.config.BATCH_CONTRACT !== undefined) {
-        //haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate, this.app.config.TOKENS, this.app.config.EXCLUDED_TOKENS);
         haveBatchWork = await this.app.db.queries.getNumberOfBatchCalls(checkDate, this.app.config.TOKENS, this.app.config.EXCLUDED_TOKENS);
         if(haveBatchWork.length > 0) {
           this.app.logger.debug(JSON.stringify(haveBatchWork));
@@ -65,27 +68,29 @@ class Liquidator {
         return checkFlow !== undefined && isCritical && !isSolvent;
       }
     } catch (err) {
-      this.app.logger.error(err);
+      this.app.logger.error(`liquidator.isPossibleToClose() - ${err}`);
       return false;
     }
   }
 
-  async singleTerminations (work) {
-    if (work.length === 0) {
+  async singleTerminations (liquidations) {
+    if (liquidations.length === 0) {
       return;
     }
     const wallet = this.app.client.getAccount();
     const chainId = await this.app.client.getChainId();
-    const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
-    for (const job of work) {
+    const networkAccountNonce = await wallet.txCount(dataFormat);
+    for (const job of liquidations) {
       if (await this.isPossibleToClose(job.superToken, job.sender, job.receiver, job.pppmode)) {
         try {
-          const txData = this.app.protocol.generateDeleteStreamTxData(job.superToken, job.sender, job.receiver);
-          const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice(); // will internally trhow and catch parse error a field
+          const txData = (job.source === "CFA")
+              ? this.app.protocol.generateDeleteCFAStreamTxData(job.superToken, job.sender, job.receiver)
+              : this.app.protocol.generateDeleteGDAStreamTxData(job.superToken, job.sender, job.receiver);
 
+          const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice();
           // if we hit the gas price limit or estimation error, we stop the liquidation job and return to main loop
           if(baseGasPrice.error) {
-            this.app.logger.error(baseGasPrice.error);
+            this.app.logger.error(`Liquidator.baseGasPrice - ${baseGasPrice.error}`);
             return;
           }
           if(baseGasPrice.hitGasPriceLimit) {
@@ -96,24 +101,25 @@ class Liquidator {
 
           const txObject = {
             retry: 1,
-            step: this.app.config.RETRY_GAS_MULTIPLIER,
+            step: Number(this.app.config.RETRY_GAS_MULTIPLIER),
             target: txData.target,
             flowSender: job.sender,
             flowReceiver: job.receiver,
             superToken: job.superToken,
+            source: job.source,
             tx: txData.tx,
-            gasPrice: baseGasPrice.gasPrice,
-            nonce: networkAccountNonce,
-            chainId: chainId
+            gasPrice: Number(baseGasPrice.gasPrice),
+            nonce: Number(networkAccountNonce),
+            chainId: Number(chainId)
           };
           const result = await this.sendWithRetry(wallet, txObject, this.app.config.TX_TIMEOUT);
           if (result !== undefined && result.error !== undefined) {
-            this.app.logger.error(result.error);
+            this.app.logger.error(`Liquidator.sendWithRetry: ${result.error}`);
           } else {
             this.app.logger.debug(JSON.stringify(result));
           }
         } catch (err) {
-          this.app.logger.error(err);
+          this.app.logger.error(`liquidator.singleTerminations() - ${err}`);
           process.exit(1);
         }
       } else {
@@ -126,8 +132,7 @@ class Liquidator {
 
   async multiTermination (batchWork, checkDate) {
     for (const batch of batchWork) {
-      let senders = [];
-      let receivers = [];
+      let liquidations = [];
       const streams = await this.app.db.queries.getLiquidations(
         checkDate,
         batch.superToken,
@@ -137,43 +142,41 @@ class Liquidator {
 
       for (const flow of streams) {
         if (await this.isPossibleToClose(flow.superToken, flow.sender, flow.receiver, flow.pppmode)) {
-          senders.push(flow.sender);
-          receivers.push(flow.receiver);
+          liquidations.push({sender: flow.sender, receiver: flow.receiver, source: flow.source});
         } else {
           this.app.logger.debug(`address ${flow.sender} is solvent at ${flow.superToken}`);
           await this.app.queues.addQueuedEstimation(flow.superToken, flow.sender, "Liquidation job");
           await this.app.timer.timeout(500);
         }
 
-        if (senders.length === parseInt(this.app.config.MAX_BATCH_TX)) {
-          this.app.logger.debug(`sending a full batch work: load ${senders.length}`);
-          await this.sendBatch(batch.superToken, senders, receivers);
-          senders = [];
-          receivers = [];
+        if (liquidations.length === parseInt(this.app.config.MAX_BATCH_TX)) {
+          this.app.logger.debug(`sending a full batch work: load ${liquidations.length}`);
+          await this.sendBatch(batch.superToken, liquidations);
+          liquidations = [];
         }
       }
 
-      if (senders.length !== 0) {
-        if (senders.length === 1) {
+      if (liquidations.length !== 0) {
+        if (liquidations.length === 1) {
           await this.singleTerminations([{
             superToken: batch.superToken,
-            sender: senders[0],
-            receiver: receivers[0]
+            sender: liquidations[0].sender,
+            receiver: liquidations[0].receiver
           }]);
         } else {
-          this.app.logger.debug(`sending a partial batch work: load ${senders.length}`);
-          await this.sendBatch(batch.superToken, senders, receivers);
+          this.app.logger.debug(`sending a partial batch work: load ${liquidations.length}`);
+          await this.sendBatch(batch.superToken, liquidations);
         }
       }
     }
   }
 
-  async sendBatch (superToken, senders, receivers) {
+  async sendBatch (superToken, liquidations) {
     const wallet = this.app.client.getAccount();
     const chainId = await this.app.client.getChainId();
-    const networkAccountNonce = await this.app.client.web3.eth.getTransactionCount(wallet.address);
+    const networkAccountNonce = await wallet.txCount(dataFormat);
     try {
-      const txData = this.app.protocol.generateBatchLiquidationTxData(superToken, senders, receivers);
+      const txData = this.app.protocol.generateBatchLiquidationTxDataNewBatch(superToken, liquidations);
       const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice();
       // if we hit the gas price limit or estimation error, we stop the liquidation job and return to main loop
       if(baseGasPrice.error) {
@@ -197,7 +200,7 @@ class Liquidator {
       };
       const result = await this.sendWithRetry(wallet, txObject, this.app.config.TX_TIMEOUT);
       if (result !== undefined && result.error !== undefined) {
-        this.app.logger.error(result.error);
+        this.app.logger.error(`Liquidation.sendBatch - ${result.error}`);
       } else {
         this.app.logger.debug(JSON.stringify(result));
       }
@@ -213,7 +216,6 @@ class Liquidator {
     const gas = await this.app.gasEstimator.getGasLimit(wallet, txObject);
     if (gas.error !== undefined) {
       if (gas.error instanceof this.app.Errors.SmartContractError) {
-        console.error(`GasEstimation - ${gas.error}`)
         await this.app.protocol.checkFlow(txObject.superToken, txObject.flowSender, txObject.flowReceiver);
       }
       return {
@@ -221,7 +223,6 @@ class Liquidator {
         tx: undefined
       };
     }
-
     txObject.gasLimit = gas.gasLimit;
     const signed = await this.signTx(wallet, txObject);
     txObject.hitGasPriceLimit = signed.tx.hitGasPriceLimit;
@@ -324,10 +325,7 @@ class Liquidator {
         gasPrice: txObject.gasPrice,
         gasLimit: txObject.gasLimit
       };
-      let signed = await this.app.client.signTransaction(
-        unsignedTx,
-        wallet._privateKey.toString("hex")
-      );
+      let signed =  await wallet.signTransaction(unsignedTx);
       signed.txObject = txObject;
       signed.hitGasPriceLimit = updatedGas.hitGasPriceLimit;
       return {

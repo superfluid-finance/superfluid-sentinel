@@ -60,6 +60,10 @@ jobs:
         run: |
           npx mocha -t 1000000 test/integration/cfa.integration.test.js
 
+      - name: run gda integration test
+        run: |
+          npx mocha -t 1000000 test/integration/gda.integration.test.js
+
       - name: run batch liquidations integration test
         run: |
           npx mocha -t 1000000 test/integration/batch.integration.test.js

@@ -11,6 +11,7 @@ async function trigger (fn, ms) {
 class Queues {
   constructor (app) {
     this.app = app;
+    this._isShutdown = false;
   }
 
   init () {
@@ -19,6 +20,7 @@ class Queues {
   }
 
   async run (fn, time) {
+    // don't run if shutting down
     if (this.app._isShutdown) {
       this.app.logger.info(`app.shutdown() - closing queues`);
       return;
@@ -139,6 +141,9 @@ class Queues {
     if (this.estimationQueue === undefined) {
       throw Error("Queues.addQueuedEstimation(): Need EstimationQueue to be set first");
     }
+    if(this._isShutdown) {
+       throw Error("Queues.addQueuedEstimation(): shutdown");
+    }
     this.estimationQueue.push({
       self: this,
       account: account,
@@ -153,6 +158,32 @@ class Queues {
 
   getEstimationQueueLength () {
     return this.estimationQueue.length();
+  }
+
+  async shutdown() {
+    try {
+      this._isShutdown = true;
+      this.app.circularBuffer.push("shutdown", null, "queues shutting down");
+      // Check if estimationQueue is active before draining
+      if (!this.estimationQueue.paused) {
+        if(this.estimationQueue.length() > 0) {
+          await this.estimationQueue.drain();
+        }
+        this.estimationQueue.pause();
+        this.app.logger.info("estimationQueue successfully shut down");
+      }
+
+      // Check if agreementUpdateQueue is active before draining
+      if (!this.agreementUpdateQueue.paused) {
+        if(this.agreementUpdateQueue.length() > 0) {
+          await this.agreementUpdateQueue.drain();
+        }
+        this.agreementUpdateQueue.pause();
+        this.app.logger.info("agreementUpdateQueue successfully shut down");
+      }
+    } catch (error) {
+      this.app.logger.error("Error during queue shutdown:", error);
+    }
   }
 
   async _handleAgreementEvents(task, senderFilter, source, eventName, getAgreementEventsFunc) {
@@ -227,6 +258,7 @@ class Queues {
       source: event.source
     }
   }
+
 }
 
 module.exports = Queues;

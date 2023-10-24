@@ -164,23 +164,20 @@ class Queues {
     try {
       this._isShutdown = true;
       this.app.circularBuffer.push("shutdown", null, "queues shutting down");
-      // Check if estimationQueue is active before draining
-      if (!this.estimationQueue.paused) {
-        if(this.estimationQueue.length() > 0) {
-          await this.estimationQueue.drain();
-        }
-        this.estimationQueue.pause();
-        this.app.logger.info("estimationQueue successfully shut down");
+
+      if(this.estimationQueue.length() > 0) {
+        this.app.circularBuffer.push("shutdown", null, `queues shutting down - estimationQueue length: ${this.estimationQueue.length()}`);
       }
 
-      // Check if agreementUpdateQueue is active before draining
-      if (!this.agreementUpdateQueue.paused) {
-        if(this.agreementUpdateQueue.length() > 0) {
-          await this.agreementUpdateQueue.drain();
-        }
-        this.agreementUpdateQueue.pause();
-        this.app.logger.info("agreementUpdateQueue successfully shut down");
+      this.estimationQueue.pause();
+      this.app.logger.info("estimationQueue successfully shut down");
+
+      if(this.agreementUpdateQueue.length() > 0) {
+        this.app.circularBuffer.push("shutdown", null, `queues shutting down - agreementUpdateQueue length: ${this.agreementUpdateQueue.length()}`);
       }
+      this.agreementUpdateQueue.pause();
+      this.app.logger.info("agreementUpdateQueue successfully shut down");
+
     } catch (error) {
       this.app.logger.error("Error during queue shutdown:", error);
     }

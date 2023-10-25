@@ -1,7 +1,4 @@
-const { Web3 } = require('web3');
 const { wad4human } = require("@decentral.ee/web3-helpers");
-const BN = require("bn.js");
-const ISuperToken = require("@superfluid-finance/ethereum-contracts/build/truffle/ISuperToken.json");
 
 const AccountManager = require("./accountManager");
 const RPCClient = require("./rpcClient");

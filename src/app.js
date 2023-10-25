@@ -135,6 +135,8 @@ class App {
         try {
             this.logger.info(`app.shutdown() - closing event tracker`);
             this.eventTracker._disconnect();
+            this.logger.info(`app.shutdown() - closing queues`);
+            await this.queues.shutdown();
             this.logger.info(`app.shutdown() - closing client`);
             this.client.disconnect();
             this.time.resetTime();

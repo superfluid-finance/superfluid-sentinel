@@ -38,7 +38,17 @@ class Bootstrap {
 
         const cfaFlows = await this.app.db.queries.getLastCFAFlows(blockNumber);
         const gdaFlows = await this.app.db.queries.getLastGDAFlows(blockNumber);
-        const flows = [...cfaFlows, ...gdaFlows];
+
+        // AVOID AVAX PROBLEMATIC FLOWS - TODO: REMOVE THIS AFTER PROTOCOL FIX -----v
+        const receiversFilter = ["0x98111049a4b760FAEdAF95ffC9E5DFB80846ae10", "0xf3AFf6EFdaADE25A1dD04f58b0ff8a2F2e16B07b", "0x254DE04a9d7284205475DCd4c07D08d2cB633A9C"];
+        const filteredGDAFlows = gdaFlows.filter((flow) => (
+            flow.sender !== "0xa9e3725CeE7b6C807665d41D603d6d0F71C27044" &&
+            flow.superToken !== "0x24f3631dbbf6880C684c5e59578C21194e285Baf" &&
+            !receiversFilter.includes(flow.receiver)
+        ));
+       // ^----- AVOID AVAX PROBLEMATIC FLOWS - TODO: REMOVE THIS AFTER PROTOCOL FIX
+
+        const flows = [...cfaFlows, ...filteredGDAFlows];
         for (const flow of flows) {
           try {
             await this.app.db.models.AgreementModel.upsert({
@@ -81,6 +91,7 @@ class Bootstrap {
         systemInfo.blockNumber = currentBlockNumber;
         await systemInfo.save();
         this.app.logger.info("finish bootstrap");
+
         return currentBlockNumber;
       } catch (err) {
         this.app.logger.error(err);

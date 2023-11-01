@@ -6,7 +6,7 @@ class Report {
 
   async checkDatabase () {
     try {
-      return (await this.app.db.queries.healthCheck()) !== undefined;
+      return (await this.app.db.sysQueries.healthCheck()) !== undefined;
     } catch (err) {
       this.app.logger.error(`Report.checkDatabase(): ${err}`);
       return false;

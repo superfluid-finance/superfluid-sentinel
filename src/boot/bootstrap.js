@@ -21,7 +21,7 @@ class Bootstrap {
     if (blockNumber < currentBlockNumber) {
       try {
         const queue = this.app.queues.newEstimationQueue();
-        const users = await this.app.db.queries.getAccounts(blockNumber);
+        const users = await this.app.db.bizQueries.getAccounts(blockNumber);
         for (const user of users) {
           queue.push({
             self: this,
@@ -36,8 +36,8 @@ class Bootstrap {
           await queue.drain();
         }
 
-        const cfaFlows = await this.app.db.queries.getLastCFAFlows(blockNumber);
-        const gdaFlows = await this.app.db.queries.getLastGDAFlows(blockNumber);
+        const cfaFlows = await this.app.db.bizQueries.getLastCFAFlows(blockNumber);
+        const gdaFlows = await this.app.db.bizQueries.getLastGDAFlows(blockNumber);
         const flows = [...cfaFlows, ...gdaFlows];
         for (const flow of flows) {
           try {

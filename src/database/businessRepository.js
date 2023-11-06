@@ -2,18 +2,41 @@ const {
     QueryTypes,
     Op
 } = require("sequelize");
+const SQLRepository = require("./SQLRepository");
 
-// rename to Queries?
-class Repository {
+class BusinessRepository {
+
     constructor(app) {
+        console.log("BusinessRepository constructor")
+        if(!app) {
+            throw new Error("BusinessRepository: app is not defined");
+        }
+
+        if (BusinessRepository._instance) {
+            return BusinessRepository._instance;
+        }
+
         this.app = app;
+        if(!this.app.db.SQLRepository) {
+            this.app.db.SQLRepository = SQLRepository.getInstance(app);
+        }
+        BusinessRepository._instance = this;
+    }
+
+    static getInstance(app) {
+        console.log("calling getInstance from businessRepository");
+        if (!BusinessRepository._instance) {
+
+            BusinessRepository._instance = new BusinessRepository(app);
+        }
+        return BusinessRepository._instance;
     }
 
     async getAccounts(fromBlock = 0) {
         const sqlquery = `SELECT DISTINCT superToken, account FROM (
       SELECT * FROM (
           SELECT  superToken, sender as account, flowRate from flowupdateds
-          WHERE blockNumber > :bn
+          WHERE blockNumber >= :bn
           GROUP BY hashId
           HAVING MAX(blockNumber)
           order by blockNumber desc , superToken, hashId
@@ -22,7 +45,7 @@ class Repository {
       UNION ALL
       SELECT * FROM (
           SELECT  superToken, receiver as account, flowRate from flowupdateds
-          WHERE blockNumber > :bn
+          WHERE blockNumber >= :bn
           GROUP BY hashId
           HAVING MAX(blockNumber)
           order by blockNumber desc , superToken, hashId
@@ -31,7 +54,7 @@ class Repository {
       UNION ALL
       SELECT * FROM (
           SELECT  superToken, distributor as account, newDistributorToPoolFlowRate as flowRate from flowdistributionupdateds
-          where blockNumber > :bn
+          where blockNumber >= :bn
           GROUP BY agreementId
           HAVING MAX(blockNumber)
           order by blockNumber desc , superToken, agreementId
@@ -39,11 +62,7 @@ class Repository {
       WHERE Y.flowRate <> 0
       ) AS Z
       ORDER BY superToken`;
-
-        return this.app.db.query(sqlquery, {
-            replacements: {bn: fromBlock},
-            type: QueryTypes.SELECT
-        });
+        return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { bn: fromBlock });
     }
 
     async getLastCFAFlows(fromBlock = 0) {
@@ -55,10 +74,7 @@ class Repository {
     order by blockNumber desc , superToken, hashId
     ) AS P
     WHERE P.flowRate <> 0`;
-        return this.app.db.query(sqlquery, {
-            replacements: {bn: fromBlock},
-            type: QueryTypes.SELECT
-        });
+        return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { bn: fromBlock });
     }
 
     async getLastGDAFlows(fromBlock = 0) {
@@ -70,10 +86,7 @@ class Repository {
     order by blockNumber desc , superToken, agreementId
     ) AS P
     WHERE P.flowRate <> 0`;
-        return this.app.db.query(sqlquery, {
-            replacements: {bn: fromBlock},
-            type: QueryTypes.SELECT
-        });
+        return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { bn: fromBlock });
     }
 
     async getAddressEstimations(address) {
@@ -93,7 +106,6 @@ class Repository {
         });
     }
 
-    // liquidations where flowRate is above a certain threshold
     async getLiquidations(checkDate, onlyTokens, excludeTokens, limitRows, useThresholds = true) {
         let inSnipped = "";
         let inSnippedLimit = "";
@@ -129,19 +141,12 @@ WHERE ${flowRateCondition} AND out.estimation <= :dt ${inSnipped}
 ORDER BY out.estimation ASC ${inSnippedLimit}`;
 
         if (inSnipped !== "") {
-            return this.app.db.query(sqlquery, {
-                replacements: {
-                    dt: checkDate,
-                    tokens: tokenFilter
-                },
-                type: QueryTypes.SELECT
+            return this.app.db.SQLRepository.executeSQLSelect(sqlquery, {
+                dt: checkDate,
+                tokens: tokenFilter
             });
         }
-
-        return this.app.db.query(sqlquery, {
-            replacements: {dt: checkDate},
-            type: QueryTypes.SELECT
-        });
+        return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { dt: checkDate });
     }
 
     async getNumberOfBatchCalls(checkDate, onlyTokens, excludeTokens, useThresholds = true) {
@@ -175,46 +180,13 @@ having count(*) > 1
 order by count(*) desc`;
 
         if (inSnipped !== "") {
-            return this.app.db.query(sqlquery, {
-                replacements: {
-                    dt: checkDate,
-                    tokens: tokenFilter
-                },
-                type: QueryTypes.SELECT
+            return this.app.db.SQLRepository.executeSQLSelect(sqlquery, {
+                dt: checkDate,
+                tokens: tokenFilter
             });
+
         }
-        return this.app.db.query(sqlquery, {
-            replacements: {dt: checkDate},
-            type: QueryTypes.SELECT
-        });
-    }
-
-    async healthCheck() {
-        return this.app.db.query("SELECT 1", {
-            type: QueryTypes.SELECT
-        });
-    }
-
-    async updateBlockNumber(newBlockNumber) {
-        const systemInfo = await this.app.db.models.SystemModel.findOne();
-        if (systemInfo !== null && systemInfo.blockNumber < newBlockNumber) {
-            systemInfo.blockNumber = Number(newBlockNumber);
-            systemInfo.superTokenBlockNumber = Number(newBlockNumber);
-        }
-        return systemInfo.save();
-    }
-
-    async getConfiguration() {
-        return this.app.db.models.UserConfig.findOne();
-    }
-
-    async saveConfiguration(configString) {
-        const fromDB = await this.app.db.models.UserConfig.findOne();
-        if (fromDB !== null) {
-            fromDB.config = configString;
-            return fromDB.save();
-        }
-        return this.app.db.models.UserConfig.create({config: configString});
+        return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { dt: checkDate });
     }
 
     async getPICInfo(onlyTokens) {
@@ -225,44 +197,12 @@ order by count(*) desc`;
         const sqlquery = `SELECT address, symbol, name, pic from supertokens ${inSnipped}`;
 
         if (inSnipped !== "") {
-            return this.app.db.query(sqlquery, {
-                replacements: {
-                    tokens: onlyTokens
-                },
-                type: QueryTypes.SELECT
-            });
+            return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { tokens: onlyTokens });
         }
-
-        return this.app.db.query(sqlquery, {
-            type: QueryTypes.SELECT
-        });
+        return this.app.db.SQLRepository.executeSQLSelect(sqlquery);
     }
 
-    async updateThresholds(thresholds) {
-        await this.app.db.models.ThresholdModel.destroy({truncate: true});
-        // check if thresholds is empty object
-        if(Object.keys(thresholds).length === 0) {
-            // create table without table data
-            return this.app.db.models.ThresholdModel.sync();
-        } else {
-            // from json data save it to table
-            for (const threshold of thresholds) {
-                await this.app.db.models.ThresholdModel.create(threshold);
-            }
-        }
-    }
-
-    async getUserSchemaVersion() {
-        return this.app.db.query("PRAGMA user_version;", {
-            type: QueryTypes.SELECT
-        });
-    }
-
-    async setUserSchemaVersion(schemaVersion){
-        return this.app.db.query(`PRAGMA user_version = ${schemaVersion};`, {
-            type: QueryTypes.SELECT
-        });
-    }
 }
+BusinessRepository._instance = null;
 
-module.exports = Repository;
+module.exports = BusinessRepository;

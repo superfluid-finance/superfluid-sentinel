@@ -11,8 +11,8 @@ const Time = require("./utils/time");
 const Timer = require("./utils/timer");
 const EventModel = require("./models/EventModel");
 const Bootstrap = require("./boot/bootstrap.js");
-
-const Repository = require("./database/repository");
+const SystemRepository = require("./database/systemRepository");
+const BusinessRepository = require("./database/businessRepository");
 const utils = require("./utils/utils.js");
 const HTTPServer = require("./httpserver/server");
 const Report = require("./httpserver/report");
@@ -46,7 +46,10 @@ class App {
             UserConfig: require("./database/models/userConfiguration")(this.db),
             ThresholdModel: require("./database/models/thresholdModel")(this.db),
         }
-        this.db.queries = new Repository(this);
+
+        this.db.sysQueries = SystemRepository.getInstance(this);
+        this.db.bizQueries = BusinessRepository.getInstance(this);
+
         this.eventTracker = new EventTracker(this);
         this.client = new Client(this);
         this.protocol = new Protocol(this);
@@ -109,12 +112,12 @@ class App {
 
     // return estimations saved on database
     async getEstimations() {
-        return this.db.queries.getEstimations();
+        return this.db.bizQueries.getEstimations();
     }
 
     // return PIC saved on database
     async getPICInfo(onlyTokens) {
-        return this.db.queries.getPICInfo(onlyTokens);
+        return this.db.bizQueries.getPICInfo(onlyTokens);
     }
 
     // return configuration used
@@ -201,7 +204,7 @@ class App {
                 this.logger.info("unzipping snapshot...");
                 this.utils.unzip(this.config.DB + ".gz", this.config.DB);
                 await this.db.sync();
-                const userSchemaVersion = Number((await this.db.queries.getUserSchemaVersion())[0].user_version);
+                const userSchemaVersion = Number((await this.db.sysQueries.getUserSchemaVersion())[0].user_version);
                 if(userSchemaVersion !== this.config.SCHEMA_VERSION) {
                     throw Error(`local data schema ${userSchemaVersion} don't match sentinel version ${this.config.SCHEMA_VERSION}. Update and resync sentinel`);
                 }
@@ -209,14 +212,14 @@ class App {
                 // drop existing database to force a full boot
                 this.logger.debug(`resyncing database data`);
                 await this.db.sync({force: true});
-                await this.db.queries.setUserSchemaVersion(this.config.SCHEMA_VERSION)
+                await this.db.sysQueries.setUserSchemaVersion(this.config.SCHEMA_VERSION)
             } else {
                 await this.db.sync();
                 // fresh database
                 if(!dbFileExist) {
-                    await this.db.queries.setUserSchemaVersion(this.config.SCHEMA_VERSION)
+                    await this.db.sysQueries.setUserSchemaVersion(this.config.SCHEMA_VERSION)
                 } else {
-                    const userSchemaVersion = Number((await this.db.queries.getUserSchemaVersion())[0].user_version);
+                    const userSchemaVersion = Number((await this.db.sysQueries.getUserSchemaVersion())[0].user_version);
                     if(userSchemaVersion !== this.config.SCHEMA_VERSION) {
                         throw Error(`local data schema ${userSchemaVersion} don't match sentinel version ${this.config.SCHEMA_VERSION}. Update and resync sentinel`);
                     }
@@ -232,17 +235,17 @@ class App {
                 await this.timer.timeout(3500);
                 process.exit(1);
             }
-            await this.db.queries.saveConfiguration(JSON.stringify(userConfig));
+            await this.db.sysQueries.saveConfiguration(JSON.stringify(userConfig));
             // get json file with tokens and their thresholds limits. Check if it exists and loaded to json object
             try {
                 const thresholds = require("../thresholds.json");
                 const tokensThresholds = thresholds.networks[await this.client.getChainId()];
                 this.config.SENTINEL_BALANCE_THRESHOLD = tokensThresholds.minSentinelBalanceThreshold;
                 // update thresholds on database
-                await this.db.queries.updateThresholds(tokensThresholds.thresholds);
+                await this.db.sysQueries.updateThresholds(tokensThresholds.thresholds);
             } catch (err) {
                 this.logger.warn(`error loading thresholds.json`);
-                await this.db.queries.updateThresholds({});
+                await this.db.sysQueries.updateThresholds({});
                 this.config.SENTINEL_BALANCE_THRESHOLD = 0;
             }
 
@@ -287,7 +290,7 @@ class App {
 
     async isResyncNeeded(userConfig) {
         // check important change of configurations
-        const res = await this.db.queries.getConfiguration();
+        const res = await this.db.sysQueries.getConfiguration();
         if (res !== null) {
             const dbuserConfig = JSON.parse(res.config);
             // if user was filtering tokens and now is not, then should resync

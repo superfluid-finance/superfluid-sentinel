@@ -140,11 +140,11 @@ describe("CFA tests", () => {
       await helper.operations.createStream(helper.sf.superToken.options.address, accounts[5], accounts[2], "100000000000000");
       await ganache.helper.timeTravelOnce(provider, web3, 1);
       await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug", toga_contract: helper.togaAddress});
-      const firstEstimation = await app.db.queries.getAddressEstimations(accounts[5]);
+      const firstEstimation = await app.db.bizQueries.getAddressEstimations(accounts[5]);
       await ganache.helper.timeTravelUntil(provider, web3, 1, 20);
       await helper.operations.updateStream(helper.sf.superToken.options.address, accounts[5], accounts[2], "1");
       await ganache.helper.timeTravelUntil(provider, web3, 1, 20);
-      const secondEstimation = await app.db.queries.getAddressEstimations(accounts[5]);
+      const secondEstimation = await app.db.bizQueries.getAddressEstimations(accounts[5]);
       await app.shutdown();
       console.log("Estimation 1: ", firstEstimation[0].estimation);
       console.log("Estimation 2: ", secondEstimation[0].estimation);

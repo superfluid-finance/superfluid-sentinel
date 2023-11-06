@@ -61,7 +61,7 @@ class HTTPServer {
         return;
       }
 
-      const liquidations = await this.app.db.queries.getLiquidations(
+      const liquidations = await this.app.db.bizQueries.getLiquidations(
         this.app.time.getTimeWithDelay(-timeframeInSeconds),
         this.app.config.TOKENS,
         this.app.config.EXCLUDED_TOKENS

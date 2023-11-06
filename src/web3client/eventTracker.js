@@ -65,7 +65,7 @@ class EventTracker {
           if (_oldBlock) {
             await self.getPastBlockAndParseEvents(_oldBlock + 1, newBlockWithOffset);
             self.updateBlockNumber(newBlockWithOffset);
-            self.app.db.queries.updateBlockNumber(newBlockWithOffset);
+            self.app.db.sysQueries.updateBlockNumber(newBlockWithOffset);
           } else if (self.oldSeenBlock) {
             await self.getPastBlockAndParseEvents(_oldBlock, newBlockWithOffset);
             self.updateBlockNumber(newBlockWithOffset);

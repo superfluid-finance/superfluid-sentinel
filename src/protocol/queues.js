@@ -142,7 +142,12 @@ class Queues {
       throw Error("Queues.addQueuedEstimation(): Need EstimationQueue to be set first");
     }
     if(this._isShutdown) {
-       throw Error("Queues.addQueuedEstimation(): shutdown");
+      throw Error("Queues.addQueuedEstimation(): shutdown");
+    }
+
+    if(this.isEstimationTaskInQueue(token, account)) {
+      this.app.logger.debug(`Queues.addQueuedEstimation(): estimation task already in queue for account: ${account} token: ${token}`);
+      return;
     }
     this.estimationQueue.push({
       self: this,
@@ -151,6 +156,35 @@ class Queues {
       parentCaller: parentCaller
     });
   }
+
+  isEstimationTaskInQueue(token, account) {
+    if (this.estimationQueue === undefined) {
+        throw Error("Queues.isEstimationTaskInQueue(): Need EstimationQueue to be set first");
+    }
+    let currentTaskNode = this.estimationQueue._tasks.head;
+    while (currentTaskNode) {
+      const taskData = currentTaskNode.data
+      if (taskData.account === account && taskData.token === token) {
+        return true;
+      }
+
+      currentTaskNode = currentTaskNode.next;
+    }
+
+    return false;
+  }
+
+  // get all tasks in the queue as array
+  getEstimationTasks(queue = undefined) {
+        let currentTaskNode = this.estimationQueue._tasks.head;
+        const tasks = [];
+        while (currentTaskNode) {
+            tasks.push(currentTaskNode.data);
+            currentTaskNode = currentTaskNode.next;
+        }
+
+        return tasks;
+    }
 
   getAgreementQueueLength () {
     return this.agreementUpdateQueue.length();
@@ -234,9 +268,7 @@ class Queues {
       if (["CFA", "GDA"].includes(event.source)) {
         const accounts = event.source === "CFA" ? [event.sender, event.receiver] : [event.distributor, event.pool];
         accounts.forEach(account => {
-          task.self.app.queues.estimationQueue.push(
-              task.self.app.queues._createAgreementTask(account, event, task)
-          );
+          task.self.app.queues.addQueuedEstimation(event.token, account, "agreementUpdateQueue");
         });
       }
     }

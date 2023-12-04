@@ -178,7 +178,7 @@ class App {
 
     async start() {
         try {
-            this.logger.debug(`booting sentinel`);
+            this.logger.debug(`booting - ${this.config.INSTANCE_NAME}`);
             this._isShutdown = false;
             // send notification about time sentinel started including timestamp
             this.notifier.sendNotification(`Sentinel started at ${new Date()}`);

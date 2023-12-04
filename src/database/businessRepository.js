@@ -7,7 +7,6 @@ const SQLRepository = require("./SQLRepository");
 class BusinessRepository {
 
     constructor(app) {
-        console.log("BusinessRepository constructor")
         if(!app) {
             throw new Error("BusinessRepository: app is not defined");
         }
@@ -24,7 +23,6 @@ class BusinessRepository {
     }
 
     static getInstance(app) {
-        console.log("calling getInstance from businessRepository");
         if (!BusinessRepository._instance) {
 
             BusinessRepository._instance = new BusinessRepository(app);

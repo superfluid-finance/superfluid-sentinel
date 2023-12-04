@@ -16,7 +16,7 @@ class NotificationJobs {
   async sendReport () {
     const healthcheck = await this.app.healthReport.fullReport();
     if(!healthcheck.healthy) {
-      const healthData = `Healthy: ${healthcheck.healthy}\nChainId: ${healthcheck.network.chainId}\nReasons: ${healthcheck.reasons.join('\n')}`;
+      const healthData = `Instance Name: ${this.app.config.INSTANCE_NAME}\nHealthy: ${healthcheck.healthy}\nChainId: ${healthcheck.network.chainId}\nReasons: ${healthcheck.reasons.join('\n')}`;
       this.app.notifier.sendNotification(healthData);
     }
     const currentTime = Date.now();

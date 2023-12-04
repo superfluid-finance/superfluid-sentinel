@@ -112,6 +112,7 @@ class Config {
     this.MAX_TX_NUMBER = process.env.MAX_TX_NUMBER || 100;
     this.NO_REMOTE_MANIFEST = this._parseToBool(process.env.NO_REMOTE_MANIFEST, false);
     this.INSTANCE_NAME =  process.env.INSTANCE_NAME || "Sentinel";
+    this.RPC_STUCK_THRESHOLD = process.env.RPC_STUCK_THRESHOLD || (this.POLLING_INTERVAL * 4) / 1000;
   }
 
   _parseToBool(value, defaultValue = false) {

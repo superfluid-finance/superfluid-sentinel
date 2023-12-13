@@ -65,6 +65,7 @@ class Config {
     this.FASTSYNC = config.fastsync !== "false";
     this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://cloudflare-ipfs.com/ipfs/"
     this.PIRATE = this._parseToBool(config.pirate);
+    this.INSTANCE_NAME = config.INSTANCE_NAME || "Sentinel";
   }
 
   _initializeFromEnvVariables() {
@@ -110,6 +111,7 @@ class Config {
     this.BLOCK_OFFSET = process.env.BLOCK_OFFSET || 12;
     this.MAX_TX_NUMBER = process.env.MAX_TX_NUMBER || 100;
     this.NO_REMOTE_MANIFEST = this._parseToBool(process.env.NO_REMOTE_MANIFEST, false);
+    this.INSTANCE_NAME =  process.env.INSTANCE_NAME || "Sentinel";
   }
 
   _parseToBool(value, defaultValue = false) {
@@ -179,6 +181,7 @@ class Config {
 
   getConfigurationInfo () {
     return {
+      INSTANCE_NAME: this.INSTANCE_NAME,
       HTTP_RPC_NODE: this.HTTP_RPC_NODE,
       FASTSYNC: this.FASTSYNC,
       OBSERVER: this.OBSERVER,

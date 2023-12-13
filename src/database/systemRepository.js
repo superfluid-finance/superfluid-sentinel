@@ -5,7 +5,6 @@ const SQLRepository = require("./SQLRepository");
 
 class SystemRepository {
     constructor(app) {
-        console.log("SystemRepository constructor")
         if(!app) {
             throw new Error("SystemRepository: app is not defined");
         }
@@ -21,7 +20,6 @@ class SystemRepository {
     }
 
     static getInstance(app) {
-        console.log("calling getInstance from systemRepository");
         if (!SystemRepository._instance) {
             SystemRepository._instance = new SystemRepository(app);
         }

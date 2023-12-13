@@ -34,7 +34,8 @@ const defaultConfig = {
   FASTSYNC: false,
   IPFS_GATEWAY: "http://localhost:8080/ipfs/",
   PIRATE: false,
-  NO_REMOTE_MANIFEST: false
+  NO_REMOTE_MANIFEST: false,
+  INSTANCE_NAME: "Test-Sentinel",
 };
 
 // set environment variables from the given config object

@@ -66,6 +66,7 @@ class Config {
     this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://cloudflare-ipfs.com/ipfs/"
     this.PIRATE = this._parseToBool(config.pirate);
     this.INSTANCE_NAME = config.INSTANCE_NAME || "Sentinel";
+    this.RPC_STUCK_THRESHOLD = config.rpc_stuck_threshold;
   }
 
   _initializeFromEnvVariables() {

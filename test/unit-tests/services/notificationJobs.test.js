@@ -11,7 +11,7 @@ describe("NotificationJobs", () => {
         sandbox = sinon.createSandbox();
         appMock = {
             healthReport: {
-                fullReport: sinon.stub().resolves({ healthy: false, network: { chainId: 1 } }),
+                fullReport: sinon.stub().resolves({ healthy: false, network: { chainId: 1 }, reasons: ["test"] }),
             },
             notifier: {
                 sendNotification: sinon.stub(),
@@ -21,6 +21,9 @@ describe("NotificationJobs", () => {
             },
             logger: {
                 info: sinon.stub(),
+            },
+            config: {
+                INSTANCE_NAME: "test",
             },
             _isShutdown: false,
         };

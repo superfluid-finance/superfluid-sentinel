@@ -4,6 +4,10 @@ on:
   pull_request:
     branches:
       - 'master'
+  workflow_run:
+    workflows: ["Dev CI/CD"]
+    types:
+      - completed
 
 jobs:
   build:

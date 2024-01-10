@@ -21,12 +21,8 @@ FROM node:18-alpine@sha256:3482a20c97e401b56ac50ba8920cc7b5b2022bfc6aa7d4e4c2317
 
 WORKDIR /app
 
-# Add packages
-RUN apk --update --no-cache add \
-        g++ \
-        make \
-        python3 \
-    && rm -rf /var/cache/apk/*
+# Add a simple init system so that Node would respect process signals
+RUN apk --update --no-cache add tini
 
 # Copy only the necessary files, including node_modules from the build stage
 COPY --from=build /app/node_modules /app/node_modules

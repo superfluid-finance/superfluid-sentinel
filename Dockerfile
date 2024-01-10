@@ -26,7 +26,7 @@ RUN apk --update --no-cache add \
         g++ \
         make \
         python3 \
-    && ln -sf python3 /usr/bin/python
+    && rm -rf /var/cache/apk/*
 
 # Copy only the necessary files, including node_modules from the build stage
 COPY --from=build /app/node_modules /app/node_modules

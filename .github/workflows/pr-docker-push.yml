@@ -1,9 +1,9 @@
 name: Build Docker Image on PR to ref main branch
 
 on:
-#   pull_request:
-#     branches:
-#       - 'master'
+  pull_request:
+    branches:
+      - 'master'
   workflow_run:
     workflows: ["Dev CI/CD"]
     types:

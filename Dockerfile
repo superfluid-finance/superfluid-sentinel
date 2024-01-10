@@ -26,7 +26,7 @@ COPY ["package.json", "yarn.lock", "./"]
 RUN mkdir -p data
 
 # Install application dependencies
-RUN yarn install
+RUN yarn install --frozen-lockfile --production
 
 ENTRYPOINT ["/sbin/tini", "--"]
 

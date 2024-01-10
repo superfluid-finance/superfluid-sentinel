@@ -12,8 +12,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # env:
+    #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout out the repo
         uses: actions/checkout@v2
@@ -27,6 +27,10 @@ jobs:
       - name: Set Docker tag as short commit sha
         id: tag
         run: echo "::set-output name=TAG::$(echo $GITHUB_SHA | head -c 8)"
+
+      - uses: jgierer12/npm-auth-gpr@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push the Docker image
         uses: docker/build-push-action@v4

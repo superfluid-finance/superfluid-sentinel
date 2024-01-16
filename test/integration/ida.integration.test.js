@@ -74,6 +74,7 @@ describe("IDA integration tests", () => {
       await app.shutdown();
       protocolHelper.expectLiquidationV2(result[0], AGENT_ACCOUNT, accounts[0], "0");
     } catch (err) {
+      
       protocolHelper.exitWithError(err);
     }
   });

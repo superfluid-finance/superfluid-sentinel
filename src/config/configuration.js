@@ -66,6 +66,7 @@ class Config {
     this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://cloudflare-ipfs.com/ipfs/"
     this.PIRATE = this._parseToBool(config.pirate);
     this.INSTANCE_NAME = config.INSTANCE_NAME || "Sentinel";
+    this.RPC_STUCK_THRESHOLD = config.rpc_stuck_threshold;
   }
 
   _initializeFromEnvVariables() {
@@ -112,6 +113,7 @@ class Config {
     this.MAX_TX_NUMBER = process.env.MAX_TX_NUMBER || 100;
     this.NO_REMOTE_MANIFEST = this._parseToBool(process.env.NO_REMOTE_MANIFEST, false);
     this.INSTANCE_NAME =  process.env.INSTANCE_NAME || "Sentinel";
+    this.RPC_STUCK_THRESHOLD = process.env.RPC_STUCK_THRESHOLD || (this.POLLING_INTERVAL * 4) / 1000;
   }
 
   _parseToBool(value, defaultValue = false) {

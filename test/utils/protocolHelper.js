@@ -206,7 +206,8 @@ function getSentinelConfig(config) {
         additional_liquidation_delay: 0,
         block_offset: 1,
         liquidation_job_awaits: 5000,
-        fastsync: "false"
+        fastsync: "false",
+        rpc_stuck_threshold: 100,
     };
 
     return { ...myBaseConfig, ...config };

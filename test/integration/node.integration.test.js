@@ -84,7 +84,7 @@ describe("Agent configurations tests", () => {
         try {
             await helper.operations.createStream(helper.sf.superToken.options.address, accounts[0], accounts[2], "100000000000");
             await ganache.helper.timeTravelOnce(provider, web3, 1);
-            await bootNode({resolver: helper.sf.resolver.options.address});
+            await bootNode({resolver: helper.sf.resolver.options.address, rpc_stuck_threshold: 10});
             let healthy;
             while (true) {
                 await protocolHelper.timeout(9000);

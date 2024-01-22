@@ -1102,10 +1102,10 @@
     ethereumjs-tx "2.1.2"
     ethereumjs-util "7.1.5"
 
-"@superfluid-finance/metadata@^1.1.17":
-  version "1.1.17"
-  resolved "https://npm.pkg.github.com/download/@superfluid-finance/metadata/1.1.17/eea2ba2dda11701bb4e2a06914f8c95607bad742#eea2ba2dda11701bb4e2a06914f8c95607bad742"
-  integrity sha512-aSIbzrkwUzxPp97mWqPie4x6RDNhdaPvFXmJX5eT+bcjnBx1AH4jyQDnldFRYpwisBByWjT1VU+/wkTU1yiBow==
+"@superfluid-finance/metadata@^1.1.23":
+  version "1.1.23"
+  resolved "https://npm.pkg.github.com/download/@superfluid-finance/metadata/1.1.23/f3126e0cba95f52a36fe7280d2a86318706e8d98#f3126e0cba95f52a36fe7280d2a86318706e8d98"
+  integrity sha512-gHajZhv5xuRMERPYpnp39Cs/24Vn/szrLu5Ih2PD7RqAG/pQcTmGi0lSpIpuU/dEzGxvtY4E/rU8PZoH2V38Rg==
 
 "@szmarczak/http-timer@^4.0.5":
   version "4.0.6"

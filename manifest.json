@@ -57,6 +57,18 @@
     "421613": {
       "name": "Arbitrum Goerli Testnet",
       "network_type": "evm-l2"
+    },
+    "534351": {
+      "name": "Scroll Sepolia Testnet",
+      "network_type": "evm-l2"
+    },
+    "534352": {
+      "name": "Scroll",
+      "network_type": "evm-l2"
+    },
+    "11155420": {
+      "name": "Optimism Sepolia Testnet",
+      "network_type": "evm-l2"
     }
   }
 }

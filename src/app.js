@@ -194,7 +194,8 @@ class App {
             }
             // create all web3 infrastructure needed
             await this.client.init();
-            this.notifier.sendNotification(`RPC connected with chainId ${await this.client.getChainId()}, account ${this.client.agentAccounts?.address} has balance ${this.client.agentAccounts ? wad4human(await this.client.getAccountBalance()) : "N/A"}`);
+            const balanceMsg = `RPC connected with chainId ${await this.client.getChainId()}, account ${this.client.accountManager.getAccountAddress(0)} has balance ${wad4human(await this.client.accountManager.getAccountBalance(0))}`;
+            this.notifier.sendNotification(balanceMsg);
             
             //check conditions to decide if getting snapshot data
             if ((!dbFileExist || this.config.COLD_BOOT) &&

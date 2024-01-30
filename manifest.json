@@ -32,7 +32,8 @@
     },
     "42161": {
       "name": "Arbitrum One",
-      "network_type": "evm-l2"
+      "network_type": "evm-l2",
+      "batch_contract" : "0x9224413b9177E6c1D5721B4a4D1D00eC84B07Ce7"
     },
     "42220": {
       "name": "Celo",

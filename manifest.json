@@ -12,23 +12,32 @@
     },
     "10": {
       "name": "Optimism",
-      "network_type": "evm-l2"
+      "network_type": "evm-l2",
+      "batch_contract" : "0x84956C84c33c38AcE22C9324F1f92028AF2215ce"
     },
     "56": {
       "name": "Binance Smart Chain",
-      "network_type": "evm"
+      "network_type": "evm",
+      "batch_contract": "0x27636F8E129cdd4ccA0F30E2b4C116DDaC773bE5"
     },
     "100": {
       "name": "Gnosis Chain",
-      "network_type": "evm"
+      "network_type": "evm",
+      "batch_contract": "0x96C3C2d23d143301cF363a02cB7fe3596d2834d7"
     },
     "137": {
       "name": "Polygon",
-      "network_type": "evm"
+      "network_type": "evm",
+      "batch_contract": "0xA7afDc46999076C295cfC6812dd73d103cF64e19"
     },
     "420": {
       "name": "Optimism Goerli Testnet",
       "network_type": "evm-l2"
+    },
+    "8453": {
+      "name": "Base Mainnet",
+      "network_type": "evm-l2",
+      "batch_contract" : "0x6b008BAc0e5846cB5d9Ca02ca0e801fCbF88B6f9"
     },
     "42161": {
       "name": "Arbitrum One",
@@ -37,7 +46,8 @@
     },
     "42220": {
       "name": "Celo",
-      "network_type": "evm"
+      "network_type": "evm",
+      "batch_contract": "0xCb0Ff4D0cA186f0Fc0301258066Fe3fA258417a6"
     },
     "43113": {
       "name": "Avalanche Fuji Testnet",
@@ -45,7 +55,8 @@
     },
     "43114": {
       "name": "Avalanche C-Chain",
-      "network_type": "evm"
+      "network_type": "evm",
+      "batch_contract": "0x3b387638a5d33aE8772715642A21345f23Af824c"
     },
     "80001": {
       "name": "Polygon Mumbai Testnet",

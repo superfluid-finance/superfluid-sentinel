@@ -233,7 +233,11 @@ class Protocol {
 
       if (isBatchContractExist) {
         // on rollups, it's cheaper to always use the batch interface due to smaller calldata (which goes to L1)
-        const tx = this.app.client.contracts.batch.methods.deleteFlow(superToken, sender, receiver).encodeABI();
+        const tx = this.app.client.contracts.batch.methods.deleteFlow(superToken, {
+          agreementOperation: "0", // CFA delete flow
+          sender: sender,
+          receiver: receiver
+        }).encodeABI();
         return { tx: tx, target: this.app.client.contracts.getBatchAddress()};
       } else {
         // on L1s, use the conventional host interface

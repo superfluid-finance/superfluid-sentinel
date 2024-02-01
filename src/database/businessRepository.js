@@ -87,6 +87,14 @@ class BusinessRepository {
         return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { bn: fromBlock });
     }
 
+    async getGDAOutFlowRate(token, distributor) {
+        const sqlquery = `SELECT SUM(sumNewDistributorToPoolFlowRate) as aggrDistributorFlowRate FROM (SELECT SUM(newDistributorToPoolFlowRate) as sumNewDistributorToPoolFlowRate, pool  from flowdistributionupdateds
+   where distributor = :distributor and superToken = :token
+   GROUP BY pool
+   HAVING MAX(blockNumber)) AS P`;
+        return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { distributor: distributor, token: token });
+    }
+
     async getAddressEstimations(address) {
         return this.app.db.models.AccountEstimationModel.findAll({
             attributes: ["address", "superToken", "estimation"],

@@ -22,7 +22,11 @@ class Bootstrap {
       try {
         const queue = this.app.queues.newEstimationQueue();
         const users = await this.app.db.bizQueries.getAccounts(blockNumber);
-        for (const user of users) {
+        // get accounts that touch pools
+        const poolMembers = await this.app.db.bizQueries.getPoolMembers(blockNumber);
+        // merge the two lists
+        const mergedUsers = [...users, ...poolMembers];
+        for (const user of mergedUsers) {
           queue.push({
             self: this,
             account: user.account,

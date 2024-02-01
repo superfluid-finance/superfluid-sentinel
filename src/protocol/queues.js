@@ -143,7 +143,7 @@ class Queues {
           break;
         } catch (err) {
           keepTrying++;
-          task.self.app.logger.cerror("Queues.agreementUpdateQueue(): " + err);
+          task.self.app.logger.error("Queues.agreementUpdateQueue(): " + err);
           if (keepTrying > task.self.app.config.NUM_RETRIES) {
             task.self.app.logger.error("Queues.agreementUpdateQueue(): exhausted number of retries");
             process.exit(1);

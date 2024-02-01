@@ -195,6 +195,57 @@ class EventTracker {
 
   processGDAEvent (event) {
     try {
+      if(event) {
+        if (event.removed) {
+          this.app.logger.warn(`Event removed: ${event.eventName}, blockNumber ${event.blockNumber}, tx ${event.transactionHash}`);
+        }
+        switch (event.eventName) {
+          case "InstantDistributionUpdated" : {
+            if (this.app.client.superToken.isSuperTokenRegistered(event.token)) {
+              this.app.logger.debug(`[InstantDistributionUpdated] - ${event.eventName} [${event.token}] - distributor ${event.distributor}`);
+              this.app.queues.estimationQueue.push([
+                {
+                  self: this,
+                  account: event.distributor,
+                  token: event.token,
+                  blockNumber: event.blockNumber,
+                  blockHash: event.blockHash,
+                  transactionHash: event.transactionHash,
+                  parentCaller: "processGDAEvent"
+                }
+              ]);
+            } else {
+              this.app.logger.debug(`[GDA]: token ${event.token} is not subscribed`);
+            }
+            break;
+          }
+          case "PoolConnectionUpdated" : {
+            this.app.logger.debug(`[PoolConnectionUpdated] - ${event.eventName} [${event.token}] - distributor ${event.distributor}`);
+            this.app.queues.estimationQueue.push(
+              {
+                self: this,
+                account: event.account,
+                token: event.token,
+                blockNumber: event.blockNumber,
+                blockHash: event.blockHash,
+                transactionHash: event.transactionHash,
+                parentCaller: "PoolConnectionUpdatedEvent"
+              }
+            );
+            break;
+          }
+        }
+      }
+
+
+    } catch (err) {
+      this.app.logger.error(err);
+      throw Error(`EventTracker.processSuperTokenEvent(): ${err}`);
+    }
+  }
+
+  procesxxxsGDAEvent (event) {
+    try {
       if(event && event.eventName === "InstantDistributionUpdated") {
         if (this.app.client.superToken.isSuperTokenRegistered(event.token)) {
           this.app.logger.debug(`[InstantDistributionUpdated] - ${event.eventName} [${event.token}] - distributor ${event.distributor}`);

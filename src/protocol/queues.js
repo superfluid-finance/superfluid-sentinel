@@ -106,6 +106,15 @@ class Queues {
             fromBlock: task.blockNumber,
             toBlock: task.blockNumber
           };
+
+          const senderFilerGDAConnections = {
+            filter: {
+              account: task.account
+            },
+            fromBlock: task.blockNumber,
+            toBlock: task.blockNumber
+          };
+
           const flowUpdatedEvents = await task.self.app.queues._handleAgreementEvents(
               task,
               senderFilterCFA,
@@ -121,13 +130,20 @@ class Queues {
               task.self.app.protocol.getGDAgreementEvents
           );
 
+          let PoolConnectionUpdated = await task.self.app.queues._handleAgreementEvents(
+              task,
+              senderFilerGDAConnections,
+              "GDAC",
+              "PoolConnectionUpdated",
+              task.self.app.protocol.getGDAgreementEvents
+          );
           // merge both
-          const events = [...flowUpdatedEvents, ...flowDistributionUpdatedEvents];
+          const events = [...flowUpdatedEvents, ...flowDistributionUpdatedEvents, ...PoolConnectionUpdated];
           await task.self.app.queues._processEvents(task, events);
           break;
         } catch (err) {
           keepTrying++;
-          task.self.app.logger.error("Queues.agreementUpdateQueue(): " + err);
+          task.self.app.logger.cerror("Queues.agreementUpdateQueue(): " + err);
           if (keepTrying > task.self.app.config.NUM_RETRIES) {
             task.self.app.logger.error("Queues.agreementUpdateQueue(): exhausted number of retries");
             process.exit(1);
@@ -233,6 +249,7 @@ class Queues {
         app.models.event.transformWeb3Event
     );
     allFlowUpdatedEvents.sort((a, b) => a.blockNumber - b.blockNumber);
+    //todo: review this
     if (source === "GDA") {
       allFlowUpdatedEvents = await Promise.all(allFlowUpdatedEvents.map(async (event) => {
         event.sender = event.distributor;
@@ -240,6 +257,14 @@ class Queues {
         event.agreementId = await app.protocol.generateGDAId(event.distributor, event.pool);
         event.flowRate = event.newDistributorToPoolFlowRate;
         event.source = "GDA";
+        return event;
+      }));
+    } else if(source === "GDAC") {
+      allFlowUpdatedEvents = await Promise.all(allFlowUpdatedEvents.map(async (event) => {
+        event.sender = event.account;
+        event.receiver = event.pool;
+        event.agreementId = await app.protocol.generateGDAId(event.sender, event.receiver);
+        event.source = "GDAC";
         return event;
       }));
     } else {
@@ -256,17 +281,28 @@ class Queues {
 
   async _processEvents(task, events) {
     for (const event of events) {
-      await task.self.app.db.models.AgreementModel.upsert({
-        agreementId: event.agreementId,
-        superToken: event.token,
-        sender: event.sender,
-        receiver: event.receiver,
-        flowRate: event.flowRate,
-        blockNumber: event.blockNumber,
-        source: event.source
-      });
-      if (["CFA", "GDA"].includes(event.source)) {
-        const accounts = event.source === "CFA" ? [event.sender, event.receiver] : [event.distributor, event.pool];
+      //in the case of connection/disconnect, don't update the agreement. Still need to update the estimation
+      if(event.source !== "GDAC") {
+        await task.self.app.db.models.AgreementModel.upsert({
+          agreementId: event.agreementId,
+          superToken: event.token,
+          sender: event.sender,
+          receiver: event.receiver,
+          flowRate: event.flowRate,
+          blockNumber: event.blockNumber,
+          source: event.source
+        });
+      }
+
+      if (["CFA", "GDA", "GDAC"].includes(event.source)) {
+        let accounts = [];
+        if(event.source === "CFA") {
+            accounts = [event.sender, event.receiver];
+        } else if(event.source === "GDA") {
+            accounts = [event.distributor, event.pool];
+        } else {
+          accounts = [event.account, event.receiver];
+        }
         accounts.forEach(account => {
           task.self.app.queues.addQueuedEstimation(event.token, account, "agreementUpdateQueue");
         });

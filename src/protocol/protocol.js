@@ -37,9 +37,12 @@ class Protocol {
     try {
       this.app.client.addTotalRequest();
       if (this.app.client.contracts.getGDAv1Address() === undefined) {
-          return 0;
+        return 0;
       }
-      return this.app.client.contracts.GDAv1.methods.getNetFlow(token, account).call();
+      // return this.app.client.contracts.GDAv1.methods.getNetFlow(token, account).call();
+      const gdaUserNetFlow = await this.app.db.bizQueries.getGDAOutFlowRate(token, account);
+      return gdaUserNetFlow[0].aggrDistributorFlowRate === null ?
+          new BN(0) : (new BN(gdaUserNetFlow[0].aggrDistributorFlowRate.toString())).neg();
     } catch (err) {
       console.error(err);
       throw Error(`Protocol.getGDAUserNetFlow(): ${err}`);

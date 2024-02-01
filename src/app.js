@@ -45,6 +45,7 @@ class App {
             SystemModel: require("./database/models/systemModel")(this.db),
             UserConfig: require("./database/models/userConfiguration")(this.db),
             ThresholdModel: require("./database/models/thresholdModel")(this.db),
+            PoolConnectionModel: require("./database/models/poolConnectionModel")(this.db),
         }
 
         this.db.sysQueries = SystemRepository.getInstance(this);

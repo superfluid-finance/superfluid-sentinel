@@ -18,6 +18,7 @@ class HTTPServer {
   }
 
   start () {
+    this.server.use(express.json());
     this.server.get("/", async (req, res) => {
       const healthcheck = await this.app.healthReport.fullReport();
       try {
@@ -87,8 +88,19 @@ class HTTPServer {
     this.runningInstance = this.server.listen(this.port, () => {
       this.app.logger.info(`Metrics: listening via http on port ${this.port}`);
     });
-
-
+    this.server.post("/estimate", async (req, res) => {
+      const { account, token } = req.body;
+      if (!account || !token) {
+        res.status(400).send({ message: "account and token are required" });
+        return;
+      }
+      try {
+        await this.app.queues.addQueuedEstimation(token.toLowerCase(), account, "http post request");
+        res.status(200).send({ message: "ok" });
+      } catch (e) {
+        res.status(400).send({ message: e.message });
+      }
+    });
 
   }
 

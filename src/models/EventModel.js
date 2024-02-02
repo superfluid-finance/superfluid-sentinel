@@ -41,6 +41,7 @@ class EventModel {
           pool: toChecksumAddress(event.returnValues.pool),
           distributor: toChecksumAddress(event.returnValues.distributor),
           publisher: toChecksumAddress(event.returnValues.publisher),
+          member: toChecksumAddress(event.returnValues.member),
           adjustmentFlowRecipient: toChecksumAddress(event.returnValues.adjustmentFlowRecipient),
           operator: toChecksumAddress(event.returnValues.operator),
           indexId: event.returnValues.indexId,
@@ -52,6 +53,8 @@ class EventModel {
           targetAccountBalanceDelta: event.returnValues.targetAccountBalanceDelta,
           bond: event.returnValues.bond,
           exitRate: event.returnValues.exitRate,
+          oldUnits: event.returnValues.oldUnits,
+          newUnits: event.returnValues.newUnits,
           liquidationTypeData: event.returnValues.liquidationTypeData,
           flowRate: (isNaN(parseInt(event.returnValues.flowRate))
             ? undefined

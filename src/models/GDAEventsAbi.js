@@ -140,5 +140,73 @@ module.exports = {
         name: "PoolCreated",
         type: "event"
 
+    },
+    MemberUnitsUpdated: {
+        "anonymous":false,
+        "inputs":[
+            {
+                "name":"token",
+                "type":"address",
+                "indexed":true,
+                "internalType":"contract ISuperfluidToken"
+            },
+            {
+                "name":"member",
+                "type":"address",
+                "indexed":true,
+                "internalType":"address"
+            },
+            {
+                "name":"oldUnits",
+                "type":"uint128",
+                "indexed":false,
+                "internalType":"uint128"
+            },
+            {
+                "name":"newUnits",
+                "type":"uint128",
+                "indexed":false,
+                "internalType":"uint128"
+            }
+        ],
+        "name":"MemberUnitsUpdated",
+        "type":"event",
+},
+    PoolConnectionUpdated: {
+        "anonymous":false,
+        "inputs":[
+            {
+                "name":"token",
+                "type":"address",
+                "indexed":true,
+                "internalType":"contract ISuperfluidToken"
+            },
+            {
+                "name":"pool",
+                "type":"address",
+                "indexed":true,
+                "internalType":"contract ISuperfluidPool"
+            },
+            {
+                "name":"account",
+                "type":"address",
+                "indexed":true,
+                "internalType":"address"
+            },
+            {
+                "name":"connected",
+                "type":"bool",
+                "indexed":false,
+                "internalType":"bool"
+            },
+            {
+                "name":"userData",
+                "type":"bytes",
+                "indexed":false,
+                "internalType":"bytes"
+            }
+        ],
+        "type":"event",
+        "name":"PoolConnectionUpdated"
     }
 }

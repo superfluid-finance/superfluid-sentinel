@@ -63,6 +63,12 @@ class BusinessRepository {
         return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { bn: fromBlock });
     }
 
+    async getPoolMembers(fromBlock = 0) {
+        const sqlquery = `SELECT  DISTINCT pc.address as pool, pc.account, pd.superToken from poolconnections pc 
+inner join poolcreateds pd on pc.address = pd.pool
+ WHERE pc.blockNumber >= :bn`;
+        return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { bn: fromBlock });
+    }
     async getLastCFAFlows(fromBlock = 0) {
         const sqlquery = `SELECT * FROM (
     SELECT  agreementId, superToken, sender, receiver, flowRate, "CFA" as source from flowupdateds

@@ -51,7 +51,7 @@ class LoadEvents {
             GDAFlowDistributionUpdated = GDAFlowDistributionUpdated.map(task.self.app.models.event.transformWeb3Event);
             GDAFlowDistributionUpdated.forEach(result => result.source = "GDA");
 
-            // debug only ----------------------------------
+            // get all pool created events
             let GDAPoolCreated = await task.self.app.protocol.getGDAgreementEvents("PoolCreated", query);
             GDAPoolCreated = GDAPoolCreated.map(task.self.app.models.event.transformWeb3Event);
             GDAPoolCreated.forEach(result => result.source = "GDA-PoolCreated");
@@ -66,7 +66,24 @@ class LoadEvents {
                 pool: event.pool,
               });
             }
-            // end debug only ----------------------------------
+
+            // get all pool connected events
+            let GDAConnected = await task.self.app.protocol.getGDAgreementEvents("PoolConnectionUpdated", query);
+            GDAConnected = GDAConnected.map(task.self.app.models.event.transformWeb3Event);
+            GDAConnected.forEach(result => result.source = "GDAC");
+            for(const event of GDAConnected) {
+              console.log("PoolConnectionUpdated", event)
+                await task.self.app.db.models.PoolConnectionModel.upsert({
+                    address: event.pool,
+                    account: event.account,
+                    blockNumber: event.blockNumber
+                }, {
+                  where: {
+                    address: event.pool,
+                    account: event.account
+                  }
+                });
+            }
 
             const events = [...CFAFlowUpdated, ...GDAFlowDistributionUpdated];
             for (const event of events) {

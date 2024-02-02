@@ -2,11 +2,11 @@ const Sequelize = require("sequelize");
 module.exports = (db) => { return db.define("flowdistributionupdated", {
     agreementId: {
         type: Sequelize.STRING,
-        allowNull: false
+        primaryKey: true
     },
     superToken: {
         type: Sequelize.STRING,
-        allowNull: false
+        primaryKey: true
     },
     pool: {
         type: Sequelize.STRING,

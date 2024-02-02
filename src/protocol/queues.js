@@ -113,7 +113,7 @@ class Queues {
               "FlowUpdated",
               task.self.app.protocol.getCFAAgreementEvents
           );
-          let flowDistributionUpdatedEvents = await task.self.app.queues._handleAgreementEvents(
+          const flowDistributionUpdatedEvents = await task.self.app.queues._handleAgreementEvents(
               task,
               senderFilerGDA,
               "GDA",
@@ -256,6 +256,7 @@ class Queues {
 
   async _processEvents(task, events) {
     for (const event of events) {
+      // we always need to save the agreement
       await task.self.app.db.models.AgreementModel.upsert({
         agreementId: event.agreementId,
         superToken: event.token,
@@ -265,6 +266,23 @@ class Queues {
         blockNumber: event.blockNumber,
         source: event.source
       });
+      // if GDA save the flow distribution
+      if (event.source === "GDA") {
+          await task.self.app.db.models.FlowDistributionModel.create({
+          agreementId: event.agreementId,
+          superToken: event.token,
+          pool: event.pool,
+          distributor: event.distributor,
+          operator: event.operator,
+          oldFlowRate: event.oldFlowRate,
+          newDistributorToPoolFlowRate: event.newDistributorToPoolFlowRate,
+          newPoolToDistributorFlowRate: event.newPoolToDistributorFlowRate,
+          newTotalDistributionFlowRate: event.newTotalDistributionFlowRate,
+          adjustmentFlowRate: event.adjustmentFlowRate,
+          blockNumber: event.blockNumber
+          });
+      }
+      // add estimation task
       if (["CFA", "GDA"].includes(event.source)) {
         const accounts = event.source === "CFA" ? [event.sender, event.receiver] : [event.distributor, event.pool];
         accounts.forEach(account => {

@@ -268,7 +268,7 @@ class Queues {
       });
       // if GDA save the flow distribution
       if (event.source === "GDA") {
-          await task.self.app.db.models.FlowDistributionModel.upsert({
+          await task.self.app.db.models.FlowDistributionModel.create({
           agreementId: event.agreementId,
           superToken: event.token,
           pool: event.pool,

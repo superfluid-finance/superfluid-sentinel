@@ -88,10 +88,12 @@ class BusinessRepository {
     }
 
     async getGDAOutFlowRate(token, distributor) {
-        const sqlquery = `SELECT SUM(sumNewDistributorToPoolFlowRate) as aggrDistributorFlowRate FROM (SELECT SUM(newDistributorToPoolFlowRate) as sumNewDistributorToPoolFlowRate, pool  from flowdistributionupdateds
-   where distributor = :distributor and superToken = :token
-   GROUP BY pool
-   HAVING MAX(blockNumber)) AS P`;
+        const sqlquery = `SELECT SUM(newDistributorToPoolFlowRate) AS aggrDistributorFlowRate FROM (
+SELECT newDistributorToPoolFlowRate, pool FROM flowdistributionupdateds
+WHERE distributor = :distributor and superToken = :token
+GROUP BY pool
+HAVING MAX(blockNumber)
+ ) AS P`;
         return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { distributor: distributor, token: token });
     }
 

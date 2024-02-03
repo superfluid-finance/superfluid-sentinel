@@ -78,6 +78,32 @@ describe("GDA integration tests", () => {
     }
   });
 
+  it("should make estimation on flowDistribution of two pools, make liquidation", async () => {
+    try {
+      const poolAddress1 = await helper.operations.createPoolGDA(helper.sf.superToken.options.address, accounts[0], accounts[0]);
+      await helper.operations.updateMemberGDA(poolAddress1, accounts[0], accounts[2], "100");
+      const poolAddress2 = await helper.operations.createPoolGDA(helper.sf.superToken.options.address, accounts[0], accounts[0]);
+      await helper.operations.updateMemberGDA(poolAddress2, accounts[0], accounts[2], "100");
+      const tx1 = await helper.operations.distributeFlow(helper.sf.superToken.options.address, accounts[0], poolAddress1, "10000000000000000");
+      const tx2 = await helper.operations.distributeFlow(helper.sf.superToken.options.address, accounts[0], poolAddress2, "10000000000000000");
+      await helper.sf.superToken.methods.transferAll(accounts[2]).send({
+        from: accounts[0],
+        gas: 1000000
+      });
+      await ganache.helper.timeTravelOnce(provider, web3,1);
+      await bootNode({pic: ZERO_ADDRESS, resolver: helper.sf.resolver.options.address, log_level: "debug", toga_contract: helper.togaAddress});
+      await ganache.helper.timeTravelUntil(provider, web3,60);
+      const result1 = await protocolHelper.waitForEvent(helper, app, ganache, "AgreementLiquidatedV2", tx1.blockNumber);
+      const result2 = await protocolHelper.waitForEvent(helper, app, ganache, "AgreementLiquidatedV2", tx2.blockNumber);
+      await app.shutdown();
+      protocolHelper.expectLiquidationV2(result1[0], AGENT_ACCOUNT, accounts[0], "0");
+      protocolHelper.expectLiquidationV2(result2[0], AGENT_ACCOUNT, accounts[0], "0");
+    } catch (err) {
+      protocolHelper.exitWithError(err);
+    }
+  });
+
+
   it("should subscribe to new token and make estimation on flowDistribution from eventLoop", async () => {
     try {
       const poolAddress = await helper.operations.createPoolGDA(helper.sf.superToken.options.address, accounts[0], accounts[0]);

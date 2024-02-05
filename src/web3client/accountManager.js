@@ -31,6 +31,12 @@ class AccountManager {
 
     // add account from private key
     addAccountFromPrivateKey(privateKey) {
+
+        // add "0x" prefix if not exists to private key if not exists
+        if (!privateKey.startsWith("0x")) {
+            privateKey = "0x" + privateKey;
+        }
+
         const newAccount = this.web3.eth.accounts.privateKeyToAccount(privateKey);
         // reject if account already exists
         if (this.accounts.find(account => account.address === newAccount.address)) {

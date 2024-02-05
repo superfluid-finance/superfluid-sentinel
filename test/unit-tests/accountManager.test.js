@@ -189,4 +189,18 @@ describe("Account Manager", () => {
         expect(accountNonce).to.equal(10);
         sinon.assert.calledOnce(stub);
     });
+
+    it("#1.22 - should add private key with '0x' prefix if not exists", () => {
+        const privateKeyWithoutPrefix = "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+        accountManager.addAccountFromPrivateKey(privateKeyWithoutPrefix);
+        const account = accountManager.accounts[accountManager.accounts.length - 1];
+        expect(account.address).to.equal("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+    });
+
+    it("#1.23 - should add private key with '0x' prefix if exists", () => {
+        const privateKeyWithPrefix = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+        accountManager.addAccountFromPrivateKey(privateKeyWithPrefix);
+        const account = accountManager.accounts[accountManager.accounts.length - 1];
+        expect(account.address).to.equal("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+    });
 });

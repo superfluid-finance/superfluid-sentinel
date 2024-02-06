@@ -1,4 +1,16 @@
+/**
+ * The SuperTokenManager class is responsible for managing SuperToken instances,
+ * including loading, saving, and querying their state. It interacts with the
+ * blockchain to fetch SuperToken details and stores relevant information in both
+ * memory and the database for quick access
+ */
+
 class SuperTokenManager {
+    /**
+     * Constructs a new SuperTokenManager instance
+     * @param {Object} app The application context, providing access to various services and configurations
+     * @throws {Error} If the application context is not provided
+     */
     constructor(app) {
 
         if(!app) throw new Error("SuperTokenManager: app is not defined");
@@ -11,7 +23,11 @@ class SuperTokenManager {
         this.superTokensAddresses = [];
     }
 
-    // save super tokens to DB and memory. Optionally set PIC for that token
+    /**
+     * Saves a new SuperToken to both memory and database. Optionally sets the PIC for the token
+     * @param {string} newSuperToken The address of the SuperToken to save
+     * @param {boolean} setPIC Indicates whether to set the PIC for the token
+     */
     async saveSuperToken (newSuperToken, setPIC=false) {
         // check if the super token is already loaded
         if (this.superTokens[newSuperToken.toLowerCase()] !== undefined) {
@@ -58,7 +74,11 @@ class SuperTokenManager {
         }
     }
 
-    // add new Super Tokens to database and memory if needed
+    /**
+     * Adds new SuperTokens to the database and memory if they are not already loaded
+     * This method ensures that all provided SuperTokens are managed by the instance
+     * @param {Array<string>} newSuperTokens An array of new SuperToken addresses to load
+     */
     async loadSuperTokens(newSuperTokens) {
         try {
             await this._loadSuperTokensFromDB();
@@ -72,6 +92,12 @@ class SuperTokenManager {
         }
     }
 
+    /**
+     * Loads a single SuperToken into the manager, if it's not already loaded
+     * Optionally sets the PIC for the SuperToken
+     * @param {string} newSuperToken The address of the SuperToken to load
+     * @param {boolean} setPIC Indicates whether to set the PIC for the token
+     */
     async loadSuperToken(newSuperToken, setPIC=false) {
         if (this.superTokens[newSuperToken.toLowerCase()] !== undefined) {
             return;
@@ -124,7 +150,34 @@ class SuperTokenManager {
         }
     }
 
-    // get super tokens and load them
+    /**
+     * Checks if a SuperToken is listed on the Superfluid Resolver contract
+     * This can be used to filter tokens based on their listing status
+     * @param {string} superTokenAddress The address of the SuperToken to check
+     * @param {string} [tokenSymbol=undefined] Optional. The symbol of the SuperToken, if already known
+     * @returns {Promise<boolean>} True if the SuperToken is listed, false otherwise
+     */
+    async isSuperTokenListed(superTokenAddress, tokenSymbol = undefined) {
+        if(tokenSymbol === undefined) {
+            const { tokenSymbol } = this.app.client.contracts.getSuperTokenInstance(superTokenAddress);
+        }
+        const resolvedSuperTokenAddress = await this.app.client.contracts.resolver.methods.get(`supertokens.${this.app.version}.${tokenSymbol}`).call();
+        return resolvedSuperTokenAddress === superTokenAddress;
+    }
+
+    /**
+     * Checks if a SuperToken is already registered and managed by this instance
+     * @param {string} token The address of the SuperToken to check
+     * @returns {boolean} True if the SuperToken is registered, false otherwise
+     */
+    isSuperTokenRegistered (token) {
+        return this.superTokens[token.toLowerCase()] !== undefined;
+    }
+
+    /**
+     * Loads SuperTokens from the database into memory at startup
+     * @private
+     */
     async _loadSuperTokensFromDB() {
         try {
 
@@ -141,18 +194,6 @@ class SuperTokenManager {
             this.app.logger.error(err);
             throw new Error(`SuperTokenManager: _loadSuperTokensFromDB(): ${err}`);
         }
-    }
-
-    async isSuperTokenListed(superTokenAddress, tokenSymbol = undefined) {
-        if(tokenSymbol === undefined) {
-            const { tokenSymbol } = this.app.client.contracts.getSuperTokenInstance(superTokenAddress);
-        }
-        const resolvedSuperTokenAddress = await this.app.client.contracts.resolver.methods.get(`supertokens.${this.app.version}.${tokenSymbol}`).call();
-        return resolvedSuperTokenAddress === superTokenAddress;
-    }
-
-    isSuperTokenRegistered (token) {
-        return this.superTokens[token.toLowerCase()] !== undefined;
     }
 }
 

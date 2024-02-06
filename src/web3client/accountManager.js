@@ -4,8 +4,8 @@ const BN = require("bn.js");
 
 /**
  * AccountManager is responsible for managing Ethereum accounts, allowing the addition
- * and management of accounts based on private keys or mnemonics. It requires a web
- * instance to interact with the Ethereum blockchain
+ * and management of accounts based on private keys or mnemonics. It requires a web3
+ * instance to interact with the EVM blockchain
  */
 class AccountManager {
     /**

@@ -3,7 +3,7 @@ const { wad4human } = require("@decentral.ee/web3-helpers");
 const AccountManager = require("./accountManager");
 const RPCClient = require("./rpcClient");
 const TestRPCClient = require("../test/testRPCClient");
-const Contracts = require("./contracts");
+const ContractManager = require("./contractManager");
 const SuperTokenManager = require("./superTokenManager");
 
 const { FMT_NUMBER, FMT_BYTES } = require("web3");
@@ -39,7 +39,7 @@ class Client {
       this.accountManager = new AccountManager(this.RPCClient.web3);
 
       // we need web3 instance for contract loader
-      this.contracts = new Contracts(this.app);
+      this.contracts = new ContractManager(this.app);
 
     } catch(err) {
       this.app.logger.error(err);

@@ -2,6 +2,7 @@ const { wad4human } = require("@decentral.ee/web3-helpers");
 
 const AccountManager = require("./accountManager");
 const RPCClient = require("./rpcClient");
+const TestRPCClient = require("../test/testRPCClient");
 const Contracts = require("./contracts");
 const SuperTokenManager = require("./superTokenManager");
 
@@ -29,7 +30,10 @@ class Client {
   // having to connect() before init() is a bit weird
   async connect () {
     try {
-
+      if(this.app.config.RUN_TEST_ENV) {
+        this.app.logger.info("Running in test environment");
+        this.RPCClient = new TestRPCClient(this.app, this.app.web3);
+      }
       this.RPCClient = new RPCClient(this.app);
       await this.RPCClient.connect();
       this.accountManager = new AccountManager(this.RPCClient.web3);

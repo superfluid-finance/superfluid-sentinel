@@ -1,12 +1,12 @@
-const web3Utils = require("web3").utils;
+const web3Utils = require('web3').utils
 
 const toChecksumAddress = (address) => {
   if (address == null) {
-    return undefined;
+    return undefined
   }
-  const result = web3Utils.toChecksumAddress(address);
-  return result ? result : undefined;
-};
+  const result = web3Utils.toChecksumAddress(address)
+  return result || undefined
+}
 
 class EventModel {
   // @title transformWeb3Event
@@ -57,17 +57,17 @@ class EventModel {
             ? undefined
             : parseInt(event.returnValues.flowRate)),
           oldFlowRate: (isNaN(parseInt(event.returnValues.oldFlowRate))
-              ? undefined
-              : parseInt(event.returnValues.oldFlowRate)),
+            ? undefined
+            : parseInt(event.returnValues.oldFlowRate)),
           newDistributorToPoolFlowRate: (isNaN(parseInt(event.returnValues.newDistributorToPoolFlowRate))
-              ? undefined
-              : parseInt(event.returnValues.newDistributorToPoolFlowRate)),
+            ? undefined
+            : parseInt(event.returnValues.newDistributorToPoolFlowRate)),
           newTotalDistributionFlowRate: (isNaN(parseInt(event.returnValues.newTotalDistributionFlowRate))
-              ? undefined
-              : parseInt(event.returnValues.newTotalDistributionFlowRate)),
+            ? undefined
+            : parseInt(event.returnValues.newTotalDistributionFlowRate)),
           adjustmentFlowRate: (isNaN(parseInt(event.returnValues.adjustmentFlowRate))
-              ? undefined
-              : parseInt(event.returnValues.adjustmentFlowRate)),
+            ? undefined
+            : parseInt(event.returnValues.adjustmentFlowRate)),
           totalSenderFlowRate: (isNaN(parseInt(event.returnValues.totalSenderFlowRate))
             ? undefined
             : parseInt(event.returnValues.totalSenderFlowRate)),
@@ -75,15 +75,15 @@ class EventModel {
             ? undefined
             : parseInt(event.returnValues.totalReceiverFlowRate)),
           removed: event.removed
-        };
+        }
 
-        Object.keys(obj).forEach(key => (obj[key] === undefined) && delete obj[key]);
-        return obj;
+        Object.keys(obj).forEach(key => (obj[key] === undefined) && delete obj[key])
+        return obj
       }
     } catch (err) {
-      console.error(err);
+      console.error(err)
     }
   }
 }
 
-module.exports = EventModel;
+module.exports = EventModel

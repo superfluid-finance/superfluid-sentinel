@@ -1,12 +1,12 @@
 // The DB is split into raw data
 // and information derived from it.
 
-const Sequelize = require("sequelize");
+const Sequelize = require('sequelize')
 
-module.exports = (db_path) => {
+module.exports = (dbPath) => {
   return new Sequelize({
-    dialect: "sqlite",
+    dialect: 'sqlite',
     logging: false,
-    storage: "./" + db_path
-  });
-};
+    storage: './' + dbPath
+  })
+}

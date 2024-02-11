@@ -9,12 +9,12 @@ class Gas {
     this.app = app
   }
 
-  async getGasLimit (wallet, txObject) {
+  async getGasLimit (wallet, transactionWithContext) {
     try {
       let result = await this.app.client.RPCClient.estimateGas({
         from: wallet.address,
-        to: txObject.target,
-        data: txObject.tx
+        to: transactionWithContext.target,
+        data: transactionWithContext.tx
       }, dataFormat)
 
       result += Math.ceil(Number(result) * 0.1)

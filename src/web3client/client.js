@@ -119,16 +119,16 @@ class Client {
     this.RPCClient.web3.currentProvider.disconnect()
   }
 
-  async sendSignedTransaction (signed) {
-    const gasPrice = signed.tx.txObject.gasPrice
-    const gasLimit = signed.tx.txObject.gasLimit
+  async sendSignedTransaction (signedTransactionWithContext) {
+    const gasPrice = signedTransactionWithContext.gasPrice
+    const gasLimit = signedTransactionWithContext.gasLimit
 
     if (this._testMode === 'TIMEOUT_ON_LOW_GAS_PRICE' && gasPrice <= this._testOption.minimumGas) {
-      await new Promise(resolve => setTimeout(resolve, signed.tx.timeout * 2))
+      await new Promise(resolve => setTimeout(resolve, signedTransactionWithContext.timeout * 2))
     } else if (this._testMode === 'REVERT_ON_BLOCK_GAS_LIMIT' && gasLimit > this._testOption.blockGasLimit) {
       throw new Error('block gas limit')
     } else {
-      return this.RPCClient.web3.eth.sendSignedTransaction(signed.tx.rawTransaction, dataFormat)
+      return this.RPCClient.web3.eth.sendSignedTransaction(signedTransactionWithContext.signed.rawTransaction, dataFormat)
     }
   }
 

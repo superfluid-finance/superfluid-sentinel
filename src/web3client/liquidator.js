@@ -7,6 +7,7 @@ const dataFormat = {
 class Liquidator {
   constructor (app) {
     this.app = app
+    this.transaction = new (require('../transaction/transaction'))(app)
     this._isShutdown = false
   }
 
@@ -79,21 +80,23 @@ class Liquidator {
             this.app.notifier.sendNotification(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`)
             return
           }
-
-          const txObject = {
+          const agreementData = {
+            superToken: job.superToken,
+            sender: job.sender,
+            receiver: job.receiver,
+            source: job.source
+          }
+          const transactionWithContext = {
             retry: 1,
             step: Number(this.app.config.RETRY_GAS_MULTIPLIER),
             target: txData.target,
-            flowSender: job.sender,
-            flowReceiver: job.receiver,
-            superToken: job.superToken,
-            source: job.source,
+            agreementData,
             tx: txData.tx,
             gasPrice: Number(baseGasPrice.gasPrice),
             nonce: Number(networkAccountNonce),
             chainId: Number(chainId)
           }
-          const result = await this.sendWithRetry(wallet, txObject, this.app.config.TX_TIMEOUT)
+          const result = await this.sendWithRetry(wallet, transactionWithContext, this.app.config.TX_TIMEOUT)
           if (result !== undefined && result.error !== undefined) {
             this.app.logger.error(`Liquidator.sendWithRetry: ${result.error}`)
           } else {
@@ -169,7 +172,7 @@ class Liquidator {
         this.app.notifier.sendNotification(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`)
         return
       }
-      const txObject = {
+      const transactionWithContext = {
         retry: 1,
         step: this.app.config.RETRY_GAS_MULTIPLIER,
         target: txData.target,
@@ -179,7 +182,7 @@ class Liquidator {
         nonce: networkAccountNonce,
         chainId
       }
-      const result = await this.sendWithRetry(wallet, txObject, this.app.config.TX_TIMEOUT)
+      const result = await this.sendWithRetry(wallet, transactionWithContext, this.app.config.TX_TIMEOUT)
       if (result !== undefined && result.error !== undefined) {
         this.app.logger.error(`Liquidation.sendBatch - ${result.error}`)
       } else {
@@ -191,31 +194,37 @@ class Liquidator {
     }
   }
 
-  async sendWithRetry (wallet, txObject, ms) {
+  async sendWithRetry (wallet, transactionWithContext, ms) {
     await this.app.timer.timeout(1000)
     // When estimate gas we get a preview of what can happen when send the transaction. Depending on the error we should execute specific logic
-    const gas = await this.app.gasEstimator.getGasLimit(wallet, txObject)
+    const gas = await this.app.gasEstimator.getGasLimit(wallet, transactionWithContext)
     if (gas.error !== undefined) {
       if (gas.error instanceof this.app.Errors.SmartContractError) {
-        await this.app.protocol.cfaHandler.checkFlow(txObject.superToken, txObject.flowSender, txObject.flowReceiver)
+        await this.app.protocol.cfaHandler.checkFlow(
+          transactionWithContext.agreementData.superToken,
+          transactionWithContext.agreementData.sender,
+          transactionWithContext.agreementData.receiver
+        )
       }
       return {
         error: gas.error,
         tx: undefined
       }
     }
-    txObject.gasLimit = gas.gasLimit
-    const signed = await this.signTx(wallet, txObject)
-    txObject.hitGasPriceLimit = signed.tx.hitGasPriceLimit
-    if (signed.error !== undefined) {
-      const error = this.app.Errors.EVMErrorParser(signed.error)
+    transactionWithContext.gasLimit = gas.gasLimit
+    const { signedWithContext, signingError } = await this.transaction.signWithContext(wallet, transactionWithContext)
+
+    if (signingError !== undefined) {
+      const error = this.app.Errors.EVMErrorParser(signingError)
+
       if (error instanceof this.app.Errors.TxUnderpricedError) {
         this.app.logger.warn('replacement transaction underpriced')
-        txObject.retry++
-        return this.sendWithRetry(wallet, txObject, ms)
+        transactionWithContext.retry++
+        return this.sendWithRetry(wallet, transactionWithContext, ms)
       }
+
       if (error instanceof this.app.Errors.SmartContractError) {
-        this.app.logger.warn(error.originalMessage)
+        this.app.logger.warn(signingError.originalMessage)
         return {
           error,
           tx: undefined
@@ -223,18 +232,17 @@ class Liquidator {
       }
 
       return {
-        error: signed.error,
+        error: signingError,
         tx: undefined
       }
     }
 
     try {
-      txObject.txHash = signed.tx.transactionHash
-      signed.tx.timeout = ms
-      this.app.logger.info(`waiting until timeout for ${ms / 1000} seconds for tx ${txObject.txHash}`)
+      signedWithContext.timeout = ms
+      this.app.logger.info(`waiting until timeout for ${ms / 1000} seconds for tx ${signedWithContext.signed.transactionHash}`)
       // Broadcast transaction
       const tx = await this.app.timer.promiseTimeout(
-        this.app.client.sendSignedTransaction(signed),
+        this.app.client.sendSignedTransaction(signedWithContext),
         ms
       )
 
@@ -244,21 +252,21 @@ class Liquidator {
       }
     } catch (err) {
       if (err instanceof this.app.Errors.TimeoutError) {
-        this.app.logger.debug(`timeout of tx: ${signed.tx.transactionHash}`)
-        txObject.retry++
-        return this.sendWithRetry(wallet, txObject, ms)
+        this.app.logger.debug(`timeout of tx: ${signedWithContext.signed.transactionHash}`)
+        signedWithContext.retry++
+        return this.sendWithRetry(wallet, signedWithContext, ms)
       }
       // get errors from EVM
       const error = this.app.Errors.EVMErrorParser(err)
       if (error instanceof this.app.Errors.TxUnderpricedError) {
         this.app.logger.warn('replacing transaction underpriced')
-        txObject.retry++
-        return this.sendWithRetry(wallet, txObject, ms)
+        signedWithContext.retry++
+        return this.sendWithRetry(wallet, signedWithContext, ms)
       }
       if (error instanceof this.app.Errors.AccountNonceError) {
         this.app.logger.warn('nonce too low, retry')
-        txObject.nonce++
-        return this.sendWithRetry(wallet, txObject, ms)
+        signedWithContext.nonce++
+        return this.sendWithRetry(wallet, signedWithContext, ms)
       }
       if (error instanceof this.app.Errors.TxAlreadyKnownError) {
         this.app.logger.warn('submitted tx already known')
@@ -269,7 +277,7 @@ class Liquidator {
       }
       if (error instanceof this.app.Errors.AccountFundsError) {
         this.app.logger.warn('insufficient funds on sentinel account')
-        this.app.notifier.sendNotification(`Sentinel account has insufficient funds to send tx ${signed.tx.transactionHash}`)
+        this.app.notifier.sendNotification(`Sentinel account has insufficient funds to send tx ${signedWithContext.signed.transactionHash}`)
         return {
           error: error.message,
           tx: undefined
@@ -290,34 +298,6 @@ class Liquidator {
       }
       // log remaining errors
       this.app.logger.error(`Liquidator.sendWithRetry() - no logic to catch error : ${error}`)
-    }
-  }
-
-  async signTx (wallet, txObject) {
-    try {
-      const updatedGas = this.app.gasEstimator.getUpdatedGasPrice(txObject.gasPrice, txObject.retry, txObject.step)
-      txObject.gasPrice = updatedGas.gasPrice
-      const unsignedTx = {
-        chainId: txObject.chainId,
-        to: txObject.target,
-        from: wallet.address,
-        data: txObject.tx,
-        nonce: txObject.nonce,
-        gasPrice: txObject.gasPrice,
-        gasLimit: txObject.gasLimit
-      }
-      const signed = await wallet.signTransaction(unsignedTx)
-      signed.txObject = txObject
-      signed.hitGasPriceLimit = updatedGas.hitGasPriceLimit
-      return {
-        tx: signed,
-        error: undefined
-      }
-    } catch (err) {
-      return {
-        tx: undefined,
-        error: err
-      }
     }
   }
 }

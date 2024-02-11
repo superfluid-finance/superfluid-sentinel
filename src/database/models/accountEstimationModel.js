@@ -1,6 +1,6 @@
-const Sequelize = require('sequelize')
+const Sequelize = require("sequelize");
 module.exports = (db) => {
-  return db.define('estimations', {
+  return db.define("estimations", {
     address: {
       type: Sequelize.STRING,
       primaryKey: true
@@ -45,5 +45,5 @@ module.exports = (db) => {
     blockNumber: {
       type: Sequelize.INTEGER
     }
-  })
-}
+  });
+};

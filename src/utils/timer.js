@@ -1,36 +1,36 @@
-const Errors = require('./errors/errors')
+const Errors = require("./errors/errors");
 class Timer {
   timeout (ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms))
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async triggerStart (fn, time = 15000) {
-    await this.timeout(time)
-    return fn.start()
+    await this.timeout(time);
+    return fn.start();
   }
 
   async triggerInterval (fn, time) {
-    return setInterval(fn, time)
+    return setInterval(fn, time);
   }
 
   async startAfter (fn, data, ms = 1000) {
-    setTimeout(() => fn.start(data), 1000)
+    setTimeout(() => fn.start(data), 1000);
   }
 
   promiseTimeout (promise, ms) {
     const timeout = new Promise((resolve, reject) => {
       const id = setTimeout(() => {
-        clearTimeout(id)
+        clearTimeout(id);
         // (name, isOperational, description)
-        reject(new Errors.TimeoutError(true, `Promise rejected with timeout ${ms}ms`))
-      }, ms)
-    })
+        reject(new Errors.TimeoutError(true, `Promise rejected with timeout ${ms}ms`));
+      }, ms);
+    });
 
     // Returns a race between timeout and promise
     return Promise.race([
       promise,
       timeout
-    ])
+    ]);
   }
 }
-module.exports = Timer
+module.exports = Timer;

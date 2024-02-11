@@ -9,8 +9,8 @@ class BaseAgreement {
      * @param {Object} app The main application context, providing access to shared resources and utilities.
      */
   constructor (app) {
-    if (!app) throw new Error('BaseAgreement: app is not defined')
-    this.app = app
+    if (!app) throw new Error("BaseAgreement: app is not defined");
+    this.app = app;
   }
 
   /**
@@ -18,7 +18,7 @@ class BaseAgreement {
      * functionality that might be used across different agreement handlers.
      */
   addTotalRequest () {
-    this.app.client.addTotalRequest()
+    this.app.client.addTotalRequest();
   }
 
   /**
@@ -27,7 +27,7 @@ class BaseAgreement {
      * @param {string} account The address of the account.
      */
   async getNetFlow (token, account) {
-    throw new Error('getNetFlow method should be implemented by subclasses')
+    throw new Error("getNetFlow method should be implemented by subclasses");
   }
 
   /**
@@ -36,8 +36,8 @@ class BaseAgreement {
      * @param {Object} filter An object containing filter criteria.
      */
   async getPastEvents (eventName, filter) {
-    throw new Error('getAgreementEvents method should be implemented by subclasses')
+    throw new Error("getAgreementEvents method should be implemented by subclasses");
   }
 }
 
-module.exports = BaseAgreement
+module.exports = BaseAgreement;

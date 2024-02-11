@@ -1,6 +1,6 @@
-const Sequelize = require('sequelize')
+const Sequelize = require("sequelize");
 module.exports = (db) => {
-  return db.define('idaevents', {
+  return db.define("idaevents", {
     eventName: {
       type: Sequelize.STRING,
       allowNull: false
@@ -29,5 +29,5 @@ module.exports = (db) => {
       type: Sequelize.STRING,
       allowNull: false
     }
-  })
-}
+  });
+};

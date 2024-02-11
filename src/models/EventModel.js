@@ -1,12 +1,12 @@
-const web3Utils = require('web3').utils
+const web3Utils = require("web3").utils;
 
 const toChecksumAddress = (address) => {
   if (address == null) {
-    return undefined
+    return undefined;
   }
-  const result = web3Utils.toChecksumAddress(address)
-  return result || undefined
-}
+  const result = web3Utils.toChecksumAddress(address);
+  return result || undefined;
+};
 
 class EventModel {
   // @title transformWeb3Event
@@ -75,15 +75,15 @@ class EventModel {
             ? undefined
             : parseInt(event.returnValues.totalReceiverFlowRate)),
           removed: event.removed
-        }
+        };
 
-        Object.keys(obj).forEach(key => (obj[key] === undefined) && delete obj[key])
-        return obj
+        Object.keys(obj).forEach(key => (obj[key] === undefined) && delete obj[key]);
+        return obj;
       }
     } catch (err) {
-      console.error(err)
+      console.error(err);
     }
   }
 }
 
-module.exports = EventModel
+module.exports = EventModel;

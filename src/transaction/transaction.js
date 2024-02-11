@@ -2,8 +2,8 @@
 
 class Transaction {
   constructor (app) {
-    if (!app) throw new Error('Transaction: app is not defined')
-    this.app = app
+    if (!app) throw new Error("Transaction: app is not defined");
+    this.app = app;
   }
 
   async signWithContext (wallet, transactionWithContext) {
@@ -12,9 +12,9 @@ class Transaction {
         transactionWithContext.gasPrice,
         transactionWithContext.retry,
         transactionWithContext.step
-      )
+      );
 
-      transactionWithContext.gasPrice = updatedGas.gasPrice
+      transactionWithContext.gasPrice = updatedGas.gasPrice;
 
       const unsignedTx = {
         chainId: transactionWithContext.chainId,
@@ -24,25 +24,25 @@ class Transaction {
         nonce: transactionWithContext.nonce,
         gasPrice: transactionWithContext.gasPrice,
         gasLimit: transactionWithContext.gasLimit
-      }
+      };
 
-      const signedTransaction = await wallet.signTransaction(unsignedTx)
+      const signedTransaction = await wallet.signTransaction(unsignedTx);
 
-      const signedWithContext = transactionWithContext
-      signedWithContext.signed = signedTransaction
-      signedWithContext.hitGasPriceLimit = updatedGas.hitGasPriceLimit
+      const signedWithContext = transactionWithContext;
+      signedWithContext.signed = signedTransaction;
+      signedWithContext.hitGasPriceLimit = updatedGas.hitGasPriceLimit;
 
       return {
         signedWithContext,
         signingError: undefined
-      }
+      };
     } catch (err) {
       return {
         signedWithContext: undefined,
         signingError: err
-      }
+      };
     }
   }
 }
 
-module.exports = Transaction
+module.exports = Transaction;

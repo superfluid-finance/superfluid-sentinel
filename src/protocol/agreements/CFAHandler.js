@@ -1,4 +1,4 @@
-const BaseAgreement = require('./baseAgreement')
+const BaseAgreement = require("./baseAgreement");
 
 /**
  * Handles operations related to the Instant Distribution Agreement.
@@ -12,11 +12,11 @@ class CFAHandler extends BaseAgreement {
      */
   async getUserNetFlow (token, account) {
     try {
-      this.app.client.addTotalRequest()
-      return this.app.client.contracts.CFAv1.methods.getNetFlow(token, account).call()
+      this.app.client.addTotalRequest();
+      return this.app.client.contracts.CFAv1.methods.getNetFlow(token, account).call();
     } catch (err) {
-      console.error(err)
-      throw Error(`Protocol.CFAHandler.getUserNetFlow(): ${err}`)
+      console.error(err);
+      throw Error(`Protocol.CFAHandler.getUserNetFlow(): ${err}`);
     }
   }
 
@@ -29,12 +29,12 @@ class CFAHandler extends BaseAgreement {
      */
   async getPastEvents (eventName, filter, app = undefined) {
     try {
-      app = app || this.app
-      app.client.addTotalRequest()
-      return app.client.contracts.CFAv1.getPastEvents(eventName, filter)
+      app = app || this.app;
+      app.client.addTotalRequest();
+      return app.client.contracts.CFAv1.getPastEvents(eventName, filter);
     } catch (err) {
-      console.error('getCFAAgreementEvents ' + err)
-      throw Error(`Protocol.CFAHandler.getPastEvents(): ${err}`)
+      console.error("getCFAAgreementEvents " + err);
+      throw Error(`Protocol.CFAHandler.getPastEvents(): ${err}`);
     }
   }
 
@@ -47,11 +47,11 @@ class CFAHandler extends BaseAgreement {
      */
   getAgreementID (sender, receiver, app) {
     try {
-      app = app || this.app
-      return app.client.soliditySha3(sender, receiver)
+      app = app || this.app;
+      return app.client.soliditySha3(sender, receiver);
     } catch (err) {
-      this.app.logger.error(err)
-      throw Error(`Protocol.CFAHandler.getAgreementID(): ${err}`)
+      this.app.logger.error(err);
+      throw Error(`Protocol.CFAHandler.getAgreementID(): ${err}`);
     }
   }
 
@@ -64,13 +64,13 @@ class CFAHandler extends BaseAgreement {
      */
   async checkFlow (superToken, sender, receiver) {
     try {
-      this.app.client.addTotalRequest() // Tracks the request for analytics or rate limiting purposes.
-      const result = await this.app.client.contracts.CFAv1.methods.getFlow(superToken, sender, receiver).call()
-      if (result.flowRate !== '0') {
-        return result // Return the flow details if there's an active flow.
+      this.app.client.addTotalRequest(); // Tracks the request for analytics or rate limiting purposes.
+      const result = await this.app.client.contracts.CFAv1.methods.getFlow(superToken, sender, receiver).call();
+      if (result.flowRate !== "0") {
+        return result; // Return the flow details if there's an active flow.
       }
     } catch (err) {
-      throw Error(`Protocol.checkFlow(): ${err}`) // Rethrows any encountered error with additional context.
+      throw Error(`Protocol.checkFlow(): ${err}`); // Rethrows any encountered error with additional context.
     }
   }
 
@@ -83,27 +83,27 @@ class CFAHandler extends BaseAgreement {
      */
   getDeleteTransaction (superToken, sender, receiver) {
     try {
-      const useBatch = this.app.client.contracts.batch !== undefined && this.app.config.NETWORK_TYPE === 'evm-l2'
+      const useBatch = this.app.client.contracts.batch !== undefined && this.app.config.NETWORK_TYPE === "evm-l2";
       if (useBatch) {
         // on rollups, it's cheaper to always use the batch interface due to smaller calldata (which goes to L1)
         const tx = this.app.client.contracts.batch.methods.deleteFlow(superToken, {
-          agreementOperation: '0', // CFA delete flow
+          agreementOperation: "0", // CFA delete flow
           sender,
           receiver
-        }).encodeABI()
-        return { tx, target: this.app.client.contracts.getBatchAddress() }
+        }).encodeABI();
+        return { tx, target: this.app.client.contracts.getBatchAddress() };
       } else {
         // on L1s, use the conventional host interface
-        const CFAv1Address = this.app.client.contracts.getCFAv1Address()
-        const deleteFlowABI = this.app.client.contracts.CFAv1.methods.deleteFlow(superToken, sender, receiver, '0x').encodeABI()
-        const tx = this.app.client.contracts.sf.methods.callAgreement(CFAv1Address, deleteFlowABI, '0x').encodeABI()
-        return { tx, target: this.app.client.contracts.getSuperfluidAddress() }
+        const CFAv1Address = this.app.client.contracts.getCFAv1Address();
+        const deleteFlowABI = this.app.client.contracts.CFAv1.methods.deleteFlow(superToken, sender, receiver, "0x").encodeABI();
+        const tx = this.app.client.contracts.sf.methods.callAgreement(CFAv1Address, deleteFlowABI, "0x").encodeABI();
+        return { tx, target: this.app.client.contracts.getSuperfluidAddress() };
       }
     } catch (error) {
-      this.app.logger.error(error)
-      throw new Error(`Protocol.CFAHandler.getDeleteTransaction(): ${error.message}`)
+      this.app.logger.error(error);
+      throw new Error(`Protocol.CFAHandler.getDeleteTransaction(): ${error.message}`);
     }
   }
 }
 
-module.exports = CFAHandler
+module.exports = CFAHandler;

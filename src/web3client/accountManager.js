@@ -1,6 +1,6 @@
-const { hdkey } = require('ethereumjs-wallet')
-const bip39 = require('bip39')
-const BN = require('bn.js')
+const { hdkey } = require("ethereumjs-wallet");
+const bip39 = require("bip39");
+const BN = require("bn.js");
 
 /**
  * AccountManager is responsible for managing Ethereum accounts, allowing the addition
@@ -14,9 +14,9 @@ class AccountManager {
      * @throws {Error} If the web3 instance is not provided
      */
   constructor (web3Instance) {
-    if (!web3Instance) throw new Error('AccountManager: web3 is not defined')
-    this.web3 = web3Instance
-    this.accounts = []
+    if (!web3Instance) throw new Error("AccountManager: web3 is not defined");
+    this.web3 = web3Instance;
+    this.accounts = [];
   }
 
   /**
@@ -26,17 +26,17 @@ class AccountManager {
      * @throws {Error} If the mnemonic is invalid or the index is negative
      */
   addAccountFromMnemonic (mnemonic, index = 0) {
-    if (typeof mnemonic !== 'string' || !bip39.validateMnemonic(mnemonic)) {
-      throw new Error('AccountManager: invalid mnemonic')
+    if (typeof mnemonic !== "string" || !bip39.validateMnemonic(mnemonic)) {
+      throw new Error("AccountManager: invalid mnemonic");
     }
-    if (typeof index !== 'number' || index < 0) {
-      throw new Error('AccountManager: invalid index')
+    if (typeof index !== "number" || index < 0) {
+      throw new Error("AccountManager: invalid index");
     }
 
-    const hdwallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic))
-    const hdpath = "m/44'/60'/0'/0/"
-    const wallet = hdwallet.derivePath(hdpath + index).getWallet()
-    this.addAccountFromPrivateKey(wallet.getPrivateKeyString())
+    const hdwallet = hdkey.fromMasterSeed(bip39.mnemonicToSeedSync(mnemonic));
+    const hdpath = "m/44'/60'/0'/0/";
+    const wallet = hdwallet.derivePath(hdpath + index).getWallet();
+    this.addAccountFromPrivateKey(wallet.getPrivateKeyString());
   }
 
   /**
@@ -45,19 +45,19 @@ class AccountManager {
      * @throws {Error} If the account already exists
      */
   addAccountFromPrivateKey (privateKey) {
-    if (!privateKey.startsWith('0x')) {
-      privateKey = '0x' + privateKey
+    if (!privateKey.startsWith("0x")) {
+      privateKey = "0x" + privateKey;
     }
 
-    const newAccount = this.web3.eth.accounts.privateKeyToAccount(privateKey)
+    const newAccount = this.web3.eth.accounts.privateKeyToAccount(privateKey);
     if (this.accounts.find(account => account.address === newAccount.address)) {
-      throw new Error('AccountManager: account already exists : ' + newAccount.address)
+      throw new Error("AccountManager: account already exists : " + newAccount.address);
     }
     this.accounts.push({
       address: newAccount.address,
       signTransaction: (txParams) => newAccount.signTransaction(txParams),
       txCount: (dataFormat) => this.web3.eth.getTransactionCount(newAccount.address, undefined, dataFormat)
-    })
+    });
   }
 
   /**
@@ -68,9 +68,9 @@ class AccountManager {
      */
   getAccount (index = 0) {
     if (!this.accounts[index]) {
-      throw new Error('AccountManager: account does not exist')
+      throw new Error("AccountManager: account does not exist");
     }
-    return this.accounts[index]
+    return this.accounts[index];
   }
 
   /**
@@ -79,7 +79,7 @@ class AccountManager {
      * @returns {string} The account's address
      */
   getAccountAddress (index = 0) {
-    return this.getAccount(index).address
+    return this.getAccount(index).address;
   }
 
   /**
@@ -88,7 +88,7 @@ class AccountManager {
      * @returns {Object|undefined} The account object or undefined if not found
      */
   getAccountFromAddress (address) {
-    return this.accounts.find(account => account.address === address)
+    return this.accounts.find(account => account.address === address);
   }
 
   /**
@@ -98,11 +98,11 @@ class AccountManager {
      * @throws {Error} If the account does not exist
      */
   getAccountIndex (address) {
-    const account = this.getAccountFromAddress(address)
+    const account = this.getAccountFromAddress(address);
     if (!account) {
-      throw new Error('AccountManager: account does not exist')
+      throw new Error("AccountManager: account does not exist");
     }
-    return this.accounts.indexOf(account)
+    return this.accounts.indexOf(account);
   }
 
   /**
@@ -113,9 +113,9 @@ class AccountManager {
      */
   async getAccountBalance (index = 0) {
     if (!this.accounts[index]) {
-      throw new Error('AccountManager: account does not exist')
+      throw new Error("AccountManager: account does not exist");
     }
-    return this.web3.eth.getBalance(this.accounts[index].address)
+    return this.web3.eth.getBalance(this.accounts[index].address);
   }
 
   /**
@@ -127,17 +127,17 @@ class AccountManager {
      */
   async isAccountBalanceBelowMinimum (index = 0, threshold) {
     if (!this.accounts[index]) {
-      throw new Error('AccountManager: account does not exist')
+      throw new Error("AccountManager: account does not exist");
     }
     if (!BN.isBN(threshold)) {
-      throw new Error('AccountManager: invalid threshold')
+      throw new Error("AccountManager: invalid threshold");
     }
 
-    const balance = new BN(await this.getAccountBalance(index))
+    const balance = new BN(await this.getAccountBalance(index));
     return {
       isBelow: balance.lt(threshold),
       balance
-    }
+    };
   }
 
   /**
@@ -148,10 +148,10 @@ class AccountManager {
      */
   async getTransactionCount (index = 0) {
     if (!this.accounts[index]) {
-      throw new Error('AccountManager: account does not exist')
+      throw new Error("AccountManager: account does not exist");
     }
-    return this.web3.eth.getTransactionCount(this.accounts[index].address)
+    return this.web3.eth.getTransactionCount(this.accounts[index].address);
   }
 }
 
-module.exports = AccountManager
+module.exports = AccountManager;

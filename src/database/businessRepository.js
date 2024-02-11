@@ -1,30 +1,30 @@
 const {
   Op
-} = require('sequelize')
-const SQLRepository = require('./SQLRepository')
+} = require("sequelize");
+const SQLRepository = require("./SQLRepository");
 
 class BusinessRepository {
   constructor (app) {
     if (!app) {
-      throw new Error('BusinessRepository: app is not defined')
+      throw new Error("BusinessRepository: app is not defined");
     }
 
     if (BusinessRepository._instance) {
-      return BusinessRepository._instance
+      return BusinessRepository._instance;
     }
 
-    this.app = app
+    this.app = app;
     if (!this.app.db.SQLRepository) {
-      this.app.db.SQLRepository = SQLRepository.getInstance(app)
+      this.app.db.SQLRepository = SQLRepository.getInstance(app);
     }
-    BusinessRepository._instance = this
+    BusinessRepository._instance = this;
   }
 
   static getInstance (app) {
     if (!BusinessRepository._instance) {
-      BusinessRepository._instance = new BusinessRepository(app)
+      BusinessRepository._instance = new BusinessRepository(app);
     }
-    return BusinessRepository._instance
+    return BusinessRepository._instance;
   }
 
   async getAccounts (fromBlock = 0) {
@@ -56,8 +56,8 @@ class BusinessRepository {
       ) AS Y
       WHERE Y.flowRate <> 0
       ) AS Z
-      ORDER BY superToken`
-    return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { bn: fromBlock })
+      ORDER BY superToken`;
+    return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { bn: fromBlock });
   }
 
   async getLastCFAFlows (fromBlock = 0) {
@@ -68,8 +68,8 @@ class BusinessRepository {
     HAVING MAX(blockNumber)
     order by blockNumber desc , superToken, hashId
     ) AS P
-    WHERE P.flowRate <> 0`
-    return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { bn: fromBlock })
+    WHERE P.flowRate <> 0`;
+    return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { bn: fromBlock });
   }
 
   async getLastGDAFlows (fromBlock = 0) {
@@ -80,8 +80,8 @@ class BusinessRepository {
     HAVING MAX(blockNumber)
     order by blockNumber desc , superToken, agreementId
     ) AS P
-    WHERE P.flowRate <> 0`
-    return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { bn: fromBlock })
+    WHERE P.flowRate <> 0`;
+    return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { bn: fromBlock });
   }
 
   async getGDAOutFlowRate (token, distributor) {
@@ -90,42 +90,42 @@ SELECT newDistributorToPoolFlowRate, pool FROM flowdistributionupdateds
 WHERE distributor = :distributor and superToken = :token
 GROUP BY pool
 HAVING MAX(blockNumber)
- ) AS P`
-    return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { distributor, token })
+ ) AS P`;
+    return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { distributor, token });
   }
 
   async getAddressEstimations (address) {
     return this.app.db.models.AccountEstimationModel.findAll({
-      attributes: ['address', 'superToken', 'estimation'],
+      attributes: ["address", "superToken", "estimation"],
       where:
                 {
                   address
                 }
-    })
+    });
   }
 
   async getEstimations () {
     return this.app.db.models.AccountEstimationModel.findAll({
-      attributes: ['address', 'superToken', 'estimation'],
+      attributes: ["address", "superToken", "estimation"],
       where: { estimation: { [Op.gt]: 0 } }
-    })
+    });
   }
 
   async getLiquidations (checkDate, onlyTokens, excludeTokens, limitRows, useThresholds = true) {
-    let inSnipped = ''
-    let inSnippedLimit = ''
+    let inSnipped = "";
+    let inSnippedLimit = "";
 
     // if configured onlyTokens we don't filter by excludeTokens
-    const tokenFilter = onlyTokens !== undefined ? onlyTokens : excludeTokens
+    const tokenFilter = onlyTokens !== undefined ? onlyTokens : excludeTokens;
     if (tokenFilter !== undefined) {
-      inSnipped = `and out.superToken ${onlyTokens !== undefined ? 'in' : 'not in'} (:tokens)`
+      inSnipped = `and out.superToken ${onlyTokens !== undefined ? "in" : "not in"} (:tokens)`;
     }
     if (limitRows !== undefined && limitRows > 0 && limitRows < 101) {
-      inSnippedLimit = `LIMIT ${limitRows}`
+      inSnippedLimit = `LIMIT ${limitRows}`;
     }
 
-    const joinThresholds = useThresholds ? 'LEFT JOIN thresholds thr on agr.superToken = thr.address' : ''
-    const flowRateCondition = useThresholds ? 'out.flowRate >= COALESCE(out.above, 0)' : 'out.flowRate > 0'
+    const joinThresholds = useThresholds ? "LEFT JOIN thresholds thr on agr.superToken = thr.address" : "";
+    const flowRateCondition = useThresholds ? "out.flowRate >= COALESCE(out.above, 0)" : "out.flowRate > 0";
 
     const sqlquery = `SELECT * FROM (SELECT agr.superToken, agr.sender, agr.receiver,
 CASE pppmode
@@ -136,34 +136,34 @@ END as estimation,
 pppmode,
 flowRate,
 source,
-${useThresholds ? 'COALESCE(thr.above, 0) as above' : '0 as above'}
+${useThresholds ? "COALESCE(thr.above, 0) as above" : "0 as above"}
 FROM agreements agr
 INNER JOIN supertokens st on agr.superToken == st.address
 INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.estimation <> 0
 ${joinThresholds}
 ) AS out
 WHERE ${flowRateCondition} AND out.estimation <= :dt ${inSnipped}
-ORDER BY out.estimation ASC ${inSnippedLimit}`
+ORDER BY out.estimation ASC ${inSnippedLimit}`;
 
-    if (inSnipped !== '') {
+    if (inSnipped !== "") {
       return this.app.db.SQLRepository.executeSQLSelect(sqlquery, {
         dt: checkDate,
         tokens: tokenFilter
-      })
+      });
     }
-    return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { dt: checkDate })
+    return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { dt: checkDate });
   }
 
   async getNumberOfBatchCalls (checkDate, onlyTokens, excludeTokens, useThresholds = true) {
-    let inSnipped = ''
+    let inSnipped = "";
     // if configured onlyTokens we don't filter by excludeTokens
-    const tokenFilter = onlyTokens !== undefined ? onlyTokens : excludeTokens
+    const tokenFilter = onlyTokens !== undefined ? onlyTokens : excludeTokens;
     if (tokenFilter !== undefined) {
-      inSnipped = `and out.superToken ${onlyTokens !== undefined ? 'in' : 'not in'} (:tokens)`
+      inSnipped = `and out.superToken ${onlyTokens !== undefined ? "in" : "not in"} (:tokens)`;
     }
 
-    const joinThresholds = useThresholds ? 'LEFT JOIN thresholds thr on agr.superToken = thr.address' : ''
-    const flowRateCondition = useThresholds ? 'out.flowRate >= COALESCE(out.above, 0)' : 'out.flowRate > 0'
+    const joinThresholds = useThresholds ? "LEFT JOIN thresholds thr on agr.superToken = thr.address" : "";
+    const flowRateCondition = useThresholds ? "out.flowRate >= COALESCE(out.above, 0)" : "out.flowRate > 0";
 
     const sqlquery = `SELECT superToken, count(*) as numberTxs  FROM (SELECT agr.superToken, agr.sender, agr.receiver,
 CASE pppmode
@@ -173,7 +173,7 @@ WHEN 2 THEN est.estimationPirate
 END as estimation,
 pppmode,
 flowRate,
-${useThresholds ? 'COALESCE(thr.above, 0) as above' : '0 as above'}
+${useThresholds ? "COALESCE(thr.above, 0) as above" : "0 as above"}
 FROM agreements agr
 INNER JOIN supertokens st on agr.superToken == st.address
 INNER JOIN estimations est ON agr.sender = est.address AND agr.superToken = est.superToken AND est.estimation <> 0
@@ -182,30 +182,30 @@ ${joinThresholds}
 WHERE ${flowRateCondition} AND out.estimation <= :dt ${inSnipped}
 group by out.superToken
 having count(*) > 1
-order by count(*) desc`
+order by count(*) desc`;
 
-    if (inSnipped !== '') {
+    if (inSnipped !== "") {
       return this.app.db.SQLRepository.executeSQLSelect(sqlquery, {
         dt: checkDate,
         tokens: tokenFilter
-      })
+      });
     }
-    return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { dt: checkDate })
+    return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { dt: checkDate });
   }
 
   async getPICInfo (onlyTokens) {
-    let inSnipped = ''
+    let inSnipped = "";
     if (onlyTokens !== undefined) {
-      inSnipped = 'where address in (:tokens)'
+      inSnipped = "where address in (:tokens)";
     }
-    const sqlquery = `SELECT address, symbol, name, pic from supertokens ${inSnipped}`
+    const sqlquery = `SELECT address, symbol, name, pic from supertokens ${inSnipped}`;
 
-    if (inSnipped !== '') {
-      return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { tokens: onlyTokens })
+    if (inSnipped !== "") {
+      return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { tokens: onlyTokens });
     }
-    return this.app.db.SQLRepository.executeSQLSelect(sqlquery)
+    return this.app.db.SQLRepository.executeSQLSelect(sqlquery);
   }
 }
-BusinessRepository._instance = null
+BusinessRepository._instance = null;
 
-module.exports = BusinessRepository
+module.exports = BusinessRepository;

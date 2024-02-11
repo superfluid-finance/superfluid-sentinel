@@ -1,4 +1,4 @@
-const BaseAgreement = require('./baseAgreement')
+const BaseAgreement = require("./baseAgreement");
 
 /**
  * Handles operations related to the Instant Distribution Agreement.
@@ -6,8 +6,8 @@ const BaseAgreement = require('./baseAgreement')
 class IDAHandler extends BaseAgreement {
   // eslint-disable-next-line no-useless-constructor
   constructor (app) {
-    super(app)
+    super(app);
   }
 }
 
-module.exports = IDAHandler
+module.exports = IDAHandler;

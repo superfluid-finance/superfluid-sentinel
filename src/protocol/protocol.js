@@ -1,7 +1,7 @@
-const BN = require('bn.js')
-const CFAHandler = require('./agreements/CFAHandler')
-const GDAHandler = require('./agreements/GDAHandler')
-const IDAHandler = require('./agreements/IDAHandler')
+const BN = require("bn.js");
+const CFAHandler = require("./agreements/CFAHandler");
+const GDAHandler = require("./agreements/GDAHandler");
+const IDAHandler = require("./agreements/IDAHandler");
 
 /**
  * The Protocol class serves as a central point for managing interactions with the Superfluid protocol,
@@ -14,15 +14,15 @@ class Protocol {
    * @param {Object} app - The main application context providing access to the blockchain client, database, and utility functions
    */
   constructor (app) {
-    this.app = app
-    this.cfaHandler = new CFAHandler(app)
-    this.gdaHandler = new GDAHandler(app)
-    this.idaHandler = new IDAHandler(app)
+    this.app = app;
+    this.cfaHandler = new CFAHandler(app);
+    this.gdaHandler = new GDAHandler(app);
+    this.idaHandler = new IDAHandler(app);
     this.PPPMode = {
       Patrician: 0,
       Pleb: 1,
       Pirate: 2
-    }
+    };
   }
 
   /**
@@ -33,13 +33,13 @@ class Protocol {
    */
   async getAccountRealtimeBalanceOfNow (token, address) {
     try {
-      this.app.client.addTotalRequest()
+      this.app.client.addTotalRequest();
       return this.app.client.superToken.superTokens[token.toLowerCase()].methods.realtimeBalanceOfNow(
         address
-      ).call()
+      ).call();
     } catch (err) {
-      console.error(err)
-      throw Error(`Protocol.getAccountRealtimeBalanceOfNow(): (${token}): ${err}`)
+      console.error(err);
+      throw Error(`Protocol.getAccountRealtimeBalanceOfNow(): (${token}): ${err}`);
     }
   }
 
@@ -50,10 +50,10 @@ class Protocol {
    * @returns {Promise<string>} - The total net flow as a string
    */
   async getTotalNetFlow (superToken, account) {
-    const cfaNetFlow = await this.cfaHandler.getUserNetFlow(superToken, account)
-    const gdaNetFlow = await this.gdaHandler.getUserNetFlow(superToken, account)
-    const totalNetFlow = new BN(cfaNetFlow).add(new BN(gdaNetFlow))
-    return totalNetFlow.toString()
+    const cfaNetFlow = await this.cfaHandler.getUserNetFlow(superToken, account);
+    const gdaNetFlow = await this.gdaHandler.getUserNetFlow(superToken, account);
+    const totalNetFlow = new BN(cfaNetFlow).add(new BN(gdaNetFlow));
+    return totalNetFlow.toString();
   }
 
   /**
@@ -64,10 +64,10 @@ class Protocol {
    */
   async isAccountCriticalNow (superToken, account) {
     try {
-      this.app.client.addTotalRequest()
-      return this.app.client.superToken.superTokens[superToken.toLowerCase()].methods.isAccountCriticalNow(account).call()
+      this.app.client.addTotalRequest();
+      return this.app.client.superToken.superTokens[superToken.toLowerCase()].methods.isAccountCriticalNow(account).call();
     } catch (err) {
-      throw Error(`Protocol.isAccountCriticalNow(): ${err}`)
+      throw Error(`Protocol.isAccountCriticalNow(): ${err}`);
     }
   }
 
@@ -79,29 +79,29 @@ class Protocol {
    */
   async isAccountSolventNow (superToken, account) {
     try {
-      this.app.client.addTotalRequest()
-      return this.app.client.superToken.superTokens[superToken.toLowerCase()].methods.isAccountSolventNow(account).call()
+      this.app.client.addTotalRequest();
+      return this.app.client.superToken.superTokens[superToken.toLowerCase()].methods.isAccountSolventNow(account).call();
     } catch (err) {
-      throw Error(`Protocol.isAccountCriticalNow(): ${err}`)
+      throw Error(`Protocol.isAccountCriticalNow(): ${err}`);
     }
   }
 
   async isPossibleToClose (superToken, sender, receiver, pppmode) {
     try {
-      const checkFlow = await this.cfaHandler.checkFlow(superToken, sender, receiver)
-      const isCritical = await this.isAccountCriticalNow(superToken, sender)
+      const checkFlow = await this.cfaHandler.checkFlow(superToken, sender, receiver);
+      const isCritical = await this.isAccountCriticalNow(superToken, sender);
       if (pppmode === this.PPPMode.Patrician) {
-        return checkFlow !== undefined && isCritical
+        return checkFlow !== undefined && isCritical;
       } else if (pppmode === this.PPPMode.Pleb) {
-        const isPatrician = await this.isPatricianPeriodNow(superToken, sender)
-        return checkFlow !== undefined && isCritical && !isPatrician.isPatricianPeriod
+        const isPatrician = await this.isPatricianPeriodNow(superToken, sender);
+        return checkFlow !== undefined && isCritical && !isPatrician.isPatricianPeriod;
       } else {
-        const isSolvent = await this.isAccountSolventNow(superToken, sender)
-        return checkFlow !== undefined && isCritical && !isSolvent
+        const isSolvent = await this.isAccountSolventNow(superToken, sender);
+        return checkFlow !== undefined && isCritical && !isSolvent;
       }
     } catch (err) {
-      this.app.logger.error(`Protocol.isPossibleToClose() - ${err}`)
-      return false
+      this.app.logger.error(`Protocol.isPossibleToClose() - ${err}`);
+      return false;
     }
   }
 
@@ -113,9 +113,9 @@ class Protocol {
    */
   async liquidationData (superToken, account) {
     try {
-      this.app.client.addTotalRequest(2)
-      const totalNetFlow = await this.getTotalNetFlow(superToken, account)
-      const accountRealtimeBalanceOfNow = await this.getAccountRealtimeBalanceOfNow(superToken, account)
+      this.app.client.addTotalRequest(2);
+      const totalNetFlow = await this.getTotalNetFlow(superToken, account);
+      const accountRealtimeBalanceOfNow = await this.getAccountRealtimeBalanceOfNow(superToken, account);
 
       return this._getLiquidationData(
         new BN(totalNetFlow),
@@ -123,10 +123,10 @@ class Protocol {
         new BN(accountRealtimeBalanceOfNow.deposit),
         this.app.client.superToken.superTokens[superToken.toLowerCase()].liquidation_period,
         this.app.client.superToken.superTokens[superToken.toLowerCase()].patrician_period
-      )
+      );
     } catch (err) {
-      console.error(err)
-      throw Error(`Protocol.liquidationData(): ${err}`)
+      console.error(err);
+      throw Error(`Protocol.liquidationData(): ${err}`);
     }
   }
 
@@ -138,10 +138,10 @@ class Protocol {
   async getCurrentPIC (superToken) {
     try {
       if (this.app.client.contracts.toga !== undefined) {
-        return await this.app.client.contracts.toga.methods.getCurrentPICInfo(superToken).call()
+        return await this.app.client.contracts.toga.methods.getCurrentPICInfo(superToken).call();
       }
     } catch (err) {
-      throw Error(`Protocol.getCurrentPIC(): ${err}`)
+      throw Error(`Protocol.getCurrentPIC(): ${err}`);
     }
   }
 
@@ -152,9 +152,9 @@ class Protocol {
    */
   async getRewardAddress (superToken) {
     try {
-      return await this.app.client.contracts.gov.methods.getRewardAddress(this.app.client.contracts.getSuperfluidAddress(), superToken).call()
+      return await this.app.client.contracts.gov.methods.getRewardAddress(this.app.client.contracts.getSuperfluidAddress(), superToken).call();
     } catch (err) {
-      throw Error(`Protocol.getRewardAddress(): ${err}`)
+      throw Error(`Protocol.getRewardAddress(): ${err}`);
     }
   }
 
@@ -166,38 +166,38 @@ class Protocol {
    */
   async isPatricianPeriodNow (superToken, account) {
     try {
-      this.app.client.addTotalRequest()
-      return await this.app.client.contracts.CFAv1.methods.isPatricianPeriodNow(superToken, account).call()
+      this.app.client.addTotalRequest();
+      return await this.app.client.contracts.CFAv1.methods.isPatricianPeriodNow(superToken, account).call();
     } catch (err) {
-      throw Error(`Protocol.isPatricianPeriodNow(): ${err}`)
+      throw Error(`Protocol.isPatricianPeriodNow(): ${err}`);
     }
   }
 
   getBatchDeleteTransaction (superToken, liquidationParams) {
     try {
-      const structParams = []
+      const structParams = [];
       for (let i = 0; i < liquidationParams.length; i++) {
         structParams.push({
-          agreementOperation: liquidationParams[i].source === 'CFA' ? '0' : '1',
+          agreementOperation: liquidationParams[i].source === "CFA" ? "0" : "1",
           sender: liquidationParams[i].sender,
           receiver: liquidationParams[i].receiver
-        })
+        });
       }
-      const tx = this.app.client.contracts.batch.methods.deleteFlows(superToken, structParams).encodeABI()
-      return { tx, target: this.app.client.contracts.getBatchAddress() }
+      const tx = this.app.client.contracts.batch.methods.deleteFlows(superToken, structParams).encodeABI();
+      return { tx, target: this.app.client.contracts.getBatchAddress() };
     } catch (error) {
-      this.app.logger.error(error)
-      throw new Error(`Protocol.generateBatchLiquidationTxData(): ${error.message}`)
+      this.app.logger.error(error);
+      throw new Error(`Protocol.generateBatchLiquidationTxData(): ${error.message}`);
     }
   }
 
   generateBatchLiquidationTxData (superToken, senders, receivers) {
     try {
-      const tx = this.app.client.contracts.batch.methods.deleteFlows(superToken, senders, receivers).encodeABI()
-      return { tx, target: this.app.client.contracts.getBatchAddress() }
+      const tx = this.app.client.contracts.batch.methods.deleteFlows(superToken, senders, receivers).encodeABI();
+      return { tx, target: this.app.client.contracts.getBatchAddress() };
     } catch (error) {
-      this.app.logger.error(error)
-      throw new Error(`Protocol.generateBatchLiquidationTxData(): ${error.message}`)
+      this.app.logger.error(error);
+      throw new Error(`Protocol.generateBatchLiquidationTxData(): ${error.message}`);
     }
   }
 
@@ -209,43 +209,43 @@ class Protocol {
   async calculateAndSaveTokenDelay (superToken, sendNotification = false) {
     try {
       if (this.app.config.OBSERVER) {
-        this.app.logger.info('running as observer, ignoring PIC event')
-        return
+        this.app.logger.info("running as observer, ignoring PIC event");
+        return;
       }
 
-      const tokenInfo = this.app.client.superToken.superTokenNames[superToken.toLowerCase()]
-      const currentTokenPIC = await this.getCurrentPIC(superToken)
-      const rewardAccount = await this.getRewardAddress(superToken)
-      const checkedSuperTokenAddress = this.app.client.toChecksumAddress(superToken)
-      const token = await this.app.db.models.SuperTokenModel.findOne({ where: { address: checkedSuperTokenAddress } })
-      token.pic = currentTokenPIC === undefined ? undefined : currentTokenPIC.pic
-      token.pppmode = this.app.config.PIRATE ? this.PPPMode.Pirate : this.PPPMode.Pleb
+      const tokenInfo = this.app.client.superToken.superTokenNames[superToken.toLowerCase()];
+      const currentTokenPIC = await this.getCurrentPIC(superToken);
+      const rewardAccount = await this.getRewardAddress(superToken);
+      const checkedSuperTokenAddress = this.app.client.toChecksumAddress(superToken);
+      const token = await this.app.db.models.SuperTokenModel.findOne({ where: { address: checkedSuperTokenAddress } });
+      token.pic = currentTokenPIC === undefined ? undefined : currentTokenPIC.pic;
+      token.pppmode = this.app.config.PIRATE ? this.PPPMode.Pirate : this.PPPMode.Pleb;
 
-      let msg
+      let msg;
       if (this.app.config.PIC === undefined) {
-        msg = `${tokenInfo}: no PIC configured, default to ${this.app.config.PIRATE ? 'Pirate' : 'Pleb'}`
-        this.app.logger.debug(msg)
+        msg = `${tokenInfo}: no PIC configured, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`;
+        this.app.logger.debug(msg);
       } else if (currentTokenPIC !== undefined && this.app.config.PIC.toLowerCase() === currentTokenPIC.pic.toLowerCase()) {
-        token.pppmode = this.PPPMode.Patrician
-        msg = `${tokenInfo}: you are the active PIC now`
-        this.app.logger.info(msg)
+        token.pppmode = this.PPPMode.Patrician;
+        msg = `${tokenInfo}: you are the active PIC now`;
+        this.app.logger.info(msg);
       } else if (rewardAccount.toLowerCase() === this.app.config.PIC.toLowerCase()) {
-        token.pppmode = this.PPPMode.Patrician
-        msg = `${tokenInfo}: your configured PIC matches the token's reward address (no TOGA set)`
-        this.app.logger.debug(msg)
+        token.pppmode = this.PPPMode.Patrician;
+        msg = `${tokenInfo}: your configured PIC matches the token's reward address (no TOGA set)`;
+        this.app.logger.debug(msg);
       } else {
-        msg = `${tokenInfo}: you are not the PIC, default to ${this.app.config.PIRATE ? 'Pirate' : 'Pleb'}`
-        this.app.logger.debug(msg)
+        msg = `${tokenInfo}: you are not the PIC, default to ${this.app.config.PIRATE ? "Pirate" : "Pleb"}`;
+        this.app.logger.debug(msg);
       }
 
       if (sendNotification) {
-        this.app.notifier.sendNotification(msg)
+        this.app.notifier.sendNotification(msg);
       }
 
-      await token.save()
+      await token.save();
     } catch (err) {
-      this.app.logger.error(err)
-      throw Error(`Protocol.calculateAndSaveTokenDelay(): ${err}`)
+      this.app.logger.error(err);
+      throw Error(`Protocol.calculateAndSaveTokenDelay(): ${err}`);
     }
   }
 
@@ -257,31 +257,31 @@ class Protocol {
       estimation: new Date(0),
       estimationPleb: new Date(0),
       estimationPirate: new Date(0)
-    }
+    };
 
     if (totalNetFlowRate.lt(new BN(0))) {
-      result.estimation = this._calculateEstimationPoint(availableBalance, totalNetFlowRate)
-      const liquidationPeriod = new BN(liqPeriod)
-      const patricianPeriod = new BN(plebPeriod)
-      const zero = new BN(0)
-      const proportionalDeposit = liquidationPeriod.eq(zero) ? zero : patricianPeriod.mul(deposit).div(liquidationPeriod)
-      result.estimationPleb = this._calculateEstimationPoint((availableBalance.add(proportionalDeposit)), totalNetFlowRate)
-      result.estimationPirate = this._calculateEstimationPoint(availableBalance.add(deposit), totalNetFlowRate)
+      result.estimation = this._calculateEstimationPoint(availableBalance, totalNetFlowRate);
+      const liquidationPeriod = new BN(liqPeriod);
+      const patricianPeriod = new BN(plebPeriod);
+      const zero = new BN(0);
+      const proportionalDeposit = liquidationPeriod.eq(zero) ? zero : patricianPeriod.mul(deposit).div(liquidationPeriod);
+      result.estimationPleb = this._calculateEstimationPoint((availableBalance.add(proportionalDeposit)), totalNetFlowRate);
+      result.estimationPirate = this._calculateEstimationPoint(availableBalance.add(deposit), totalNetFlowRate);
     }
 
-    return result
+    return result;
   }
 
   _calculateEstimationPoint (balance, netFlowRate) {
     if (balance.lt(new BN(0))) {
-      return new Date()
+      return new Date();
     }
-    const seconds = isFinite(balance.div(netFlowRate)) ? balance.div(netFlowRate) : 0
-    const roundSeconds = Math.round(Math.abs(isNaN(seconds) ? 0 : seconds))
-    const estimation = new Date()
-    const dateFuture = new Date(estimation.setSeconds(roundSeconds))
-    return (isNaN(dateFuture) ? new Date('2999-12-31') : dateFuture)
+    const seconds = isFinite(balance.div(netFlowRate)) ? balance.div(netFlowRate) : 0;
+    const roundSeconds = Math.round(Math.abs(isNaN(seconds) ? 0 : seconds));
+    const estimation = new Date();
+    const dateFuture = new Date(estimation.setSeconds(roundSeconds));
+    return (isNaN(dateFuture) ? new Date("2999-12-31") : dateFuture);
   }
 }
 
-module.exports = Protocol
+module.exports = Protocol;

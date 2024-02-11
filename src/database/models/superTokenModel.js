@@ -1,6 +1,6 @@
-const Sequelize = require('sequelize')
+const Sequelize = require("sequelize");
 module.exports = (db) => {
-  return db.define('supertokens', {
+  return db.define("supertokens", {
     address: {
       type: Sequelize.STRING,
       allowNull: false,
@@ -33,5 +33,5 @@ module.exports = (db) => {
       type: Sequelize.BOOLEAN,
       allowNull: false
     }
-  })
-}
+  });
+};

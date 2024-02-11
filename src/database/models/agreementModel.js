@@ -1,6 +1,6 @@
-const Sequelize = require('sequelize')
+const Sequelize = require("sequelize");
 module.exports = (db) => {
-  return db.define('agreements', {
+  return db.define("agreements", {
     agreementId: {
       type: Sequelize.STRING,
       primaryKey: true
@@ -32,8 +32,8 @@ module.exports = (db) => {
   }, {
     indexes: [{
       unique: false,
-      fields: ['superToken', 'sender']
+      fields: ["superToken", "sender"]
     }]
   }
-  )
-}
+  );
+};

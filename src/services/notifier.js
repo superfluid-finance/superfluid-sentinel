@@ -1,9 +1,9 @@
-const EventEmitter = require('events')
+const EventEmitter = require("events");
 
 class Notifier extends EventEmitter {
   sendNotification (message) {
-    this.emit('notification', `[${process.pid}]: ${message}`)
+    this.emit("notification", `[${process.pid}]: ${message}`);
   }
 }
 
-module.exports = Notifier
+module.exports = Notifier;

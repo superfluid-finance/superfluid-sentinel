@@ -1,5 +1,5 @@
-const BaseAgreement = require('./baseAgreement')
-const BN = require('bn.js')
+const BaseAgreement = require("./baseAgreement");
+const BN = require("bn.js");
 
 /**
  * Handles operations related to the Generalized Distribution Agreement (GDA) within the Superfluid protocol.
@@ -14,18 +14,18 @@ class GDAHandler extends BaseAgreement {
      */
   async getUserNetFlow (token, account) {
     try {
-      this.app.client.addTotalRequest()
+      this.app.client.addTotalRequest();
       if (this.app.client.contracts.getGDAv1Address() === undefined) {
-        return 0
+        return 0;
       }
       // return this.app.client.contracts.GDAv1.methods.getNetFlow(token, account).call();
-      const gdaUserNetFlow = await this.app.db.bizQueries.getGDAOutFlowRate(token, account)
+      const gdaUserNetFlow = await this.app.db.bizQueries.getGDAOutFlowRate(token, account);
       return gdaUserNetFlow[0].aggrDistributorFlowRate === null
         ? new BN(0)
-        : (new BN(gdaUserNetFlow[0].aggrDistributorFlowRate.toString())).neg()
+        : (new BN(gdaUserNetFlow[0].aggrDistributorFlowRate.toString())).neg();
     } catch (err) {
-      console.error(err)
-      throw Error(`Protocol.getGDAUserNetFlow(): ${err}`)
+      console.error(err);
+      throw Error(`Protocol.getGDAUserNetFlow(): ${err}`);
     }
   }
 
@@ -38,16 +38,16 @@ class GDAHandler extends BaseAgreement {
      */
   async getPastEvents (eventName, filter, app = undefined) {
     try {
-      app = app || this.app
-      app.client.addTotalRequest()
+      app = app || this.app;
+      app.client.addTotalRequest();
       // if GDA is not deployed, return empty array
       if (app.client.contracts.getGDAv1Address() === undefined) {
-        return []
+        return [];
       }
-      return app.client.contracts.GDAv1.getPastEvents(eventName, filter)
+      return app.client.contracts.GDAv1.getPastEvents(eventName, filter);
     } catch (err) {
-      console.error('getGDAgreementEvents' + err)
-      throw Error(`Protocol.getGDAgreementEvents(): ${err}`)
+      console.error("getGDAgreementEvents" + err);
+      throw Error(`Protocol.getGDAgreementEvents(): ${err}`);
     }
   }
 
@@ -60,15 +60,15 @@ class GDAHandler extends BaseAgreement {
      */
   async getAgreementID (sender, receiver, app) {
     try {
-      app = app || this.app
+      app = app || this.app;
       if (app.client.contracts.getGDAv1Address() === undefined) {
-        return undefined
+        return undefined;
       }
-      const chainId = await app.client.RPCClient.getChainId()
-      return this.app.client.soliditySha3(chainId, 'distributionFlow', sender, receiver)
+      const chainId = await app.client.RPCClient.getChainId();
+      return this.app.client.soliditySha3(chainId, "distributionFlow", sender, receiver);
     } catch (err) {
-      this.app.logger.error(err)
-      throw Error(`Protocol.generateGDAId(): ${err}`)
+      this.app.logger.error(err);
+      throw Error(`Protocol.generateGDAId(): ${err}`);
     }
   }
 
@@ -81,26 +81,26 @@ class GDAHandler extends BaseAgreement {
      */
   getDeleteTransaction (superToken, sender, receiver) {
     try {
-      const useBatch = this.app.client.contracts.batch !== undefined && this.app.config.NETWORK_TYPE === 'evm-l2'
+      const useBatch = this.app.client.contracts.batch !== undefined && this.app.config.NETWORK_TYPE === "evm-l2";
       if (useBatch) {
         // on rollups, it's cheaper to always use the batch interface due to smaller calldata (which goes to L1)
         const tx = this.app.client.contracts.batch.methods.deleteFlow(superToken, {
-          agreementOperation: '1', // GDA delete flow
+          agreementOperation: "1", // GDA delete flow
           sender,
           receiver
-        }).encodeABI()
-        return { tx, target: this.app.client.contracts.getBatchAddress() }
+        }).encodeABI();
+        return { tx, target: this.app.client.contracts.getBatchAddress() };
       } else {
-        const GDAv1Address = this.app.client.contracts.getGDAv1Address()
-        const distributeFlowABI = this.app.client.contracts.GDAv1.methods.distributeFlow(superToken, sender, receiver, 0, '0x').encodeABI()
-        const tx = this.app.client.contracts.sf.methods.callAgreement(GDAv1Address, distributeFlowABI, '0x').encodeABI()
-        return { tx, target: this.app.client.contracts.getSuperfluidAddress() }
+        const GDAv1Address = this.app.client.contracts.getGDAv1Address();
+        const distributeFlowABI = this.app.client.contracts.GDAv1.methods.distributeFlow(superToken, sender, receiver, 0, "0x").encodeABI();
+        const tx = this.app.client.contracts.sf.methods.callAgreement(GDAv1Address, distributeFlowABI, "0x").encodeABI();
+        return { tx, target: this.app.client.contracts.getSuperfluidAddress() };
       }
     } catch (error) {
-      this.app.logger.error(error)
-      throw new Error(`Protocol.GDAHandler.getDeleteTransaction(): ${error.message}`)
+      this.app.logger.error(error);
+      throw new Error(`Protocol.GDAHandler.getDeleteTransaction(): ${error.message}`);
     }
   }
 }
 
-module.exports = GDAHandler
+module.exports = GDAHandler;

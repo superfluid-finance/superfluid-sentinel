@@ -1,6 +1,6 @@
-const Sequelize = require('sequelize')
+const Sequelize = require("sequelize");
 module.exports = (db) => {
-  return db.define('flowdistributionupdated', {
+  return db.define("flowdistributionupdated", {
     agreementId: {
       type: Sequelize.STRING,
       allowNull: false
@@ -41,5 +41,5 @@ module.exports = (db) => {
       type: Sequelize.INTEGER,
       allowNull: false
     }
-  })
-}
+  });
+};

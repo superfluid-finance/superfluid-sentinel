@@ -1,6 +1,6 @@
-const Sequelize = require('sequelize')
+const Sequelize = require("sequelize");
 module.exports = (db) => {
-  return db.define('system', {
+  return db.define("system", {
     blockNumber: {
       type: Sequelize.INTEGER,
       allowNull: false
@@ -12,5 +12,5 @@ module.exports = (db) => {
     superTokenBlockNumber: {
       type: Sequelize.INTEGER
     }
-  })
-}
+  });
+};

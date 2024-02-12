@@ -154,6 +154,16 @@ ORDER BY out.estimation ASC ${inSnippedLimit}`;
     return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { dt: checkDate });
   }
 
+  async getLiquidationsWithConfigParams (checkDate) {
+    const adjustedTime = checkDate || this.app.time.getDelayedTime();
+    return this.getLiquidations(
+      adjustedTime,
+      this.app.config.TOKENS,
+      this.app.config.EXCLUDED_TOKENS,
+      this.app.config.MAX_TX_NUMBER
+    );
+  }
+
   async getNumberOfBatchCalls (checkDate, onlyTokens, excludeTokens, useThresholds = true) {
     let inSnipped = "";
     // if configured onlyTokens we don't filter by excludeTokens
@@ -191,6 +201,15 @@ order by count(*) desc`;
       });
     }
     return this.app.db.SQLRepository.executeSQLSelect(sqlquery, { dt: checkDate });
+  }
+
+  async getNumberOfTransactionByToken (checkDate) {
+    const adjustedTime = checkDate || this.app.time.getDelayedTime();
+    return this.getNumberOfBatchCalls(
+      adjustedTime,
+      this.app.config.TOKENS,
+      this.app.config.EXCLUDED_TOKENS
+    );
   }
 
   async getPICInfo (onlyTokens) {

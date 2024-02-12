@@ -13,35 +13,15 @@ class Liquidator {
 
   async start () {
     try {
-      if (this.app._isShutdown) {
-        this._isShutdown = true;
-        this.app.logger.info("app.shutdown() - closing liquidation");
-        return;
-      }
-
-      if (this.app.client.RPCClient.isRPCDrifting()) {
-        return {
-          error: "liquidation.start() - RPC drifting",
-          msg: undefined
-        };
-      }
+      if (this.checkAppShutdown()) return;
+      if (this.checkRPCDrift()) return;
 
       this.app.logger.debug("running liquidation job");
       const checkDate = this.app.time.getDelayedTime();
-      let haveBatchWork = [];
-      // if we have a batchLiquidator contract, use batch calls
-      if (this.app.config.BATCH_CONTRACT !== undefined) {
-        haveBatchWork = await this.app.db.bizQueries.getNumberOfBatchCalls(checkDate, this.app.config.TOKENS, this.app.config.EXCLUDED_TOKENS);
-        if (haveBatchWork.length > 0) {
-          this.app.logger.debug(JSON.stringify(haveBatchWork));
-        }
-      }
-      if (haveBatchWork.length > 0) {
-        await this.multiTermination(haveBatchWork, checkDate);
-      } else {
-        const work = await this.app.db.bizQueries.getLiquidations(checkDate, this.app.config.TOKENS, this.app.config.EXCLUDED_TOKENS, this.app.config.MAX_TX_NUMBER);
-        await this.singleTerminations(work);
-      }
+
+      const numberOfLiquidationsByToken = await this.getNumberOfLiquidationsByToken();
+
+      await this.runLiquidationJob(numberOfLiquidationsByToken, checkDate);
     } catch (err) {
       this.app.logger.error(`liquidator.start() - ${err}`);
       return {
@@ -56,57 +36,42 @@ class Liquidator {
     };
   }
 
-  async processLiquidations (liquidations) {
-    // common logic for processing liquidations
-    for (const job of liquidations) {
-      if (await this.app.protocol.isPossibleToClose(job.superToken, job.sender, job.receiver, job.pppmode)) {
-        try {
-          const txData = (job.source === "CFA")
-            ? this.app.protocol.cfaHandler.getDeleteTransaction(job.superToken, job.sender, job.receiver)
-            : this.app.protocol.gdaHandler.getDeleteTransaction(job.superToken, job.sender, job.receiver);
+  checkAppShutdown () {
+    if (this.app._isShutdown) {
+      this._isShutdown = true;
+      this.app.logger.info("app.shutdown() - closing liquidation");
+      return true;
+    }
+    return false;
+  }
 
-          const baseGasPrice = await this.app.gasEstimator.getCappedGasPrice();
-          // if we hit the gas price limit or estimation error, we stop the liquidation job and return to main loop
-          if (baseGasPrice.error) {
-            this.app.logger.error(`Liquidator.baseGasPrice - ${baseGasPrice.error}`);
-            return;
-          }
-          if (baseGasPrice.hitGasPriceLimit) {
-            this.app.logger.warn(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
-            this.app.notifier.sendNotification(`Hit gas price limit of ${this.app.config.MAX_GAS_PRICE}`);
-            return;
-          }
-          const agreementData = {
-            superToken: job.superToken,
-            sender: job.sender,
-            receiver: job.receiver,
-            source: job.source
-          };
-          const transactionWithContext = {
-            retry: 1,
-            step: Number(this.app.config.RETRY_GAS_MULTIPLIER),
-            target: txData.target,
-            agreementData,
-            tx: txData.tx,
-            gasPrice: Number(baseGasPrice.gasPrice),
-            nonce: Number(networkAccountNonce),
-            chainId: Number(chainId)
-          };
-          const result = await this.sendWithRetry(wallet, transactionWithContext, this.app.config.TX_TIMEOUT);
-          if (result !== undefined && result.error !== undefined) {
-            this.app.logger.error(`Liquidator.sendWithRetry: ${result.error}`);
-          } else {
-            this.app.logger.debug(JSON.stringify(result));
-          }
-        } catch (err) {
-          this.app.logger.error(`liquidator.processLiquidations() - ${err}`);
-          process.exit(1);
-        }
-      } else {
-        this.app.logger.debug(`address ${job.sender} is solvent at ${job.superToken}`);
-        await this.app.queues.addQueuedEstimation(job.superToken, job.sender, "Liquidation job");
-        await this.app.timer.timeout(500);
+  checkRPCDrift () {
+    if (this.app.client.RPCClient.isRPCDrifting()) {
+      return {
+        error: "liquidation.start() - RPC drifting",
+        msg: undefined
+      };
+    }
+    return false;
+  }
+
+  async getNumberOfLiquidationsByToken () {
+    let numberOfLiquidationsByToken = [];
+    if (this.app.client.contracts.haveBatchContract()) {
+      numberOfLiquidationsByToken = await this.app.db.bizQueries.getNumberOfTransactionByToken();
+      if (numberOfLiquidationsByToken.length > 0) {
+        this.app.logger.debug(JSON.stringify(numberOfLiquidationsByToken));
       }
+    }
+    return numberOfLiquidationsByToken;
+  }
+
+  async runLiquidationJob (numberOfLiquidationsByToken, checkDate) {
+    if (numberOfLiquidationsByToken.length > 0) {
+      await this.multiTermination(numberOfLiquidationsByToken, checkDate);
+    } else {
+      const liquidations = await this.app.db.bizQueries.getLiquidationsWithConfigParams();
+      await this.singleTerminations(liquidations);
     }
   }
 
@@ -152,6 +117,7 @@ class Liquidator {
             chainId: Number(chainId)
           };
           const result = await this.sendWithRetry(wallet, transactionWithContext, this.app.config.TX_TIMEOUT);
+
           if (result !== undefined && result.error !== undefined) {
             this.app.logger.error(`Liquidator.sendWithRetry: ${result.error}`);
           } else {

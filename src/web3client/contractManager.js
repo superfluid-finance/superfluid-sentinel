@@ -139,6 +139,14 @@ class ContractManager {
   }
 
   /**
+   * Returns is the Batch contract is loaded
+   * @returns {boolean}
+   */
+  haveBatchContract () {
+    return this.batch !== undefined;
+  }
+
+  /**
      * Returns the address of the Superfluid contract
      * @returns {string|undefined} The address of the Superfluid contract or undefined if not loaded
      */

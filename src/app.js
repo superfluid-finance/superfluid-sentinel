@@ -62,7 +62,7 @@ class App {
     };
     this.liquidator = new Liquidator(this);
     this.bootstrap = new Bootstrap(this);
-    this.time = new Time();
+    this.time = new Time(this);
     this.utils = utils;
 
     this.healthReport = new Report(this);
@@ -311,12 +311,6 @@ class App {
       }
     }
     return false;
-  }
-
-  isRPCDrifting () {
-    const now = Date.now();
-    const tracker = this.eventTracker.lastTimeNewBlocks.getTime();
-    return Math.floor(Math.abs(now - tracker)) > (this.config.POLLING_INTERVAL * 5);
   }
 }
 

@@ -101,6 +101,12 @@ class RPCClient {
   getContract (abi, address, dataFormat) {
     return new this.web3.eth.Contract(abi, address, dataFormat);
   }
+
+  isRPCDrifting () {
+    const now = Date.now();
+    const tracker = this.app.eventTracker.lastTimeNewBlocks.getTime();
+    return Math.floor(Math.abs(now - tracker)) > (this.app.config.POLLING_INTERVAL * 5);
+  }
 }
 
 module.exports = RPCClient;

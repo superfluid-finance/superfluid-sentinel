@@ -1,21 +1,20 @@
-const { FMT_NUMBER, FMT_BYTES } = require("web3");
+const { FMT_NUMBER } = require("web3");
 
 const dataFormat = {
   number: FMT_NUMBER.NUMBER
-}
+};
 
 class Gas {
   constructor (app) {
     this.app = app;
   }
 
-  async getGasLimit (wallet, txObject) {
+  async getGasLimit (wallet, transactionWithContext) {
     try {
-
       let result = await this.app.client.RPCClient.estimateGas({
         from: wallet.address,
-        to: txObject.target,
-        data: txObject.tx
+        to: transactionWithContext.target,
+        data: transactionWithContext.tx
       }, dataFormat);
 
       result += Math.ceil(Number(result) * 0.1);
@@ -37,14 +36,13 @@ class Gas {
       let hitGasPriceLimit = false;
       if (this.app.config.MAX_GAS_PRICE !== undefined &&
           parseInt(gasPrice) >= this.app.config.MAX_GAS_PRICE
-      )
-      {
-          hitGasPriceLimit = true;
+      ) {
+        hitGasPriceLimit = true;
       }
       return {
         error: undefined,
-        gasPrice: gasPrice,
-        hitGasPriceLimit: hitGasPriceLimit
+        gasPrice,
+        hitGasPriceLimit
 
       };
     } catch (err) {
@@ -71,8 +69,8 @@ class Gas {
       this.app.logger.debug(`update gas price from ${originalGasPrice} to ${gasPrice}`);
     }
     return {
-      gasPrice: gasPrice,
-      hitGasPriceLimit: hitGasPriceLimit
+      gasPrice,
+      hitGasPriceLimit
     };
   }
 }

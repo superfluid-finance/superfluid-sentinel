@@ -22,7 +22,7 @@ class Queues {
   async run (fn, time) {
     // don't run if shutting down
     if (this.app._isShutdown) {
-      this.app.logger.info(`app.shutdown() - closing queues`);
+      this.app.logger.info("app.shutdown() - closing queues");
       return;
     }
     await trigger(fn, time);
@@ -55,7 +55,7 @@ class Queues {
               estimationPleb: new Date(estimationData.estimationPleb).getTime(),
               estimationPirate: new Date(estimationData.estimationPirate).getTime(),
               estimationHuman: estimationData.estimation,
-              estimationHumanPleb:estimationData.estimationPleb,
+              estimationHumanPleb: estimationData.estimationPleb,
               estimationHumanPirate: estimationData.estimationPirate,
               blockNumber: task.blockNumber,
               source: task.source
@@ -68,7 +68,7 @@ class Queues {
           break;
         } catch (err) {
           keepTrying++;
-          task.self.app.logger.error("newEstimationQueue: " +  err);
+          task.self.app.logger.error("newEstimationQueue: " + err);
           if (keepTrying > task.self.app.config.NUM_RETRIES) {
             task.self.app.logger.error("Queues.estimationQueue(): exhausted number of retries");
             process.exit(1);
@@ -78,7 +78,7 @@ class Queues {
     }, this.app.config.CONCURRENCY);
   }
 
-  newAgreementQueue() {
+  newAgreementQueue () {
     if (this.estimationQueue === undefined) {
       throw Error("Queues.newAgreementQueue(): Need EstimationQueue to be set first");
     }
@@ -107,18 +107,18 @@ class Queues {
             toBlock: task.blockNumber
           };
           const flowUpdatedEvents = await task.self.app.queues._handleAgreementEvents(
-              task,
-              senderFilterCFA,
-              "CFA",
-              "FlowUpdated",
-              task.self.app.protocol.getCFAAgreementEvents
+            task,
+            senderFilterCFA,
+            "CFA",
+            "FlowUpdated",
+            task.self.app.protocol.cfaHandler.getPastEvents
           );
           const flowDistributionUpdatedEvents = await task.self.app.queues._handleAgreementEvents(
-              task,
-              senderFilerGDA,
-              "GDA",
-              "FlowDistributionUpdated",
-              task.self.app.protocol.getGDAgreementEvents
+            task,
+            senderFilerGDA,
+            "GDA",
+            "FlowDistributionUpdated",
+            task.self.app.protocol.gdaHandler.getPastEvents
           );
 
           // merge both
@@ -141,29 +141,29 @@ class Queues {
     if (this.estimationQueue === undefined) {
       throw Error("Queues.addQueuedEstimation(): Need EstimationQueue to be set first");
     }
-    if(this._isShutdown) {
+    if (this._isShutdown) {
       throw Error("Queues.addQueuedEstimation(): shutdown");
     }
 
-    if(this.isEstimationTaskInQueue(token, account)) {
+    if (this.isEstimationTaskInQueue(token, account)) {
       this.app.logger.debug(`Queues.addQueuedEstimation(): estimation task already in queue for account: ${account} token: ${token}`);
       return;
     }
     this.estimationQueue.push({
       self: this,
-      account: account,
-      token: token,
-      parentCaller: parentCaller
+      account,
+      token,
+      parentCaller
     });
   }
 
-  isEstimationTaskInQueue(token, account) {
+  isEstimationTaskInQueue (token, account) {
     if (this.estimationQueue === undefined) {
-        throw Error("Queues.isEstimationTaskInQueue(): Need EstimationQueue to be set first");
+      throw Error("Queues.isEstimationTaskInQueue(): Need EstimationQueue to be set first");
     }
     let currentTaskNode = this.estimationQueue._tasks.head;
     while (currentTaskNode) {
-      const taskData = currentTaskNode.data
+      const taskData = currentTaskNode.data;
       if (taskData.account === account && taskData.token === token) {
         return true;
       }
@@ -175,16 +175,16 @@ class Queues {
   }
 
   // get all tasks in the queue as array
-  getEstimationTasks(queue = undefined) {
-        let currentTaskNode = this.estimationQueue._tasks.head;
-        const tasks = [];
-        while (currentTaskNode) {
-            tasks.push(currentTaskNode.data);
-            currentTaskNode = currentTaskNode.next;
-        }
-
-        return tasks;
+  getEstimationTasks (queue = undefined) {
+    let currentTaskNode = this.estimationQueue._tasks.head;
+    const tasks = [];
+    while (currentTaskNode) {
+      tasks.push(currentTaskNode.data);
+      currentTaskNode = currentTaskNode.next;
     }
+
+    return tasks;
+  }
 
   getAgreementQueueLength () {
     return this.agreementUpdateQueue.length();
@@ -194,35 +194,34 @@ class Queues {
     return this.estimationQueue.length();
   }
 
-  async shutdown() {
+  async shutdown () {
     try {
       this._isShutdown = true;
       this.app.circularBuffer.push("shutdown", null, "queues shutting down");
 
-      if(this.estimationQueue.length() > 0) {
+      if (this.estimationQueue.length() > 0) {
         this.app.circularBuffer.push("shutdown", null, `queues shutting down - estimationQueue length: ${this.estimationQueue.length()}`);
       }
 
       this.estimationQueue.pause();
       this.app.logger.info("estimationQueue successfully shut down");
 
-      if(this.agreementUpdateQueue.length() > 0) {
+      if (this.agreementUpdateQueue.length() > 0) {
         this.app.circularBuffer.push("shutdown", null, `queues shutting down - agreementUpdateQueue length: ${this.agreementUpdateQueue.length()}`);
       }
       this.agreementUpdateQueue.pause();
       this.app.logger.info("agreementUpdateQueue successfully shut down");
-
     } catch (error) {
       this.app.logger.error("Error during queue shutdown:", error);
     }
   }
 
-  async _handleAgreementEvents(task, senderFilter, source, eventName, getAgreementEventsFunc) {
+  async _handleAgreementEvents (task, senderFilter, source, eventName, getAgreementEventsFunc) {
     const app = task.self.app;
     let allFlowUpdatedEvents = await getAgreementEventsFunc(
-        eventName,
-        senderFilter,
-        app
+      eventName,
+      senderFilter,
+      app
     );
 
     // return if no events
@@ -230,21 +229,21 @@ class Queues {
       return [];
     }
     allFlowUpdatedEvents = allFlowUpdatedEvents.map(
-        app.models.event.transformWeb3Event
+      app.models.event.transformWeb3Event
     );
     allFlowUpdatedEvents.sort((a, b) => a.blockNumber - b.blockNumber);
     if (source === "GDA") {
       allFlowUpdatedEvents = await Promise.all(allFlowUpdatedEvents.map(async (event) => {
         event.sender = event.distributor;
         event.receiver = event.pool;
-        event.agreementId = await app.protocol.generateGDAId(event.distributor, event.pool);
+        event.agreementId = await app.protocol.gdaHandler.getAgreementID(event.distributor, event.pool);
         event.flowRate = event.newDistributorToPoolFlowRate;
         event.source = "GDA";
         return event;
       }));
     } else {
       allFlowUpdatedEvents.forEach((event) => {
-        event.agreementId = app.protocol.generateCFAId(event.sender, event.receiver);
+        event.agreementId = app.protocol.cfaHandler.getAgreementID(event.sender, event.receiver);
         event.source = "CFA";
       });
     }
@@ -254,7 +253,7 @@ class Queues {
     return allFlowUpdatedEvents;
   }
 
-  async _processEvents(task, events) {
+  async _processEvents (task, events) {
     for (const event of events) {
       // we always need to save the agreement
       await task.self.app.db.models.AgreementModel.upsert({
@@ -268,7 +267,7 @@ class Queues {
       });
       // if GDA save the flow distribution
       if (event.source === "GDA") {
-          await task.self.app.db.models.FlowDistributionModel.create({
+        await task.self.app.db.models.FlowDistributionModel.create({
           agreementId: event.agreementId,
           superToken: event.token,
           pool: event.pool,
@@ -280,7 +279,7 @@ class Queues {
           newTotalDistributionFlowRate: event.newTotalDistributionFlowRate,
           adjustmentFlowRate: event.adjustmentFlowRate,
           blockNumber: event.blockNumber
-          });
+        });
       }
       // add estimation task
       if (["CFA", "GDA"].includes(event.source)) {
@@ -293,19 +292,18 @@ class Queues {
   }
 
   // organize the task to be pushed to the queue
-  _createAgreementTask(account, event, task) {
+  _createAgreementTask (account, event, task) {
     return {
       self: task.self,
-      account: account,
+      account,
       token: event.token,
       blockNumber: event.blockNumber,
       blockHash: event.blockHash,
       transactionHash: event.transactionHash,
       parentCaller: "agreementUpdateQueue",
       source: event.source
-    }
+    };
   }
-
 }
 
 module.exports = Queues;

@@ -8,7 +8,7 @@ class Config {
     if (typeof config === "object") {
       this._initializeFromConfigObject(config);
     } else {
-        this._initializeFromEnvVariables();
+      this._initializeFromEnvVariables();
     }
 
     // token filter affects ONLY_LISTED_TOKENS and EXCLUDED_TOKENS
@@ -23,14 +23,14 @@ class Config {
     }
 
     if (this.EXCLUDED_TOKENS !== undefined && this._hasDuplicates(this.EXCLUDED_TOKENS)) {
-        throw Error("Config.constructor(): duplicate tokens set from configuration: EXCLUDED_TOKENS");
+      throw Error("Config.constructor(): duplicate tokens set from configuration: EXCLUDED_TOKENS");
     }
     if (this.HTTP_RPC_NODE === undefined) {
       throw Error("Config.constructor(): required configuration item missing: HTTP_RPC_NODE");
     }
   }
 
-  _initializeFromConfigObject(config) {
+  _initializeFromConfigObject (config) {
     this.RUN_TEST_ENV = this._parseToBool(config.run_test_env, true);
     this.LOG_LEVEL = config.log_level;
     this.HTTP_RPC_NODE = config.http_rpc_node;
@@ -63,13 +63,13 @@ class Config {
     this.ONLY_LISTED_TOKENS = this._parseToBool(config.only_listed_tokens);
     this.TOGA_CONTRACT = config.toga_contract;
     this.FASTSYNC = config.fastsync !== "false";
-    this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://cloudflare-ipfs.com/ipfs/"
+    this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://cloudflare-ipfs.com/ipfs/";
     this.PIRATE = this._parseToBool(config.pirate);
     this.INSTANCE_NAME = config.INSTANCE_NAME || "Sentinel";
     this.RPC_STUCK_THRESHOLD = config.rpc_stuck_threshold;
   }
 
-  _initializeFromEnvVariables() {
+  _initializeFromEnvVariables () {
     this.HTTP_RPC_NODE = process.env.HTTP_RPC_NODE;
     this.OBSERVER = this._parseToBool(process.env.OBSERVER, false);
     this.MNEMONIC = process.env.MNEMONIC;
@@ -112,11 +112,11 @@ class Config {
     this.BLOCK_OFFSET = process.env.BLOCK_OFFSET || 12;
     this.MAX_TX_NUMBER = process.env.MAX_TX_NUMBER || 100;
     this.NO_REMOTE_MANIFEST = this._parseToBool(process.env.NO_REMOTE_MANIFEST, false);
-    this.INSTANCE_NAME =  process.env.INSTANCE_NAME || "Sentinel";
+    this.INSTANCE_NAME = process.env.INSTANCE_NAME || "Sentinel";
     this.RPC_STUCK_THRESHOLD = process.env.RPC_STUCK_THRESHOLD || (this.POLLING_INTERVAL * 4) / 1000;
   }
 
-  _parseToBool(value, defaultValue = false) {
+  _parseToBool (value, defaultValue = false) {
     if (value === undefined || value === null) {
       return defaultValue;
     }
@@ -130,7 +130,7 @@ class Config {
     return value === true || value === 1;
   }
 
-  _hasDuplicates(array) {
+  _hasDuplicates (array) {
     return Array.from(new Set(array.map(x => x.toLowerCase()))).length !== array.length;
   }
 
@@ -145,14 +145,13 @@ class Config {
         const response = await axios.get(manifestUrl);
         const remoteManifestSchemaVersion = Number(response?.data["schema-version"]);
         // if version don't match, this sentinel is outdated, continue with local file
-        if(schemaVersion === remoteManifestSchemaVersion) {
+        if (schemaVersion === remoteManifestSchemaVersion) {
           schemaVersion = remoteManifestSchemaVersion;
           cid = response?.data?.networks?.[chainId]?.cid;
           networkType = response?.data?.networks?.[chainId]?.network_type;
         } else {
-          returnError = "Remote manifest schema version don't match local version. Please update sentinel and resync database"
+          returnError = "Remote manifest schema version don't match local version. Please update sentinel and resync database";
         }
-
       } catch (error) {
         returnError = error;
       }
@@ -162,8 +161,8 @@ class Config {
 
   async loadNetworkInfo (chainId, dbFileExist) {
     const network = metadata.filter(x => x.chainId === Number(chainId))[0];
-    if(network === undefined) {
-        throw Error(`Config.loadNetworkInfo(): unknown chainId: ${chainId}`);
+    if (network === undefined) {
+      throw Error(`Config.loadNetworkInfo(): unknown chainId: ${chainId}`);
     }
     const contractsV1 = network.contractsV1 || {};
     this.EPOCH_BLOCK = network.startBlockV1 || 0;
@@ -172,10 +171,9 @@ class Config {
     this.NETWORK_TYPE = networkType;
     this.SCHEMA_VERSION = schemaVersion;
 
-
     this.BATCH_CONTRACT = localManifest.networks[chainId]?.batch_contract || contractsV1.batchLiquidator || undefined;
     this.TOGA_CONTRACT = contractsV1.toga || undefined;
-    if(this.RESOLVER === undefined) {
+    if (this.RESOLVER === undefined) {
       this.RESOLVER = contractsV1.resolver || undefined;
     }
     return returnError;
@@ -213,7 +211,7 @@ class Config {
       MAX_TX_NUMBER: this.MAX_TX_NUMBER,
       SLACK_WEBHOOK_URL: this.SLACK_WEBHOOK_URL,
       TELEGRAM_BOT_TOKEN: this.TELEGRAM_BOT_TOKEN,
-      TELEGRAM_CHAT_ID: this.TELEGRAM_CHAT_ID,
+      TELEGRAM_CHAT_ID: this.TELEGRAM_CHAT_ID
     };
   }
 }

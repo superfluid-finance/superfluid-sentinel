@@ -3,10 +3,10 @@
 
 const Sequelize = require("sequelize");
 
-module.exports = (db_path) => {
+module.exports = (dbPath) => {
   return new Sequelize({
     dialect: "sqlite",
     logging: false,
-    storage: "./" + db_path
+    storage: "./" + dbPath
   });
 };

@@ -4,6 +4,8 @@
   "description": "Superfluid Sentinel",
   "main": "main.js",
   "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "start": "node main.js $1",
     "toga-status": "node scripts/printTOGAstatus.js",
     "build-snap": "node scripts/buildSnapshot.js",
@@ -42,15 +44,14 @@
     "node-telegram-bot-api": "^0.61.0",
     "prom-client": "^14.2.0",
     "sequelize": "^6.32.1",
-
     "sqlite3": "^5.1.6",
     "web3": "4.2.0",
     "winston": "^3.10.0"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
     "@nomicfoundation/hardhat-verify": "^1.0.0",
     "@truffle/contract": "^4.6.26",
     "@typechain/ethers-v6": "^0.4.0",
@@ -58,6 +59,11 @@
     "@types/chai": "^4.2.0",
     "@types/mocha": ">=9.1.0",
     "chai": "^4.2.0",
+    "eslint": "^8.0.1",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-n": "^15.0.0 || ^16.0.0 ",
+    "eslint-plugin-promise": "^6.0.0",
     "ganache": "^7.9.0",
     "hardhat": "^2.17.0",
     "hardhat-gas-reporter": "^1.0.8",

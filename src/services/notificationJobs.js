@@ -1,4 +1,4 @@
-const {wad4human} = require("@decentral.ee/web3-helpers/src/math-utils");
+const { wad4human } = require("@decentral.ee/web3-helpers/src/math-utils");
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function trigger (obj, ms) {
   await timeout(ms);
@@ -8,21 +8,21 @@ async function trigger (obj, ms) {
 const BALANCE_REPORT_INTERVAL = 12 * 1000 * 60 * 60; // 12 hours
 
 class NotificationJobs {
-  constructor(app) {
+  constructor (app) {
     this.app = app;
     this._lastBalanceReportTime = Date.now();
   }
 
   async sendReport () {
     const healthcheck = await this.app.healthReport.fullReport();
-    if(!healthcheck.healthy) {
-      const healthData = `Instance Name: ${this.app.config.INSTANCE_NAME}\nHealthy: ${healthcheck.healthy}\nChainId: ${healthcheck.network.chainId}\nReasons: ${healthcheck.reasons.join('\n')}`;
+    if (!healthcheck.healthy) {
+      const healthData = `Instance Name: ${this.app.config.INSTANCE_NAME}\nHealthy: ${healthcheck.healthy}\nChainId: ${healthcheck.network.chainId}\nReasons: ${healthcheck.reasons.join("\n")}`;
       this.app.notifier.sendNotification(healthData);
     }
     const currentTime = Date.now();
-    if(currentTime - this._lastBalanceReportTime >= BALANCE_REPORT_INTERVAL) {
+    if (currentTime - this._lastBalanceReportTime >= BALANCE_REPORT_INTERVAL) {
       const balanceQuery = await this.app.client.isAccountBalanceBelowMinimum();
-      if(balanceQuery.isBelow) {
+      if (balanceQuery.isBelow) {
         this.app.notifier.sendNotification(`Attention: Sentinel balance: ${wad4human(balanceQuery.balance)}`);
         // update the time of last balance report
         this._lastBalanceReportTime = currentTime;
@@ -37,7 +37,7 @@ class NotificationJobs {
 
   async run (self, time) {
     if (self.app._isShutdown) {
-      self.app.logger.info(`app.shutdown() - closing NotificationJobs`);
+      self.app.logger.info("app.shutdown() - closing NotificationJobs");
       return;
     }
     await trigger(self, time);

@@ -73,61 +73,61 @@ module.exports = {
     name: "AgreementLiquidatedBy",
     type: "event"
   },
-  AgreementLiquidatedV2:{
-  "anonymous": false,
-    "inputs": [
-  {
-    "indexed": true,
-    "internalType": "address",
-    "name": "agreementClass",
-    "type": "address"
+  AgreementLiquidatedV2: {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "agreementClass",
+        type: "address"
+      },
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "id",
+        type: "bytes32"
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "liquidatorAccount",
+        type: "address"
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "targetAccount",
+        type: "address"
+      },
+      {
+        indexed: false,
+        internalType: "address",
+        name: "rewardAccount",
+        type: "address"
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "rewardAmount",
+        type: "uint256"
+      },
+      {
+        indexed: false,
+        internalType: "int256",
+        name: "targetAccountBalanceDelta",
+        type: "int256"
+      },
+      {
+        indexed: false,
+        internalType: "bytes",
+        name: "liquidationTypeData",
+        type: "bytes"
+      }
+    ],
+    name: "AgreementLiquidatedV2",
+    type: "event"
   },
-  {
-    "indexed": false,
-    "internalType": "bytes32",
-    "name": "id",
-    "type": "bytes32"
-  },
-  {
-    "indexed": true,
-    "internalType": "address",
-    "name": "liquidatorAccount",
-    "type": "address"
-  },
-  {
-    "indexed": true,
-    "internalType": "address",
-    "name": "targetAccount",
-    "type": "address"
-  },
-  {
-    "indexed": false,
-    "internalType": "address",
-    "name": "rewardAccount",
-    "type": "address"
-  },
-  {
-    "indexed": false,
-    "internalType": "uint256",
-    "name": "rewardAmount",
-    "type": "uint256"
-  },
-  {
-    "indexed": false,
-    "internalType": "int256",
-    "name": "targetAccountBalanceDelta",
-    "type": "int256"
-  },
-  {
-    "indexed": false,
-    "internalType": "bytes",
-    "name": "liquidationTypeData",
-    "type": "bytes"
-  }
-],
-    "name": "AgreementLiquidatedV2",
-    "type": "event"
-},
   AgreementStateUpdated: {
     anonymous: false,
     inputs: [

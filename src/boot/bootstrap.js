@@ -47,7 +47,7 @@ class Bootstrap {
               sender: flow.sender,
               receiver: flow.receiver,
               flowRate: flow.flowRate,
-              blockNumber: blockNumber,
+              blockNumber,
               source: flow.source
             });
           } catch (err) {
@@ -87,7 +87,7 @@ class Bootstrap {
         process.exit(1);
       }
     } else {
-      if(blockNumber === currentBlockNumber) {
+      if (blockNumber === currentBlockNumber) {
         this.app.logger.warn(`epoch block number is the same as current block: ${systemInfo.blockNumber}`);
       } else {
         this.app.logger.error(`epoch block number is from the future: ${systemInfo.blockNumber}`);

@@ -151,7 +151,7 @@ class Liquidator {
       );
 
       for (const flow of streams) {
-        if (await this._.isPossibleToClose(flow.superToken, flow.sender, flow.receiver, flow.pppmode)) {
+        if (await this._isPossibleToClose(flow.superToken, flow.sender, flow.receiver, flow.pppmode)) {
           liquidations.push({ sender: flow.sender, receiver: flow.receiver, source: flow.source });
         }
 

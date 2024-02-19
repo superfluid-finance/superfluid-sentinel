@@ -1096,10 +1096,10 @@
   dependencies:
     antlr4ts "^0.5.0-alpha.4"
 
-"@superfluid-finance/ethereum-contracts@1.9.1-dev.083b723.0":
-  version "1.9.1-dev.083b723.0"
-  resolved "https://npm.pkg.github.com/download/@superfluid-finance/ethereum-contracts/1.9.1-dev.083b723.0/c4cfdfe8887c5f754f46258534d63328748803a3#c4cfdfe8887c5f754f46258534d63328748803a3"
-  integrity sha512-0wW+yPGhioW/p0cGJj5NPAl9zk30SGo2XHNCnXgFrNqBQg+h2LIie1O18K5B+aE1lNHHsY4bG0izHNd6zrRRgw==
+"@superfluid-finance/ethereum-contracts@1.9.0":
+  version "1.9.0"
+  resolved "https://registry.yarnpkg.com/@superfluid-finance/ethereum-contracts/-/ethereum-contracts-1.9.0.tgz#e3bc894bb39a730cc9f6c2bbb7f3fa449191112b"
+  integrity sha512-1ZPaZjc2wCgeADIAB6jRe+3p7c1S4oDfsUXg3+nAsEflMdvujncJzl1vUHjoC4sGIObZ9voYowYP9WuRoaPSug==
   dependencies:
     "@decentral.ee/web3-helpers" "0.5.3"
     "@nomiclabs/hardhat-ethers" "^2.2.3"
@@ -1109,9 +1109,9 @@
     ethereumjs-util "7.1.5"
     hardhat "^2.19.4"
 
-"@superfluid-finance/metadata@^1.1.27":
+"@superfluid-finance/metadata@1.1.27":
   version "1.1.27"
-  resolved "https://npm.pkg.github.com/download/@superfluid-finance/metadata/1.1.27/24df39277e6eb27201765693bbc47ce4c93befb6#24df39277e6eb27201765693bbc47ce4c93befb6"
+  resolved "https://registry.yarnpkg.com/@superfluid-finance/metadata/-/metadata-1.1.27.tgz#24df39277e6eb27201765693bbc47ce4c93befb6"
   integrity sha512-61Dj7zcncPLSyqhWowj6Xmb6xeeT9b5Yjg4lAhnFIk1XCiycxrgsWc7aokbm4On3dLRg3xBiacy6qoG2rSaM5A==
 
 "@szmarczak/http-timer@^4.0.5":

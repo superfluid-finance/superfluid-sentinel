@@ -194,9 +194,11 @@ class App {
             }
             // create all web3 infrastructure needed
             await this.client.init();
-            const balanceMsg = `RPC connected with chainId ${await this.client.getChainId()}, account ${this.client.accountManager.getAccountAddress(0)} has balance ${wad4human(await this.client.accountManager.getAccountBalance(0))}`;
+            const balanceMsg = `RPC connected with chainId ${await this.client.getChainId()}`
+                + this.config.OBSERVER ? "" :
+                `account ${this.client.accountManager.getAccountAddress(0)} has balance ${wad4human(await this.client.accountManager.getAccountBalance(0))}`;
             this.notifier.sendNotification(balanceMsg);
-            
+
             //check conditions to decide if getting snapshot data
             if ((!dbFileExist || this.config.COLD_BOOT) &&
                 this.config.FASTSYNC && this.config.CID) {
@@ -245,7 +247,7 @@ class App {
                 // update thresholds on database
                 await this.db.sysQueries.updateThresholds(tokensThresholds.thresholds);
             } catch (err) {
-                this.logger.warn(`error loading thresholds.json`);
+                this.logger.warn(`thresholds.json not loaded`);
                 await this.db.sysQueries.updateThresholds({});
                 this.config.SENTINEL_BALANCE_THRESHOLD = 0;
             }

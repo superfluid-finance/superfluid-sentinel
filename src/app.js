@@ -244,13 +244,11 @@ class App {
             try {
                 const thresholds = require("../thresholds.json");
                 const tokensThresholds = thresholds.networks[await this.client.getChainId()];
-                this.config.SENTINEL_BALANCE_THRESHOLD = tokensThresholds.minSentinelBalanceThreshold;
                 // update thresholds on database
                 await this.db.sysQueries.updateThresholds(tokensThresholds.thresholds);
             } catch (err) {
                 this.logger.warn(`thresholds.json not loaded`);
                 await this.db.sysQueries.updateThresholds({});
-                this.config.SENTINEL_BALANCE_THRESHOLD = 0;
             }
 
 

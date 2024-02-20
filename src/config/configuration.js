@@ -67,6 +67,7 @@ class Config {
     this.PIRATE = this._parseToBool(config.pirate);
     this.INSTANCE_NAME = config.INSTANCE_NAME || "Sentinel";
     this.RPC_STUCK_THRESHOLD = config.rpc_stuck_threshold;
+    this.SENTINEL_BALANCE_THRESHOLD = config.sentinel_balance_threshold;
   }
 
   _initializeFromEnvVariables() {
@@ -112,8 +113,9 @@ class Config {
     this.BLOCK_OFFSET = process.env.BLOCK_OFFSET || 12;
     this.MAX_TX_NUMBER = process.env.MAX_TX_NUMBER || 100;
     this.NO_REMOTE_MANIFEST = this._parseToBool(process.env.NO_REMOTE_MANIFEST, false);
-    this.INSTANCE_NAME =  process.env.INSTANCE_NAME || "Sentinel";
     this.RPC_STUCK_THRESHOLD = process.env.RPC_STUCK_THRESHOLD || (this.POLLING_INTERVAL * 4) / 1000;
+    this.INSTANCE_NAME =  process.env.INSTANCE_NAME || "Sentinel";
+    this.SENTINEL_BALANCE_THRESHOLD = process.env.SENTINEL_BALANCE_THRESHOLD || 0;
   }
 
   _parseToBool(value, defaultValue = false) {
@@ -183,7 +185,6 @@ class Config {
 
   getConfigurationInfo () {
     return {
-      INSTANCE_NAME: this.INSTANCE_NAME,
       HTTP_RPC_NODE: this.HTTP_RPC_NODE,
       FASTSYNC: this.FASTSYNC,
       OBSERVER: this.OBSERVER,
@@ -214,6 +215,8 @@ class Config {
       SLACK_WEBHOOK_URL: this.SLACK_WEBHOOK_URL,
       TELEGRAM_BOT_TOKEN: this.TELEGRAM_BOT_TOKEN,
       TELEGRAM_CHAT_ID: this.TELEGRAM_CHAT_ID,
+      INSTANCE_NAME: this.INSTANCE_NAME,
+      SENTINEL_BALANCE_THRESHOLD: this.SENTINEL_BALANCE_THRESHOLD,
     };
   }
 }

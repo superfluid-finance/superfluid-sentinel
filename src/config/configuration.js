@@ -41,7 +41,7 @@ class Config {
     this.MAX_QUERY_BLOCK_RANGE = config.max_query_block_range || 2000;
     this.TOKENS = config.TOKENS?.split(",");
     this.EXCLUDED_TOKENS = config.EXCLUDED_TOKENS?.split(",");
-    this.DB = (config.db_path !== undefined && config.db_path !== "") ? config.db_path : "./db.sqlite";
+    this.DB = (config.db_path !== undefined && config.db_path !== "") ? config.db_path : "data/db.sqlite";
     this.ADDITIONAL_LIQUIDATION_DELAY = config.additional_liquidation_delay || 0;
     this.TX_TIMEOUT = config.tx_timeout * 1000 || 60000;
     this.PROTOCOL_RELEASE_VERSION = config.protocol_release_version || "v1";
@@ -80,7 +80,7 @@ class Config {
     this.TOKENS = undefined;
     this.TOKENS = process.env.TOKENS?.split(",");
     this.EXCLUDED_TOKENS = process.env.EXCLUDED_TOKENS?.split(",");
-    this.DB = (process.env.DB_PATH !== undefined && process.env.DB_PATH !== "") ? process.env.DB_PATH : "./db.sqlite";
+    this.DB = (process.env.DB_PATH !== undefined && process.env.DB_PATH !== "") ? process.env.DB_PATH : "data/db.sqlite";
     this.ADDITIONAL_LIQUIDATION_DELAY = process.env.ADDITIONAL_LIQUIDATION_DELAY || 0;
     this.TX_TIMEOUT = process.env.TX_TIMEOUT * 1000 || 60000;
     this.PROTOCOL_RELEASE_VERSION = process.env.PROTOCOL_RELEASE_VERSION || "v1";

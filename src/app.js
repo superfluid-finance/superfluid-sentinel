@@ -24,6 +24,7 @@ const Telemetry = require("./services/telemetry");
 const Errors = require("./utils/errors/errors");
 const CircularBuffer = require("./utils/circularBuffer");
 const { wad4human } = require("@decentral.ee/web3-helpers");
+const packageVersion = require("../package.json").version;
 
 class App {
     /*
@@ -178,7 +179,7 @@ class App {
 
     async start() {
         try {
-            this.logger.debug(`booting - ${this.config.INSTANCE_NAME}`);
+            this.logger.debug(`booting version ${packageVersion} - ${this.config.INSTANCE_NAME}`);
             this._isShutdown = false;
             // send notification about time sentinel started including timestamp
             this.notifier.sendNotification(`Sentinel started at ${new Date()}`);

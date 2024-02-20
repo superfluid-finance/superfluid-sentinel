@@ -1,9 +1,10 @@
-# Minimal version which starts the sentinel service only, without additional monitoring services.
+# Basic docker-compose file for running a sentinel.
 # This is ideal for resource constrained environments or for use with custom monitoring setups.
 
 version: '3'
 services:
   sentinel:
+    image: superfluidfinance/superfluid-sentinel:${SENTINEL_VERSION:-latest}
     build: .
     restart: unless-stopped
     env_file: .env
@@ -16,13 +17,6 @@ services:
       - ${METRICS_PORT:-9100}:9100
     volumes:
       - data:/app/data
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 300M
-        reservations:
-          memory: 50M
 
 volumes:
   data:

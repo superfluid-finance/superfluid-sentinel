@@ -8,11 +8,8 @@ WORKDIR /app
 
 # Install dependencies
 RUN apk add --update --no-cache \
-        g++ \
-        make \
-        python3 \
-        yarn \ 
-        tini && ln -sf python3 /usr/bin/python
+        yarn \
+        tini
 
 # Copy package.json and yarn.lock
 COPY package.json yarn.lock ./

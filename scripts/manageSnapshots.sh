@@ -4,7 +4,7 @@ set -xe
 
 #Variables
 filename="networks"
-ipfs_api="${IPFS_API:-/ip4/65.21.152.182/tcp/5001}"
+ipfs_api="${IPFS_API}"
 
 generate_snapshot() {
     echo "Generating new snapshots..."
@@ -14,34 +14,21 @@ generate_snapshot() {
         mkdir snapshots
     fi
 
-    # Check if network argument is provided
-    if [ -z "$1" ]; then
-        echo "Usage: $0 -g <network>"
-        exit 1
-    fi
-
-    # Search for the specified network in the filename
-    if grep -q "^$1," "$filename"; then
-        echo "Generating snapshot for $1..."
-        url=$(grep "^$1," "$filename" | cut -d ',' -f 2)  # Extract URL
-        [ -n "$url" ] && node ./scripts/buildSnapshot.js "$url"
-        echo "Generating done"
-    else
-        echo "Error: Network '$1' not found in '$filename'."
-        exit 1
-    fi
+    while IFS=, read -r _ rpc; do
+        echo "${rpc} - ${rpc:-no rpc found}"
+        [ -n "$rpc" ] && node ./scripts/buildSnapshot.js "$rpc"
+    done < "$filename"
+    echo "Generating done"
 }
-
 
 upload_snapshot() {
     echo "Uploading snapshots..."
     ipfs_logfile="logs/ipfs_$(date '+%Y-%m-%d').txt"
     rm -f -- "$ipfs_logfile"
     for file in ./snapshots/*.sqlite.gz; do
-      ipfs_hash=`ipfs --api "$ipfs_api" add -q $file`
-      echo $file,$ipfs_hash >> "$ipfs_logfile"
+    ipfs_hash=`ipfs --api "$ipfs_api" add -q $file`
+    echo $file,$ipfs_hash >> "$ipfs_logfile"
     done
-    rm manifest.json
     node ./scripts/generateManifest.js "$ipfs_logfile" manifest.json
     ipfs_hash=`ipfs --api "$ipfs_api" add -q manifest.json`
     echo manifest.json,$ipfs_hash >> "$ipfs_logfile"
@@ -60,22 +47,21 @@ clean_snapshots() {
 usage() {
     echo "Usage: $0 [-g] [-u] [-p] [-c]"
     echo "Options:"
-    echo "  -g <network-name> Generate snapshots"
+    echo "  -g    Generate snapshots"
     echo "  -u    Upload snapshots"
     echo "  -c    Clean snapshots"
     exit 1
 }
 
 # Command line options
-while getopts "g:upc" opt; do
+while getopts "gupc" opt; do
     case $opt in
-        g) generate_snapshot "$OPTARG" ;;
+        g) generate_snapshot ;;
         u) upload_snapshot ;;
         c) clean_snapshots ;;
         *) usage ;;
     esac
 done
-
 
 # If no options are provided, show usage
 if [[ $# -eq 0 ]]; then

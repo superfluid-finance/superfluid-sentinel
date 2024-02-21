@@ -5,6 +5,8 @@ datadir/
 snapshots/
 coverage
 typechain
+networks
+*error.log
 
 # Hardhat files
 cache

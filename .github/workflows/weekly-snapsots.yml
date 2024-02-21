@@ -1,0 +1,70 @@
+name: Weekly Sentinel Snapshots
+on:
+  schedule:
+    - cron: '0 0 * * 0'
+  push:
+    branches:
+      - '*'
+
+jobs:
+  snapshots:
+    name: "Sentinel Snapshots"
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        network: [base-mainnet, bsc-mainnet, eth-mainnet, optimism-mainnet]
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Get current date
+        id: get-date
+        run: echo "{date}=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Install jq
+        uses: dcarbone/install-jq-action@v2.1.0
+
+      - name: Set up IPFS
+        uses: ibnesayeed/setup-ipfs@master
+        id: ipfs_setup
+
+      - name: Generate networks file
+        run: ./scripts/getSFMetadata.sh
+
+      - name: Build Snapshot
+        run: ./scripts/manageSnapshots.sh -g ${{ matrix.network }} > ${{ matrix.network }}.txt
+
+      - name: Upload Snapshot
+        run: ./scripts/manageSnapshots.sh -u
+
+      - name: Collate Changes
+        run: |
+          #!/bin/bash
+          if [[ ! -f "manifest.json" || ! -f "manifest-tmp.json" ]]; then
+            echo "One or both files do not exist."
+            exit 0
+          fi
+
+          if ! diff -q manifest.json manifest-tmp.json > /dev/null; then
+            echo "Files are different. Outputting manifest-tmp.json."
+            cat manifest-tmp.json
+          else
+            echo "Files are identical. No output needed."
+          fi
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          add-paths: |
+            manifest.json
+          commit-message: ${{ steps.get-date.outputs.date }} uupdate manifest
+          title: 'Update manifests for ${{ steps.get-date.outputs.date }}'

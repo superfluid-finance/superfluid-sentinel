@@ -16,7 +16,7 @@ async function setup(provider, agentAccount) {
     const httpProvider = new Web3.providers.HttpProvider("http://127.0.0.1:8545");
     const web3 = new Web3(httpProvider);
     const accounts = await web3.eth.getAccounts();
-    const providerEthers = new ethers.JsonRpcProvider("http://127.0.0.1:8545",null,{polling: true});
+    const providerEthers = new ethers.JsonRpcProvider("http://127.0.0.1:8545",);
     const account = await providerEthers.getSigner();
 
     await web3.eth.sendTransaction({
@@ -26,7 +26,7 @@ async function setup(provider, agentAccount) {
         type: "0x0"
     });
 
-    const sf = await DeployAndLoadSuperfluidFramework(web3, account,  accounts[0]);
+    const sf = await DeployAndLoadSuperfluidFramework(web3, providerEthers, account);
     for (const account of accounts) {
         await sf.tokens.fDAI.methods.mint(account, "10000000000000000000000").send({from: account});
         await sf.tokens.fDAI.methods.approve(sf.superTokens.fDAIx.options.address, "10000000000000000000000").send({from: account});

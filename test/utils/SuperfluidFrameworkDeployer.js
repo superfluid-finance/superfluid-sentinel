@@ -43,7 +43,6 @@ const _getFactoryAndReturnDeployedContract = async (
 
         await contract.deploymentTransaction().wait(0);
     } else if (!contract.deployed) {
-        console.log("dfasdf")
         // ethers v6
         await contract.deploymentTransaction().wait(0);
     }

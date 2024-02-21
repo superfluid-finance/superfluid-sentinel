@@ -3,7 +3,7 @@
 set -xe
 
 #Variables
-filename="networks"
+rpc_urls="${SNAPSHOT_RPC_URLS}"
 ipfs_api="${IPFS_API}"
 
 generate_snapshot() {
@@ -14,12 +14,16 @@ generate_snapshot() {
         mkdir snapshots
     fi
 
-    while IFS=, read -r _ rpc; do
-        echo "${rpc} - ${rpc:-no rpc found}"
-        [ -n "$rpc" ] && node ./scripts/buildSnapshot.js "$rpc"
-    done < "$filename"
+    # Get list of RPC URLs from environment variable
+    IFS=',' read -r -a rpc_array <<< "$rpc_urls"
+    for rpc in "${rpc_array[@]}"; do
+        echo "${rpc}"
+        [ -n "$rpc" ] && node ./scripts/buildSnapshot.js "https://$rpc"
+    done
+
     echo "Generating done"
 }
+
 
 upload_snapshot() {
     echo "Uploading snapshots..."

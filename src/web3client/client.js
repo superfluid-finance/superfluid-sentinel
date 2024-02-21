@@ -66,7 +66,7 @@ class Client {
       } else if(this.app.config.OBSERVER) {
         this.app.logger.warn("Configuration is set to be Observer.");
       } else {
-        throw Error("No account configured. Either PRIVATE_KEY or MNEMONIC needs to be set.");
+        throw Error("No account configured. Either PRIVATE_KEY or MNEMONIC needs to be set. Set OBSERVER=true if you really want to run a passive sentinel.");
       }
 
       if(!this.app.config.OBSERVER) {

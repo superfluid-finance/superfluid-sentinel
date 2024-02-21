@@ -17,7 +17,7 @@ program
     .option("--max-query-block-range [value]", "Max query block range (default: 2000)")
     .option("-t, --tokens [value]", "Addresses of SuperTokens the sentinel should watch (default: all SuperTokens)")
     .option("-e, --exclude-tokens [value]", "Addresses of SuperTokens the sentinel should excluded (default: none)")
-    .option("-p, --db-path [value]", "Path of the DB file (default: db.sqlite)")
+    .option("-p, --db-path [value]", "Path of the DB file (default: data/db.sqlite)")
     .option("-d, --additional-liquidation-delay [value]", "Time to wait (seconds) after an agreement becoming critical before doing a liquidation (default: 0)")
     .option("--tx-timeout [value]", "Time to wait (seconds) before re-broadcasting a pending transaction with higher gas price (default: 60)")
     .option("--protocol-release-version [value]", "Superfluid Protocol Release Version (default: v1)")

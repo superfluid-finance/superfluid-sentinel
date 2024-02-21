@@ -41,7 +41,7 @@ class Config {
     this.MAX_QUERY_BLOCK_RANGE = config.max_query_block_range || 2000;
     this.TOKENS = config.TOKENS?.split(",");
     this.EXCLUDED_TOKENS = config.EXCLUDED_TOKENS?.split(",");
-    this.DB = (config.db_path !== undefined && config.db_path !== "") ? config.db_path : "./db.sqlite";
+    this.DB = (config.db_path !== undefined && config.db_path !== "") ? config.db_path : "data/db.sqlite";
     this.ADDITIONAL_LIQUIDATION_DELAY = config.additional_liquidation_delay || 0;
     this.TX_TIMEOUT = config.tx_timeout * 1000 || 60000;
     this.PROTOCOL_RELEASE_VERSION = config.protocol_release_version || "v1";
@@ -67,6 +67,7 @@ class Config {
     this.PIRATE = this._parseToBool(config.pirate);
     this.INSTANCE_NAME = config.INSTANCE_NAME || "Sentinel";
     this.RPC_STUCK_THRESHOLD = config.rpc_stuck_threshold;
+    this.SENTINEL_BALANCE_THRESHOLD = config.sentinel_balance_threshold;
   }
 
   _initializeFromEnvVariables() {
@@ -79,7 +80,7 @@ class Config {
     this.TOKENS = undefined;
     this.TOKENS = process.env.TOKENS?.split(",");
     this.EXCLUDED_TOKENS = process.env.EXCLUDED_TOKENS?.split(",");
-    this.DB = (process.env.DB_PATH !== undefined && process.env.DB_PATH !== "") ? process.env.DB_PATH : "./db.sqlite";
+    this.DB = (process.env.DB_PATH !== undefined && process.env.DB_PATH !== "") ? process.env.DB_PATH : "data/db.sqlite";
     this.ADDITIONAL_LIQUIDATION_DELAY = process.env.ADDITIONAL_LIQUIDATION_DELAY || 0;
     this.TX_TIMEOUT = process.env.TX_TIMEOUT * 1000 || 60000;
     this.PROTOCOL_RELEASE_VERSION = process.env.PROTOCOL_RELEASE_VERSION || "v1";
@@ -112,8 +113,9 @@ class Config {
     this.BLOCK_OFFSET = process.env.BLOCK_OFFSET || 12;
     this.MAX_TX_NUMBER = process.env.MAX_TX_NUMBER || 100;
     this.NO_REMOTE_MANIFEST = this._parseToBool(process.env.NO_REMOTE_MANIFEST, false);
-    this.INSTANCE_NAME =  process.env.INSTANCE_NAME || "Sentinel";
     this.RPC_STUCK_THRESHOLD = process.env.RPC_STUCK_THRESHOLD || (this.POLLING_INTERVAL * 4) / 1000;
+    this.INSTANCE_NAME =  process.env.INSTANCE_NAME || "Sentinel";
+    this.SENTINEL_BALANCE_THRESHOLD = process.env.SENTINEL_BALANCE_THRESHOLD || 0;
   }
 
   _parseToBool(value, defaultValue = false) {
@@ -183,7 +185,6 @@ class Config {
 
   getConfigurationInfo () {
     return {
-      INSTANCE_NAME: this.INSTANCE_NAME,
       HTTP_RPC_NODE: this.HTTP_RPC_NODE,
       FASTSYNC: this.FASTSYNC,
       OBSERVER: this.OBSERVER,
@@ -214,6 +215,8 @@ class Config {
       SLACK_WEBHOOK_URL: this.SLACK_WEBHOOK_URL,
       TELEGRAM_BOT_TOKEN: this.TELEGRAM_BOT_TOKEN,
       TELEGRAM_CHAT_ID: this.TELEGRAM_CHAT_ID,
+      INSTANCE_NAME: this.INSTANCE_NAME,
+      SENTINEL_BALANCE_THRESHOLD: this.SENTINEL_BALANCE_THRESHOLD,
     };
   }
 }

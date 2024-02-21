@@ -80,10 +80,12 @@ class Report {
                 }
             },
 
-            account: {
-                address: this.app.client.getAccountAddress(),
-                balance: (await this.app.client.getAccountBalance()).toString(),
-            },
+            ...(this.app.config.OBSERVER ? {} : {
+                account: {
+                    address: this.app.client.getAccountAddress(),
+                    balance: (await this.app.client.getAccountBalance()).toString(),
+                }
+            }),
 
             queues: {
                 agreementQueue: this.app.queues.getAgreementQueueLength(),

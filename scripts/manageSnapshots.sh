@@ -3,13 +3,6 @@
 set -xe
 
 #Variables
-if [ -f .env ]; then
-    source .env
-else
-    echo "Error: .env file not found. Please create a .env file with the required environment variables." >&2
-    exit 1
-fi
-
 rpc_urls="${SNAPSHOT_RPC_URLS}"
 ipfs_api="${IPFS_API}"
 

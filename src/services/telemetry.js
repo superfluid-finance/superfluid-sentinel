@@ -85,7 +85,7 @@ sentinel_telemetry_healthy{${labels}} ${healthReport.healthy ? 1 : 0}
 # TYPE sentinel_telemetry_rpc_requests counter
 sentinel_telemetry_rpc_requests{${labels}} ${healthReport.network.rpc.totalRequests}
 `
-+ (healthReport.account.balance ? // undefined in observer mode
++ (healthReport.account?.balance ? // undefined in observer mode
 `# HELP sentinel_telemetry_account_balance Balance of the monitored account, rounded to 3 decimal places.
 # TYPE sentinel_telemetry_account_balance gauge
 sentinel_telemetry_account_balance{${labels}} ${Math.floor(parseInt(healthReport.account.balance) / 1e15) / 1e3}

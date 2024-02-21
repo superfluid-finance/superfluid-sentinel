@@ -23,7 +23,7 @@ const TestToken = require("@superfluid-finance/ethereum-contracts/build/truffle/
 const BatchLiquidator = require("@superfluid-finance/ethereum-contracts/build/truffle/BatchLiquidator.json");
 const TOGA = require("@superfluid-finance/ethereum-contracts/build/truffle/TOGA.json");
 
-async function DeployAndLoadSuperfluidFramework(web3, provider) {
+async function DeployAndLoadSuperfluidFramework(web3, ethersProvider, signer) {
 
     // web3 is required to load the framework
     if (!web3) {
@@ -32,11 +32,11 @@ async function DeployAndLoadSuperfluidFramework(web3, provider) {
 
     const MINT_AMOUNT = ethers.parseEther("100000000").toString();
 
-    const sfDeployer = await SuperfluidFrameworkDeployer.deployTestFramework(provider);
+    const sfDeployer = await SuperfluidFrameworkDeployer.deployTestFramework(ethersProvider, signer);
     const contractsFramework = await sfDeployer.frameworkDeployer.getFramework();
 
-    await sfDeployer.frameworkDeployer.deployWrapperSuperToken("Fake DAI Token", "fDAI", 18, MINT_AMOUNT, provider.address);
-    await sfDeployer.frameworkDeployer.deployWrapperSuperToken("Fake USDC Token", "fUSDC", 18, MINT_AMOUNT, provider.address);
+    await sfDeployer.frameworkDeployer.deployWrapperSuperToken("Fake DAI Token", "fDAI", 18, MINT_AMOUNT, signer.address);
+    await sfDeployer.frameworkDeployer.deployWrapperSuperToken("Fake USDC Token", "fUSDC", 18, MINT_AMOUNT, signer.address);
 
     const resolver = new web3.eth.Contract(IResolver.abi, contractsFramework[11]);
     const superfluid = new web3.eth.Contract(ISuperfluid.abi, contractsFramework[1]);

@@ -5,6 +5,8 @@ datadir/
 snapshots/
 coverage
 typechain
+networks
+*error.log
 
 # Hardhat files
 cache
@@ -13,7 +15,7 @@ artifacts
 database.sqlite
 .env
 .env*
-!.env-example
+!.env.example
 .DS_Store
 *.sqlite
 .npmrc

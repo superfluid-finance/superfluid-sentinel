@@ -15,17 +15,19 @@ class NotificationJobs {
 
   async sendReport () {
     const healthcheck = await this.app.healthReport.fullReport();
-    if(!healthcheck.healthy) {
+    if (!healthcheck.healthy) {
       const healthData = `Instance Name: ${this.app.config.INSTANCE_NAME}\nHealthy: ${healthcheck.healthy}\nChainId: ${healthcheck.network.chainId}\nReasons: ${healthcheck.reasons.join('\n')}`;
       this.app.notifier.sendNotification(healthData);
     }
-    const currentTime = Date.now();
-    if(currentTime - this._lastBalanceReportTime >= BALANCE_REPORT_INTERVAL) {
-      const balanceQuery = await this.app.client.isAccountBalanceBelowMinimum();
-      if(balanceQuery.isBelow) {
-        this.app.notifier.sendNotification(`Attention: Sentinel balance: ${wad4human(balanceQuery.balance)}`);
-        // update the time of last balance report
-        this._lastBalanceReportTime = currentTime;
+    if (!this.app.config.OBSERVER) {
+      const currentTime = Date.now();
+      if(currentTime - this._lastBalanceReportTime >= BALANCE_REPORT_INTERVAL) {
+        const balanceQuery = await this.app.client.isAccountBalanceBelowMinimum();
+        if(balanceQuery.isBelow) {
+          this.app.notifier.sendNotification(`Attention: Sentinel balance: ${wad4human(balanceQuery.balance)}`);
+          // update the time of last balance report
+          this._lastBalanceReportTime = currentTime;
+        }
       }
     }
   }

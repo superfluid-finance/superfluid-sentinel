@@ -24,6 +24,7 @@ const Telemetry = require("./services/telemetry");
 const Errors = require("./utils/errors/errors");
 const CircularBuffer = require("./utils/circularBuffer");
 const { wad4human } = require("@decentral.ee/web3-helpers");
+const packageVersion = require("../package.json").version;
 
 class App {
     /*
@@ -178,7 +179,7 @@ class App {
 
     async start() {
         try {
-            this.logger.debug(`booting - ${this.config.INSTANCE_NAME}`);
+            this.logger.debug(`booting version ${packageVersion} - ${this.config.INSTANCE_NAME}`);
             this._isShutdown = false;
             // send notification about time sentinel started including timestamp
             this.notifier.sendNotification(`Sentinel started at ${new Date()}`);
@@ -194,9 +195,11 @@ class App {
             }
             // create all web3 infrastructure needed
             await this.client.init();
-            const balanceMsg = `RPC connected with chainId ${await this.client.getChainId()}, account ${this.client.accountManager.getAccountAddress(0)} has balance ${wad4human(await this.client.accountManager.getAccountBalance(0))}`;
+            const balanceMsg = `RPC connected with chainId ${await this.client.getChainId()}`
+                + this.config.OBSERVER ? "" :
+                `account ${this.client.accountManager.getAccountAddress(0)} has balance ${wad4human(await this.client.accountManager.getAccountBalance(0))}`;
             this.notifier.sendNotification(balanceMsg);
-            
+
             //check conditions to decide if getting snapshot data
             if ((!dbFileExist || this.config.COLD_BOOT) &&
                 this.config.FASTSYNC && this.config.CID) {
@@ -241,13 +244,11 @@ class App {
             try {
                 const thresholds = require("../thresholds.json");
                 const tokensThresholds = thresholds.networks[await this.client.getChainId()];
-                this.config.SENTINEL_BALANCE_THRESHOLD = tokensThresholds.minSentinelBalanceThreshold;
                 // update thresholds on database
                 await this.db.sysQueries.updateThresholds(tokensThresholds.thresholds);
             } catch (err) {
-                this.logger.warn(`error loading thresholds.json`);
+                this.logger.warn(`thresholds.json not loaded`);
                 await this.db.sysQueries.updateThresholds({});
-                this.config.SENTINEL_BALANCE_THRESHOLD = 0;
             }
 
 

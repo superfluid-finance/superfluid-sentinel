@@ -6,8 +6,6 @@
 require("dotenv").config();
 const zlib = require("zlib");
 const fs = require("fs");
-const Utils = require("./../src/utils/utils");
-
 const Client = require("./../src/web3client/client");
 const Protocol = require("./../src/protocol/protocol");
 const Queues = require("./../src/protocol/queues");
@@ -15,10 +13,11 @@ const EventModel = require("./../src/models/EventModel");
 const Bootstrap = require("./../src/boot/bootstrap");
 const LoadEvents = require("./../src/boot/loadEvents");
 const DB = require("./../src/database/db");
-const Repository = require("./../src/database/businessRepository");
 const Timer = require("./../src/utils/timer");
 const metadata = require("@superfluid-finance/metadata/networks.json");
 const {QueryTypes} = require("sequelize");
+const SystemRepository = require("../src/database/systemRepository");
+const BusinessRepository = require("../src/database/businessRepository");
 
 const DB_SCHEMA_VERSION = 3;
 /*
@@ -26,7 +25,6 @@ const DB_SCHEMA_VERSION = 3;
  */
 (async () => {
     const myArgs = process.argv.slice(2);
-    const genAccounts = Utils.generateAccounts;
     try {
         const config = {
             HTTP_RPC_NODE: myArgs[0] ? myArgs[0] : process.env.HTTP_RPC_NODE,
@@ -41,8 +39,7 @@ const DB_SCHEMA_VERSION = 3;
         const app = {
             config: config,
             logger: console,
-            timer: new Timer(),
-            genAccounts: genAccounts
+            timer: new Timer()
         }
 
         app.client = new Client(app);
@@ -59,13 +56,15 @@ const DB_SCHEMA_VERSION = 3;
         config.db_path = `./snapshots/snapshot_${chainId}_${Math.round(new Date().getTime() / 1000)}.tmp`;
         const db = DB(config.db_path);
         db.models = {
-            AccountEstimationModel: require("./../src/database/models/accountEstimationModel")(db),
-            AgreementModel: require("./../src/database/models/agreementModel")(db),
-            FlowUpdatedModel: require("./../src/database/models/flowUpdatedModel")(db),
-            SuperTokenModel: require("./../src/database/models/superTokenModel")(db),
-            FlowDistributionModel: require("./../src/database/models/flowDistributionUpdatedModel")(db),
-            PoolCreatedModel: require("./../src/database/models/poolCreatedModel")(db),
-            SystemModel: require("./../src/database/models/systemModel")(db)
+            AccountEstimationModel: require("../src/database/models/accountEstimationModel")(db),
+            AgreementModel: require("../src/database/models/agreementModel")(db),
+            FlowUpdatedModel: require("../src/database/models/flowUpdatedModel")(db),
+            SuperTokenModel: require("../src/database/models/superTokenModel")(db),
+            PoolCreatedModel: require("../src/database/models/poolCreatedModel")(db),
+            FlowDistributionModel: require("../src/database/models/flowDistributionUpdatedModel")(db),
+            SystemModel: require("../src/database/models/systemModel")(db),
+            UserConfig: require("../src/database/models/userConfiguration")(db),
+            ThresholdModel: require("../src/database/models/thresholdModel")(db),
         }
 
         await db.sync({ force: true });
@@ -74,7 +73,8 @@ const DB_SCHEMA_VERSION = 3;
         app.models = {
             event: new EventModel()
         };
-        db.queries = new Repository(app);
+        app.db.sysQueries = SystemRepository.getInstance(app);
+        app.db.bizQueries = BusinessRepository.getInstance(app);
         config.EPOCH_BLOCK = network.startBlockV1 || 0;
         app.protocol = new Protocol(app);
         app.queues = new Queues(app);

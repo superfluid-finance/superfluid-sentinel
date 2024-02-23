@@ -4,7 +4,8 @@
   "networks": {
     "1": {
       "name": "Ethereum",
-      "network_type": "evm"
+      "network_type": "evm",
+      "cid": "QmXTaEcw7sg72SYQP1g5obw3zC5YTHktPAyQCxt5VuWmCJ"
     },
     "5": {
       "name": "Goerli Testnet",
@@ -13,22 +14,26 @@
     "10": {
       "name": "Optimism",
       "network_type": "evm-l2",
-      "batch_contract" : "0x84956C84c33c38AcE22C9324F1f92028AF2215ce"
+      "batch_contract": "0x84956C84c33c38AcE22C9324F1f92028AF2215ce",
+      "cid": "QmXS83mPhBuyPXQcX7ivfHeZ4BoNddMcHVySatUdU9TjWv"
     },
     "56": {
       "name": "Binance Smart Chain",
       "network_type": "evm",
-      "batch_contract": "0x27636F8E129cdd4ccA0F30E2b4C116DDaC773bE5"
+      "batch_contract": "0x27636F8E129cdd4ccA0F30E2b4C116DDaC773bE5",
+      "cid": "QmeVZW3W93s1gSdPtohbWPiA244MmNaPUuaHyfSNWEbYMQ"
     },
     "100": {
       "name": "Gnosis Chain",
       "network_type": "evm",
-      "batch_contract": "0x96C3C2d23d143301cF363a02cB7fe3596d2834d7"
+      "batch_contract": "0x96C3C2d23d143301cF363a02cB7fe3596d2834d7",
+      "cid": "QmTZ5XhAvKsJ8XW14hMKikKkpHFu1sxA5Cgi7zDpxo9Xub"
     },
     "137": {
       "name": "Polygon",
       "network_type": "evm",
-      "batch_contract": "0xA7afDc46999076C295cfC6812dd73d103cF64e19"
+      "batch_contract": "0xA7afDc46999076C295cfC6812dd73d103cF64e19",
+      "cid": "Qmch2Bn1tdZ8JCA3Ss3EohyEMGqVK2JCq1zALHz3i9PMrs"
     },
     "420": {
       "name": "Optimism Goerli Testnet",
@@ -37,21 +42,24 @@
     "8453": {
       "name": "Base Mainnet",
       "network_type": "evm-l2",
-      "batch_contract" : "0x6b008BAc0e5846cB5d9Ca02ca0e801fCbF88B6f9"
+      "batch_contract": "0x6b008BAc0e5846cB5d9Ca02ca0e801fCbF88B6f9"
     },
     "42161": {
       "name": "Arbitrum One",
       "network_type": "evm-l2",
-      "batch_contract" : "0x9224413b9177E6c1D5721B4a4D1D00eC84B07Ce7"
+      "batch_contract": "0x9224413b9177E6c1D5721B4a4D1D00eC84B07Ce7",
+      "cid": "QmZ1WE2iBBj8WoSgPQmvMyPPuyR8pErhnvgNuqUuwWCjkX"
     },
     "42220": {
       "name": "Celo",
       "network_type": "evm",
-      "batch_contract": "0xCb0Ff4D0cA186f0Fc0301258066Fe3fA258417a6"
+      "batch_contract": "0xCb0Ff4D0cA186f0Fc0301258066Fe3fA258417a6",
+      "cid": "QmewQVkxGLTcCLx6zuP4Q5q9QEywuzgoMLhKQANPSVaq2R"
     },
     "43113": {
       "name": "Avalanche Fuji Testnet",
-      "network_type": "evm"
+      "network_type": "evm",
+      "cid": "QmWbR31s7dkZ3zoVGCMKm8nZxdgupdT45sUmRhXhj4CvCU"
     },
     "43114": {
       "name": "Avalanche C-Chain",
@@ -60,7 +68,8 @@
     },
     "80001": {
       "name": "Polygon Mumbai Testnet",
-      "network_type": "evm"
+      "network_type": "evm",
+      "cid": "QmV1MCLREr2DWczA6nvajxe1EfiGmTgT9PH2h2Qo1Zvfo7"
     },
     "84531": {
       "name": "Base Goerli Testnet",
@@ -76,7 +85,8 @@
     },
     "534352": {
       "name": "Scroll",
-      "network_type": "evm-l2"
+      "network_type": "evm-l2",
+      "cid": "QmfMKdvQagt9EJNx7rRy8XY3PyhAdcgyettpDMuAdYSF5q"
     },
     "11155420": {
       "name": "Optimism Sepolia Testnet",

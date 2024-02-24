@@ -27,6 +27,9 @@ generate_snapshot() {
 
 upload_snapshot() {
     echo "Uploading snapshots..."
+    if [ ! -d "logs" ]; then
+        mkdir logs
+    fi
     ipfs_logfile="logs/ipfs_$(date '+%Y-%m-%d').txt"
     rm -f -- "$ipfs_logfile"
     for file in ./snapshots/*.sqlite.gz; do

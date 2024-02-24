@@ -3,6 +3,7 @@ datadir/
 .idea/
 .vscode
 snapshots/
+logs/
 coverage
 typechain
 networks

@@ -63,7 +63,7 @@ class Config {
     this.ONLY_LISTED_TOKENS = this._parseToBool(config.only_listed_tokens);
     this.TOGA_CONTRACT = config.toga_contract;
     this.FASTSYNC = config.fastsync !== "false";
-    this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://cloudflare-ipfs.com/ipfs/"
+    this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://gateway.pinata.cloud/ipfs/"
     this.PIRATE = this._parseToBool(config.pirate);
     this.INSTANCE_NAME = config.INSTANCE_NAME || "Sentinel";
     this.RPC_STUCK_THRESHOLD = config.rpc_stuck_threshold;
@@ -90,7 +90,7 @@ class Config {
     this.METRICS = this._parseToBool(process.env.METRICS, true);
     this.METRICS_PORT = process.env.METRICS_PORT || 9100;
     this.FASTSYNC = this._parseToBool(process.env.FASTSYNC, true);
-    this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://cloudflare-ipfs.com/ipfs/";
+    this.IPFS_GATEWAY = process.env.IPFS_GATEWAY || "https://gateway.pinata.cloud/ipfs/";
     this.PIRATE = this._parseToBool(process.env.PIRATE, false);
     this.SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL;
     this.TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;

@@ -175,7 +175,9 @@ class Config {
     this.SCHEMA_VERSION = schemaVersion;
 
 
-    this.BATCH_CONTRACT = localManifest.networks[chainId]?.batch_contract || contractsV1.batchLiquidator || undefined;
+    this.BATCH_CONTRACT = process.env.DISABLE_BATCH_CONTRACT ?
+      undefined :
+      localManifest.networks[chainId]?.batch_contract || contractsV1.batchLiquidator || undefined;
     this.TOGA_CONTRACT = contractsV1.toga || undefined;
     if(this.RESOLVER === undefined) {
       this.RESOLVER = contractsV1.resolver || undefined;

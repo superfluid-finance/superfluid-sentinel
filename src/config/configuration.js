@@ -115,7 +115,7 @@ class Config {
     this.NO_REMOTE_MANIFEST = this._parseToBool(process.env.NO_REMOTE_MANIFEST, false);
     this.RPC_STUCK_THRESHOLD = process.env.RPC_STUCK_THRESHOLD || (this.POLLING_INTERVAL * 4) / 1000;
     this.INSTANCE_NAME =  process.env.INSTANCE_NAME || "Sentinel";
-    this.SENTINEL_BALANCE_THRESHOLD = process.env.SENTINEL_BALANCE_THRESHOLD || 0;
+    this.SENTINEL_BALANCE_THRESHOLD = process.env.SENTINEL_BALANCE_THRESHOLD || "0";
   }
 
   _parseToBool(value, defaultValue = false) {

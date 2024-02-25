@@ -86,16 +86,15 @@ class AccountManager {
     }
 
     async isAccountBalanceBelowMinimum(index = 0, threshold) {
+        console.log("isAccountBalanceBelowMinimum index: ", index, " threshold: ", threshold);
         if (!this.accounts[index]) {
             throw new Error("AccountManager: account does not exist");
         }
-        if (!BN.isBN(threshold)) {
-            throw new Error("AccountManager: invalid threshold");
-        }
+        const thresholdBN = new BN(threshold);
 
         const balance = new BN(await this.getAccountBalance(index));
         return {
-            isBelow: balance.lt(threshold),
+            isBelow: balance.lt(thresholdBN),
             balance: balance
         };
     }

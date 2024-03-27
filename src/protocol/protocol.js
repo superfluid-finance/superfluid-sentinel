@@ -125,7 +125,8 @@ class Protocol {
     try {
       this.app.client.addTotalRequest();
       const result = await this.app.client.contracts.CFAv1.methods.getFlow(superToken, sender, receiver).call();
-      if (result.flowRate !== "0") {
+      const flowRate = new BN(result.flowRate);
+      if (!flowRate.eq(new BN(0))) {
         return result;
       }
     } catch (err) {

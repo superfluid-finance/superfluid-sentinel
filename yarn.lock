@@ -1251,9 +1251,9 @@
     hardhat "^2.19.4"
 
 "@superfluid-finance/metadata@^1.1.27":
-  version "1.1.28"
-  resolved "https://registry.yarnpkg.com/@superfluid-finance/metadata/-/metadata-1.1.28.tgz#0724432be7486c1fe1f147591f15c1b41391267a"
-  integrity sha512-MbhcHjcVahQZAdZZWBIzeVIFBScgksaejKWy8/hcShymYlo/0fHB2g90ty+vQAc7bZEquHOkRXfgGoP65D+KgQ==
+  version "1.1.30"
+  resolved "https://registry.yarnpkg.com/@superfluid-finance/metadata/-/metadata-1.1.30.tgz#b97a9c9f7956ab4bbd3d293fd4c3050e06ea64b9"
+  integrity sha512-+vUFudyVY834D/2npl8EQMobrGdYT6B04p18UWVTBJvvumgCJIfJxxWyKAPOQBKdXW3Gy9PwRkaExyIi0gW1vA==
 
 "@szmarczak/http-timer@^4.0.5":
   version "4.0.6"

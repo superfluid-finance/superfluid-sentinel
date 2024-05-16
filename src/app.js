@@ -233,7 +233,13 @@ class App {
             // log configuration data
             const userConfig = this.config.getConfigurationInfo();
             this.logger.debug(JSON.stringify(userConfig));
-            if (await this.isResyncNeeded(userConfig)) {
+            let needsResync = await this.isResyncNeeded(userConfig);
+            if(needsResync) {
+                this.logger.error("ATTENTION: Configuration changed since last run, We are going to continue, but hope you know what you are doing.");
+                needsResync = false;
+            }
+
+            if(/*await this.isResyncNeeded(userConfig)*/ needsResync) { // todo: i know, this is to be removed later
                 this.logger.error(`ATTENTION: Configuration changed since last run, please re-sync.`);
                 // send notification about configuration change, and exit
                 this.notifier.sendNotification(`Configuration changed since last run, please re-sync.`);

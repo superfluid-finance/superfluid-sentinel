@@ -102,6 +102,11 @@ class EventTracker {
             break;
           }
           case "Transfer" : {
+
+            if (!this.app.client.superToken.isSuperTokenRegistered(event.address.toLowerCase())) {
+              return
+            }
+
             this.app.logger.debug(`${event.eventName} [${event.address}] - sender ${event.from} receiver ${event.to}`);
             this.app.queues.estimationQueue.push([
               {
@@ -126,13 +131,20 @@ class EventTracker {
             break;
           }
           case "AgreementLiquidatedBy": {
-            this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superToken,superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.penaltyAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
+            if (!this.app.client.superToken.isSuperTokenRegistered(event.address.toLowerCase())) {
+              return
+            }
+
+            this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superToken.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.penaltyAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
             if (event.bailoutAmount.toString() !== "0") {
               this.app.logger.warn(`${event.id} has to be bailed out with amount ${wad4human(event.bailoutAmount)}`);
             }
             break;
           }
           case "AgreementLiquidatedV2": {
+            if (!this.app.client.superToken.isSuperTokenRegistered(event.address.toLowerCase())) {
+              return
+            }
             this.app.logger.info(`Liquidation: tx ${event.transactionHash}, token ${this.app.client.superToken.superTokenNames[event.address.toLowerCase()]}, liquidated acc ${event.targetAccount}, liquidator acc ${event.liquidatorAccount}, reward ${wad4human(event.rewardAmount)}`);
             const ramount = new BN(event.rewardAmount)
             const delta = new BN(event.targetAccountBalanceDelta)

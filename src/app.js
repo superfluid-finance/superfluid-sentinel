@@ -239,7 +239,7 @@ class App {
                 needsResync = false;
             }
 
-            if(/*await this.isResyncNeeded(userConfig)*/ needsResync) { // todo: i know what i'm doing, this to be removed later
+            if(/*await this.isResyncNeeded(userConfig)*/ needsResync) { // todo: i know, this is to be removed later
                 this.logger.error(`ATTENTION: Configuration changed since last run, please re-sync.`);
                 // send notification about configuration change, and exit
                 this.notifier.sendNotification(`Configuration changed since last run, please re-sync.`);
@@ -298,9 +298,6 @@ class App {
     }
 
     async isResyncNeeded(userConfig) {
-
-        return false;
-
         // check important change of configurations
         const res = await this.db.sysQueries.getConfiguration();
         if (res !== null) {

@@ -166,6 +166,11 @@ class EventTracker {
 
   async processAgreementEvent (event) {
     try {
+      // check if the token is in the list of tokens to be tracked
+      if(this.app.config.TOKENS && !this.app.config.TOKENS.includes(event.token)) {
+        return false;
+      }
+
       if(event && !this.app.client.superToken.isSuperTokenRegistered(event.token)) {
         this.app.logger.debug(`found a new token at ${event.token}`);
         this.app.circularBuffer.push(event.token, null, "new token found");

@@ -1,4 +1,5 @@
 const async = require("async");
+const {Op, Sequelize} = require("sequelize");
 
 // rename to EventLoader?
 // used only for the initial load
@@ -39,7 +40,6 @@ class LoadEvents {
         while (true) {
           try {
             task.self.app.logger.info(`getting blocks: trying #${keepTrying} - from:${task.fromBlock} to:${task.toBlock}`);
-
             const query = task.self.app.config.TOKENS
                 ? { filter: { token: task.self.app.config.TOKENS }, fromBlock: task.fromBlock, toBlock: task.toBlock }
                 : { fromBlock: task.fromBlock, toBlock: task.toBlock };
@@ -131,7 +131,18 @@ class LoadEvents {
         attributes: ["superToken"],
         group: ["superToken"]
       });
-      const tokens = [...tokensCFA, ...tokensGDA];
+      let tokens = [...tokensCFA, ...tokensGDA];
+      // remove all tokens that are not in this.app.config.TOKENS
+        if (this.app.config.TOKENS) {
+            tokens = tokens.filter(({ superToken }) => this.app.config.TOKENS.includes(superToken));
+
+            // remove duplicates
+            tokens = tokens.filter((token, index, self) =>
+                index === self.findIndex((t) => (
+                    t.superToken === token.superToken
+                ))
+            );
+        }
       // fresh database
       if (systemInfo === null) {
         await this.app.db.models.SystemModel.create({
@@ -164,7 +175,9 @@ class LoadEvents {
             }
           }
         }, this.app.config.CONCURRENCY);
+
         const superTokens = this.app.client.superToken.superTokensAddresses;
+        console.log("checking delays for superTokens", superTokens);
         for (const st of superTokens) {
           delayChecker.push({
             self: this,
@@ -176,6 +189,31 @@ class LoadEvents {
           await delayChecker.drain();
         }
         this.app.logger.info("finish getting delays PIC system");
+
+
+        const superTokenLowerCase = superTokens.map((token) => token.toLowerCase());
+        console.log("cleaning superTokens table keeping only: ", superTokenLowerCase);
+        await this.app.db.models.SuperTokenModel.destroy({
+            where: Sequelize.where(
+                Sequelize.fn('lower', Sequelize.col('address')),
+                {
+                    [Op.notIn]: superTokenLowerCase
+                }
+            )
+        });
+
+        // remove all estimations that are not in the superTokens list
+        console.log("cleaning estimations table");
+        await this.app.db.models.AccountEstimationModel.destroy({
+          where: Sequelize.where(
+              Sequelize.fn('lower', Sequelize.col('superToken')),
+              {
+                [Op.notIn]: superTokenLowerCase
+              }
+          )
+        });
+
+
       } else {
         this.app.logger.info("running as observer, ignoring PIC system");
       }

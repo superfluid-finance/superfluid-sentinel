@@ -13,6 +13,10 @@ class SuperTokenManager {
 
     // save super tokens to DB and memory. Optionally set PIC for that token
     async saveSuperToken (newSuperToken, setPIC=false) {
+        // if config.token is set, only load those tokens
+        if(this.app.config.TOKENS && !this.app.config.TOKENS.includes(newSuperToken)) {
+            return;
+        }
         // check if the super token is already loaded
         if (this.superTokens[newSuperToken.toLowerCase()] !== undefined) {
             return;
@@ -127,12 +131,16 @@ class SuperTokenManager {
     // get super tokens and load them
     async _loadSuperTokensFromDB() {
         try {
-
             const filter = {
                 attributes: ["address"],
                 where: this.app.config.ONLY_LISTED_TOKENS ? { listed: 1 } : undefined
             };
-
+            // we only care about tokens in the config
+            if(this.app.config.TOKENS) {
+                filter.where = {
+                    address: this.app.config.TOKENS
+                };
+            }
             const superTokensDB = await this.app.db.models.SuperTokenModel.findAll(filter);
             for(const token of superTokensDB) {
                 await this.saveSuperToken(token.address);
